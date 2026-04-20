@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { pendingNotifications } from '@/lib/notificationQueue';
+import connectDB from '@/lib/db';
+import Notification from '@/models/Notification';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,21 +12,24 @@ export async function GET(req: NextRequest) {
     if (!session) return NextResponse.json({ notifications: [] });
 
     const user = session.user as { id: string; role: string };
+    await connectDB();
 
-    // Pull notifications for this manager
-    const mine: typeof pendingNotifications = [];
-    const rest: typeof pendingNotifications = [];
+    const notifications = await Notification.find({
+      managerId: user.id,
+      deliveredAt: null,
+    })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
 
-    pendingNotifications.forEach(n => {
-      if (n.managerId === user.id) mine.push(n);
-      else rest.push(n);
-    });
+    if (notifications.length > 0) {
+      await Notification.updateMany(
+        { _id: { $in: notifications.map((notification) => notification._id) } },
+        { $set: { deliveredAt: new Date() } }
+      );
+    }
 
-    // Clear delivered ones
-    pendingNotifications.length = 0;
-    pendingNotifications.push(...rest);
-
-    return NextResponse.json({ notifications: mine });
+    return NextResponse.json({ notifications });
   } catch (err) {
     console.error('[GET /api/notifications]', err);
     return NextResponse.json({ notifications: [] });

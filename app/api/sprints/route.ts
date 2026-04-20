@@ -5,8 +5,10 @@ import connectDB from '@/lib/db';
 import TaskProgress from '@/models/TaskProgress';
 import Startup from '@/models/Startup';
 import User from '@/models/User';
+import Notification from '@/models/Notification';
 import mongoose from 'mongoose';
-import { pendingNotifications } from '@/lib/notificationQueue';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(_req: NextRequest) {
   try {
@@ -66,10 +68,11 @@ export async function POST(req: NextRequest) {
     if (completed && comment?.trim()) {
       const mgr = await User.findOne({ role: { $in: ['manager', 'super_admin'] } }).lean();
       if (mgr) {
-        pendingNotifications.push({
+        await Notification.create({
           managerId: (mgr as any)._id.toString(),
           title:    '✅ Vazifa bajarildi',
           message:  `${(startup as any).startup_name}: "${taskId.slice(0,20)}" — "${comment.slice(0,60)}"`,
+          type: 'report',
         });
       }
     }

@@ -8,6 +8,8 @@ import Meeting from '@/models/Meeting';
 import User from '@/models/User';
 import TaskProgress from '@/models/TaskProgress';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(_req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/db';
 import Schedule from '@/models/Schedule';
 import Meeting from '@/models/Meeting';
+
+export const dynamic = 'force-dynamic';
 import User from '@/models/User';
 
 const DAY_KEYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];

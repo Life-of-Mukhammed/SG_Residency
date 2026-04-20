@@ -12,6 +12,20 @@ npm run dev
 
 Open http://localhost:3000
 
+## ▲ Deploy To Vercel
+
+1. Import the repository into Vercel.
+2. Add the required environment variables from [.env.example](/Users/muhammad/Downloads/startup-residency%204/.env.example):
+   `MONGODB_URI`
+   `NEXTAUTH_SECRET`
+3. Optionally set `NEXTAUTH_URL` if you use a custom domain or want an explicit auth callback URL.
+4. Deploy with the default Next.js build command: `npm run build`
+
+Notes:
+`MONGODB_URI` is required at runtime for API routes and authentication.
+`NEXTAUTH_SECRET` is required for session and middleware token handling.
+Notifications are now persisted in MongoDB, which is important for Vercel serverless deployments.
+
 ## 🔐 Demo Credentials (after seeding)
 
 | Role | Email | Password |

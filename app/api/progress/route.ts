@@ -5,6 +5,8 @@ import connectDB from '@/lib/db';
 import TaskProgress from '@/models/TaskProgress';
 import Startup from '@/models/Startup';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(_req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

@@ -4,14 +4,13 @@ import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/db';
 import Meeting from '@/models/Meeting';
 import Startup from '@/models/Startup';
+import Notification from '@/models/Notification';
 
 function genMeetLink(): string {
   const c = 'abcdefghijklmnopqrstuvwxyz';
   const s = (n: number) => Array.from({ length: n }, () => c[Math.floor(Math.random() * c.length)]).join('');
   return `https://meet.google.com/${s(3)}-${s(4)}-${s(3)}`;
 }
-
-import { pendingNotifications } from '@/lib/notificationQueue';
 
 export async function GET(req: NextRequest) {
   try {
@@ -90,11 +89,11 @@ export async function POST(req: NextRequest) {
         status:        'booked',
       });
 
-      // Queue notification for manager
-      pendingNotifications.push({
+      await Notification.create({
         managerId,
         title: 'Yangi uchrashuv!',
         message: `${startupName || 'Startup'} — ${date} ${time} da uchrashuv belgiladi: "${topic}"`,
+        type: 'meeting',
       });
 
       const populated = await Meeting.findById(meeting._id)
