@@ -6,10 +6,10 @@ import { signOut, useSession } from 'next-auth/react';
 import {
   Rocket, Target, BookOpen, Settings, LogOut, LayoutDashboard,
   Calendar, FileText, Users, BarChart3, Shield, ChevronRight,
-  Clock, Menu, X, Sun, Moon, Bell, ChevronDown, Star, TrendingUp
+  Clock, Menu, X, TrendingUp
 } from 'lucide-react';
 import { useAppStore } from '@/store/appStore';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 type NavKey = 'dashboard'|'sprint'|'gtm'|'reports'|'meetings'|'books'|'myStartup'|'settings'|
               'managerPanel'|'schedule'|'analytics'|'superAdmin'|'gtmManager'|'sprintManager'|'progressTracker';
@@ -62,15 +62,10 @@ export default function Sidebar() {
   const { data: session } = useSession();
   const role = (session?.user as any)?.role || 'user';
 
-  const { lang, setLang, theme, toggleTheme, sidebarOpen, toggleSidebar,
-          notifications, markAllRead, _hydrated } = useAppStore();
-
-  const [showNotifs, setShowNotifs] = useState(false);
+  const { lang, sidebarOpen, toggleSidebar, _hydrated } = useAppStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
-
-  const unread = notifications.filter(n => !n.read).length;
 
   const label = (key: NavKey) => NAV_LABELS[key]?.[lang] ?? NAV_LABELS[key]?.en ?? key;
 
@@ -162,55 +157,8 @@ export default function Sidebar() {
           )}
         </nav>
 
-        {/* Bottom controls */}
+        {/* Bottom area */}
         <div className="border-t px-2 py-3 space-y-1" style={{ borderColor: 'var(--border)' }}>
-          {/* Controls row */}
-          <div className={`flex items-center gap-1.5 mb-2 ${open ? 'px-1' : 'flex-col'}`}>
-            {/* Theme */}
-           
-
-            {/* Language */}
-            
-
-            {/* Notifications */}
-            <div className="relative flex-shrink-0">
-              <button
-                onClick={() => { setShowNotifs(!showNotifs); if (!showNotifs) markAllRead(); }}
-                className="w-8 h-8 rounded-lg flex items-center justify-center relative"
-                style={{ color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                <Bell size={14}/>
-                {unread > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white font-bold flex items-center justify-center"
-                    style={{ background: '#ef4444', fontSize: 9 }}>
-                    {unread > 9 ? '9+' : unread}
-                  </span>
-                )}
-              </button>
-              {showNotifs && (
-                <div className="absolute bottom-10 left-0 rounded-xl shadow-2xl z-50"
-                  style={{ width: 280, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                  <div className="px-4 py-3 border-b text-sm font-semibold"
-                    style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-                    Bildirishnomalar
-                  </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <div className="px-4 py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-                        Bildirishnoma yo&apos;q
-                      </div>
-                    ) : notifications.slice(0, 10).map(n => (
-                      <div key={n.id} className="px-4 py-3 border-b"
-                        style={{ borderColor: 'var(--border)', background: n.read ? 'transparent' : 'rgba(99,102,241,0.06)' }}>
-                        <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{n.title}</p>
-                        <p className="text-xs mt-0.5"         style={{ color: 'var(--text-muted)'   }}>{n.message}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* User info */}
           <div className="flex items-center gap-2 px-2 py-2 rounded-xl" style={{ background: 'var(--bg-card)' }}>
             <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"

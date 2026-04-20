@@ -9,6 +9,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { Rocket, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { useAppStore } from '@/store/appStore';
+import { AuthPreferences } from '@/components/AuthPreferences';
 
 const schema = z.object({
   email: z.string().email('Invalid email'),
@@ -20,6 +22,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { t } = useAppStore();
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -55,6 +58,8 @@ export default function LoginPage() {
       }} />
 
       <div className="w-full max-w-md animate-fade-in">
+        <AuthPreferences />
+
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
@@ -67,10 +72,10 @@ export default function LoginPage() {
             </div>
           </div>
           <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-            Sign in to your account
+            {t('signInAccount')}
           </h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            Welcome back — let's build something great.
+            {t('welcomeBack')} — let&apos;s build something great.
           </p>
         </div>
 
@@ -78,7 +83,7 @@ export default function LoginPage() {
         <div className="card p-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
-              <label className="label">Email address</label>
+              <label className="label">{t('email')}</label>
               <input
                 {...register('email')}
                 type="email"
@@ -90,7 +95,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="label">Password</label>
+              <label className="label">{t('password')}</label>
               <div className="relative">
                 <input
                   {...register('password')}
@@ -119,16 +124,16 @@ export default function LoginPage() {
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <>Sign In <ArrowRight size={16} /></>
+                <>{t('signIn')} <ArrowRight size={16} /></>
               )}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              Don&apos;t have an account?{' '}
+              {t('noAccount')}{' '}
               <Link href="/register" style={{ color: 'var(--accent)' }} className="font-medium hover:underline">
-                Create one
+                {t('createAccount')}
               </Link>
             </p>
           </div>
@@ -137,7 +142,7 @@ export default function LoginPage() {
         {/* Demo credentials */}
         <div className="mt-4 p-4 rounded-xl text-center" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid var(--border)' }}>
           <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Demo Credentials</p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Register a new account to get started</p>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('createAccount')} to get started</p>
         </div>
       </div>
     </div>

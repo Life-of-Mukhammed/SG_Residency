@@ -9,6 +9,8 @@ import { z } from 'zod';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Rocket, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { useAppStore } from '@/store/appStore';
+import { AuthPreferences } from '@/components/AuthPreferences';
 
 const schema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -26,6 +28,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { t } = useAppStore();
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -56,6 +59,8 @@ export default function RegisterPage() {
       }} />
 
       <div className="w-full max-w-md animate-fade-in">
+        <AuthPreferences />
+
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
@@ -66,7 +71,7 @@ export default function RegisterPage() {
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Startup Accelerator OS</p>
             </div>
           </div>
-          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Create your account</h1>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>{t('createAccount')}</h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Join the residency program today.</p>
         </div>
 
@@ -74,25 +79,25 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="label">First Name</label>
+                <label className="label">{t('firstName')}</label>
                 <input {...register('name')} className="input" placeholder="Aisha" />
                 {errors.name && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.name.message}</p>}
               </div>
               <div>
-                <label className="label">Last Name</label>
+                <label className="label">{t('lastName')}</label>
                 <input {...register('surname')} className="input" placeholder="Karimova" />
                 {errors.surname && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.surname.message}</p>}
               </div>
             </div>
 
             <div>
-              <label className="label">Email address</label>
+              <label className="label">{t('email')}</label>
               <input {...register('email')} type="email" className="input" placeholder="you@example.com" />
               {errors.email && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.email.message}</p>}
             </div>
 
             <div>
-              <label className="label">Password</label>
+              <label className="label">{t('password')}</label>
               <div className="relative">
                 <input
                   {...register('password')}
@@ -108,7 +113,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="label">Confirm Password</label>
+              <label className="label">{t('confirmPassword')}</label>
               <input
                 {...register('confirmPassword')}
                 type={showPass ? 'text' : 'password'}
@@ -119,14 +124,14 @@ export default function RegisterPage() {
             </div>
 
             <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 py-3 mt-2">
-              {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Create Account <ArrowRight size={16} /></>}
+              {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>{t('createAccount')} <ArrowRight size={16} /></>}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              Already have an account?{' '}
-              <Link href="/login" style={{ color: 'var(--accent)' }} className="font-medium hover:underline">Sign in</Link>
+              {t('alreadyHaveAccount')}{' '}
+              <Link href="/login" style={{ color: 'var(--accent)' }} className="font-medium hover:underline">{t('signIn')}</Link>
             </p>
           </div>
         </div>
