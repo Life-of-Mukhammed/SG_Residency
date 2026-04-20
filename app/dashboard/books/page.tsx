@@ -1,35 +1,63 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
 import { useSession } from 'next-auth/react';
 import { BookOpen, Download, Plus, Trash2, Search } from 'lucide-react';
 
+type Book = {
+  _id: string;
+  title: string;
+  author: string;
+  description: string;
+  fileUrl: string;
+  coverUrl?: string;
+  category: string;
+  downloadCount?: number;
+};
+
+type BookForm = {
+  title: string;
+  author: string;
+  description: string;
+  fileUrl: string;
+  coverUrl: string;
+  category: string;
+};
+
 export default function BooksPage() {
   const { data: session } = useSession();
-  const user = session?.user as any;
+  const user = session?.user;
   const isManagerOrAdmin = ['manager', 'super_admin'].includes(user?.role);
 
-  const [books, setBooks] = useState<any[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [addModal, setAddModal] = useState(false);
-  const [form, setForm] = useState({ title: '', author: '', description: '', fileUrl: '', coverUrl: '', category: '' });
+  const [form, setForm] = useState<BookForm>({ title: '', author: '', description: '', fileUrl: '', coverUrl: '', category: '' });
   const [adding, setAdding] = useState(false);
 
   const categories = ['Business', 'Marketing', 'Technology', 'Leadership', 'Finance', 'Product', 'Design', 'Sales'];
 
   const fetchBooks = async () => {
+    setLoading(true);
     try {
-      const res = await axios.get(`/api/books${search ? `?search=${search}` : ''}`);
+      const query = search ? `?search=${encodeURIComponent(search)}` : '';
+      const res = await axios.get<{ books: Book[] }>(`/api/books${query}`);
       setBooks(res.data.books || []);
-    } catch (e) { console.error(e); }
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to load books');
+    }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchBooks(); }, [search]);
+  useEffect(() => {
+    void fetchBooks();
+  }, [search]);
 
   const addBook = async () => {
     if (!form.title || !form.author || !form.fileUrl || !form.category) {
@@ -42,7 +70,7 @@ export default function BooksPage() {
       toast.success('Book added!');
       setAddModal(false);
       setForm({ title: '', author: '', description: '', fileUrl: '', coverUrl: '', category: '' });
-      fetchBooks();
+      void fetchBooks();
     } catch { toast.error('Failed to add book'); }
     finally { setAdding(false); }
   };
@@ -51,13 +79,19 @@ export default function BooksPage() {
     try {
       await axios.delete(`/api/books/${id}`);
       toast.success('Book deleted');
-      fetchBooks();
+      void fetchBooks();
     } catch { toast.error('Failed to delete'); }
   };
 
-  const handleDownload = async (book: any) => {
-    await axios.patch(`/api/books/${book._id}`, { action: 'download' });
-    window.open(book.fileUrl, '_blank');
+  const handleDownload = async (book: Book) => {
+    try {
+      await axios.patch(`/api/books/${book._id}`, { action: 'download' });
+      window.open(book.fileUrl, '_blank', 'noopener,noreferrer');
+      void fetchBooks();
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to start download');
+    }
   };
 
   const BOOK_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#14b8a6'];
@@ -102,7 +136,13 @@ export default function BooksPage() {
                 {/* Cover */}
                 <div className="h-44 flex items-center justify-center relative" style={{ background: `linear-gradient(135deg, ${BOOK_COLORS[i % BOOK_COLORS.length]}22, ${BOOK_COLORS[(i + 2) % BOOK_COLORS.length]}33)` }}>
                   {book.coverUrl ? (
-                    <img src={book.coverUrl} alt={book.title} className="h-full w-full object-cover" />
+                    <Image
+                      src={book.coverUrl}
+                      alt={book.title}
+                      fill
+                      sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                      className="object-cover"
+                    />
                   ) : (
                     <div className="text-center px-4">
                       <BookOpen size={32} style={{ color: BOOK_COLORS[i % BOOK_COLORS.length], margin: '0 auto 8px' }} />
