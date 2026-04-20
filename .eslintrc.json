@@ -1,0 +1,10 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "no-unused-vars": "off",
+    "prefer-const": "off",
+    "no-var": "off",
+    "react/no-unescaped-entities": "off",
+    "react-hooks/exhaustive-deps": "off"
+  }
+}
