@@ -31,7 +31,7 @@ type BookForm = {
 export default function BooksPage() {
   const { data: session } = useSession();
   const user = session?.user;
-  const isManagerOrAdmin = ['manager', 'super_admin'].includes(user?.role);
+  const isManagerOrAdmin = user ? ['manager', 'super_admin'].includes(user.role) : false;
 
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);

@@ -5,13 +5,18 @@ import { Sun, Moon, Globe, Bell, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 
+type HeaderProps = {
+  title?: string;
+  subtitle?: string;
+};
+
 const LANGS = [
   { code: 'uz' as const, label: "O'z", flag: '🇺🇿' },
   { code: 'ru' as const, label: 'Ру', flag: '🇷🇺' },
   { code: 'en' as const, label: 'En', flag: '🇬🇧' },
 ];
 
-export default function Header() {
+export default function Header({ title = 'Dashboard', subtitle }: HeaderProps) {
   const { data: session } = useSession();
   const { lang, setLang, theme, toggleTheme, notifications, markAllRead } = useAppStore();
 
@@ -32,7 +37,14 @@ export default function Header() {
         borderBottom: '1px solid var(--border)',
       }}
     >
-      <h1 className="text-lg font-bold">Dashboard</h1>
+      <div>
+        <h1 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h1>
+        {subtitle && (
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+            {subtitle}
+          </p>
+        )}
+      </div>
 
       <div className="flex items-center gap-2">
 
