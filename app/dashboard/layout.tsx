@@ -4,9 +4,11 @@ import { authOptions } from '@/lib/auth-options';
 import Sidebar from '@/components/dashboard/Sidebar';
 import DynamicMain from '@/components/dashboard/DynamicMain';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
-  if (!session) redirect('/login');
+  if (!session?.user) redirect('/login');
 
   return (
     <div className="flex min-h-screen">
