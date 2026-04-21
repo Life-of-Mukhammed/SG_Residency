@@ -20,7 +20,6 @@ const USER_NAV: { key: NavKey; href: string; icon: React.ReactNode }[] = [
   { key: 'gtm',       href: '/dashboard/gtm',      icon: <Rocket size={17}/> },
   { key: 'reports',   href: '/dashboard/reports',  icon: <FileText size={17}/> },
   { key: 'meetings',  href: '/dashboard/meetings', icon: <Calendar size={17}/> },
-  { key: 'books',     href: '/dashboard/books',    icon: <BookOpen size={17}/> },
   { key: 'myStartup', href: '/dashboard/startup',  icon: <Star size={17}/> },
   { key: 'settings',  href: '/dashboard/settings', icon: <Settings size={17}/> },
 ];
