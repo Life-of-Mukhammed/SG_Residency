@@ -3,8 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/db';
 import Meeting from '@/models/Meeting';
-import Startup from '@/models/Startup';
 import Notification from '@/models/Notification';
+import { getActiveStartup } from '@/lib/access';
 
 function genMeetLink(): string {
   const c = 'abcdefghijklmnopqrstuvwxyz';
@@ -25,6 +25,8 @@ export async function GET(req: NextRequest) {
     const query: Record<string, any> = {};
 
     if (user.role === 'user') {
+      const startup = await getActiveStartup(user.id);
+      if (!startup) return NextResponse.json({ meetings: [] });
       query.$or = [{ userId: user.id }, { status: 'available' }];
     } else if (user.role === 'manager') {
       query.managerId = user.id;
@@ -73,7 +75,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'This slot is already taken. Please choose another time.' }, { status: 409 });
       }
 
-      const startup = await Startup.findOne({ userId: user.id }).select('_id startup_name').lean();
+      const startup = await getActiveStartup(user.id);
+      if (!startup) {
+        return NextResponse.json({ error: 'Your startup must be approved before booking meetings.' }, { status: 403 });
+      }
 
       const meeting = await Meeting.create({
         managerId,

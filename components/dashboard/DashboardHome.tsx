@@ -37,6 +37,7 @@ export default function DashboardHome() {
     (m) => m.status === 'booked' && new Date(m.scheduledAt) > new Date()
   );
   const lastReport = reports[0];
+  const isApproved = startup?.status === 'active';
 
   if (loading) {
     return (
@@ -62,7 +63,7 @@ export default function DashboardHome() {
               {startup?.status || 'no startup'}
             </span>
           </div>
-          <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+          <p className="text-2xl font-bold notranslate" translate="no" style={{ color: 'var(--text-primary)' }}>
             {startup?.startup_name || '—'}
           </p>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
@@ -80,7 +81,7 @@ export default function DashboardHome() {
               {startup?.stage || 'idea'}
             </span>
           </div>
-          <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+          <p className="text-2xl font-bold notranslate" translate="no" style={{ color: 'var(--text-primary)' }}>
             ${startup?.mrr?.toLocaleString() || '0'}
           </p>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Monthly Recurring Revenue</p>
@@ -93,7 +94,7 @@ export default function DashboardHome() {
               <Users size={18} style={{ color: '#f59e0b' }} />
             </div>
           </div>
-          <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+          <p className="text-2xl font-bold notranslate" translate="no" style={{ color: 'var(--text-primary)' }}>
             {startup?.users_count?.toLocaleString() || '0'}
           </p>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Total Users</p>
@@ -139,7 +140,7 @@ export default function DashboardHome() {
                 </div>
               </div>
             </Link>
-          ) : (
+          ) : isApproved ? (
             <Link href="/dashboard/sprint">
               <div className="card cursor-pointer group">
                 <div className="flex items-center gap-4">
@@ -156,9 +157,21 @@ export default function DashboardHome() {
                 </div>
               </div>
             </Link>
+          ) : (
+            <div className="card" style={{ borderStyle: 'dashed' }}>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(245,158,11,0.15)' }}>
+                  <Target size={22} style={{ color: '#f59e0b' }} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Sprint unlocks after approval</p>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Manager or admin approval is required before sprint opens.</p>
+                </div>
+              </div>
+            </div>
           )}
 
-          <Link href="/dashboard/reports/new">
+          <Link href={isApproved ? "/dashboard/reports/new" : "/dashboard/settings"}>
             <div className="card cursor-pointer group">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -166,8 +179,8 @@ export default function DashboardHome() {
                   <FileText size={22} style={{ color: '#10b981' }} />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Submit Report</p>
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Weekly progress update</p>
+                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{isApproved ? 'Submit Report' : 'Reports locked'}</p>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{isApproved ? 'Weekly progress update' : 'Approval is required before weekly reports'}</p>
                 </div>
                 <ArrowRight size={16} style={{ color: 'var(--text-muted)' }}
                   className="group-hover:translate-x-1 transition-transform" />
@@ -175,7 +188,7 @@ export default function DashboardHome() {
             </div>
           </Link>
 
-          <Link href="/dashboard/meetings">
+          <Link href={isApproved ? "/dashboard/meetings" : "/dashboard/settings"}>
             <div className="card cursor-pointer group">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -183,8 +196,8 @@ export default function DashboardHome() {
                   <Calendar size={22} style={{ color: '#f59e0b' }} />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Book Meeting</p>
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Schedule with your manager</p>
+                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{isApproved ? 'Book Meeting' : 'Meetings locked'}</p>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{isApproved ? 'Schedule with your manager' : 'Approval is required before booking'}</p>
                 </div>
                 <ArrowRight size={16} style={{ color: 'var(--text-muted)' }}
                   className="group-hover:translate-x-1 transition-transform" />

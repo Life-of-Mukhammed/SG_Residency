@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
+  const [startup, setStartup] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
 
@@ -20,13 +21,18 @@ export default function ReportsPage() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchReports(); }, [filter]);
+  useEffect(() => {
+    axios.get('/api/startups?limit=1').then((res) => setStartup(res.data.startups?.[0] ?? null)).catch(() => {});
+    fetchReports();
+  }, [filter]);
 
   const StatusIcon = ({ status }: { status: string }) => {
     if (status === 'accepted') return <CheckCircle size={16} style={{ color: '#10b981' }} />;
     if (status === 'rejected') return <XCircle size={16} style={{ color: '#ef4444' }} />;
     return <Clock size={16} style={{ color: '#f59e0b' }} />;
   };
+
+  const isApproved = startup?.status === 'active';
 
   return (
     <div className="animate-fade-in">
@@ -42,14 +48,20 @@ export default function ReportsPage() {
               </button>
             ))}
           </div>
-          <Link href="/dashboard/reports/new">
+          <Link href={isApproved ? "/dashboard/reports/new" : "/dashboard/settings"}>
             <button className="btn-primary flex items-center gap-2">
-              <Plus size={16} /> New Report
+              <Plus size={16} /> {isApproved ? 'New Report' : 'Approval Required'}
             </button>
           </Link>
         </div>
 
-        {loading ? (
+        {!isApproved ? (
+          <div className="card text-center py-16">
+            <FileText size={48} className="mx-auto mb-4 opacity-20" />
+            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Reports are locked</p>
+            <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Your startup must be approved before reports open.</p>
+          </div>
+        ) : loading ? (
           <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="skeleton h-24" />)}</div>
         ) : reports.length === 0 ? (
           <div className="card text-center py-16">

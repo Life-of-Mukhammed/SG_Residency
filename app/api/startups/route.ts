@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/db';
 import Startup from '@/models/Startup';
+import { notifyRoles } from '@/lib/notifications';
 import { z } from 'zod';
 
 const startupSchema = z.object({
@@ -16,7 +17,7 @@ const startupSchema = z.object({
   startup_sphere:    z.string().min(1),
   stage:             z.enum(['idea', 'mvp', 'growth', 'scale']),
   founder_name:      z.string().min(1),
-  phone:             z.string().min(7),
+  phone:             z.string().min(1),
   telegram:          z.string().min(1),
   team_size:         z.coerce.number().min(1),
   pitch_deck:        z.string().optional(),
@@ -98,6 +99,11 @@ export async function POST(req: NextRequest) {
     }
 
     const startup = await Startup.create({ ...result.data, userId: user.id });
+    await notifyRoles(['manager', 'super_admin'], {
+      title: 'New residency application',
+      message: `${result.data.founder_name} submitted ${result.data.startup_name} for review.`,
+      type: 'info',
+    });
 
     return NextResponse.json({ startup }, { status: 201 });
   } catch (err) {

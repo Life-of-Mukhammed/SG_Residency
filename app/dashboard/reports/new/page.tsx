@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -10,8 +10,16 @@ import Link from 'next/link';
 
 export default function NewReportPage() {
   const router = useRouter();
+  const [startup, setStartup] = useState<any>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ completed: '', notCompleted: '', plans: '' });
+
+  useEffect(() => {
+    axios.get('/api/startups?limit=1')
+      .then((res) => setStartup(res.data.startups?.[0] ?? null))
+      .finally(() => setInitialLoading(false));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +38,26 @@ export default function NewReportPage() {
       setLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return <div className="p-8"><div className="skeleton h-64 rounded-2xl max-w-2xl mx-auto" /></div>;
+  }
+
+  if (!startup || startup.status !== 'active') {
+    return (
+      <div className="animate-fade-in">
+        <Header title="Submit Weekly Report" subtitle="Approval required" />
+        <div className="p-8 max-w-2xl mx-auto">
+          <div className="card text-center py-14">
+            <p className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Reports are locked</p>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              Your startup must be approved before you can submit weekly reports.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in">

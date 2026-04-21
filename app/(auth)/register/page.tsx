@@ -28,7 +28,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { t } = useAppStore();
+  const { t, theme } = useAppStore();
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -53,46 +53,64 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg-primary)' }}>
-      <div className="fixed inset-0 pointer-events-none" style={{
-        backgroundImage: 'radial-gradient(circle at 70% 30%, rgba(99,102,241,0.08) 0%, transparent 50%), radial-gradient(circle at 30% 70%, rgba(139,92,246,0.08) 0%, transparent 50%)',
-      }} />
-
-      <div className="w-full max-w-md animate-fade-in">
-        <AuthPreferences />
-
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-              <Rocket size={22} className="text-white" />
-            </div>
-            <div className="text-left">
-              <p className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Residency</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Startup Accelerator OS</p>
+    <div
+      className="min-h-screen relative overflow-hidden"
+      style={{
+        background: theme === 'light'
+          ? 'linear-gradient(160deg, #f6fbf8 0%, #eef7ff 45%, #f9fafb 100%)'
+          : 'linear-gradient(160deg, #08111f 0%, #13223b 45%, #0f172a 100%)',
+      }}
+    >
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: theme === 'light'
+            ? 'radial-gradient(circle at 20% 15%, rgba(16,185,129,0.12) 0%, transparent 28%), radial-gradient(circle at 80% 20%, rgba(59,130,246,0.13) 0%, transparent 30%), radial-gradient(circle at 55% 85%, rgba(56,189,248,0.08) 0%, transparent 26%)'
+            : 'radial-gradient(circle at 20% 15%, rgba(16,185,129,0.16) 0%, transparent 28%), radial-gradient(circle at 80% 20%, rgba(59,130,246,0.18) 0%, transparent 30%), radial-gradient(circle at 55% 85%, rgba(56,189,248,0.10) 0%, transparent 26%)',
+        }}
+      />
+      <div className="relative min-h-screen grid lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="hidden lg:flex items-end p-10 xl:p-14">
+          <div className="max-w-xl">
+            <p className="text-xs uppercase tracking-[0.3em]" style={{ color: theme === 'light' ? '#059669' : '#6ee7b7' }}>Join residency</p>
+            <h1 className="text-5xl font-bold leading-tight mt-4" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>Bitta account bilan founder workflow’ni to‘liq ishga tushiring.</h1>
+            <div className="grid grid-cols-3 gap-4 mt-8">
+              {['Profile setup', 'Application review', 'Execution tools'].map((item) => (
+                <div key={item} className="rounded-2xl p-4" style={{ background: theme === 'light' ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.06)', border: theme === 'light' ? '1px solid rgba(16,185,129,0.12)' : '1px solid rgba(255,255,255,0.08)' }}>
+                  <p className="text-sm font-medium" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>{item}</p>
+                </div>
+              ))}
             </div>
           </div>
-          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>{t('createAccount')}</h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Join the residency program today.</p>
         </div>
 
-        <div className="card p-8">
+        <div className="flex items-center justify-center p-4 sm:p-6">
+          <div className="w-full max-w-lg animate-fade-in">
+            <AuthPreferences />
+            <div className="card p-8 md:p-9" style={{ background: theme === 'light' ? 'rgba(255,255,255,0.9)' : 'rgba(11, 18, 32, 0.9)', borderColor: theme === 'light' ? 'rgba(16,185,129,0.15)' : 'rgba(52,211,153,0.18)', boxShadow: '0 24px 90px rgba(0,0,0,0.18)' }}>
+              <div className="mb-8">
+                <p className="text-xs uppercase tracking-[0.3em]" style={{ color: '#6ee7b7' }}>Create account</p>
+                <h1 className="text-3xl font-bold mt-3" style={{ color: 'var(--text-primary)' }}>{t('createAccount')}</h1>
+                <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Join the residency program today.</p>
+              </div>
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="label">{t('firstName')}</label>
-                <input {...register('name')} className="input" placeholder="Aisha" />
+                <input {...register('name')} className="input notranslate" translate="no" placeholder="Aisha" />
                 {errors.name && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.name.message}</p>}
               </div>
               <div>
                 <label className="label">{t('lastName')}</label>
-                <input {...register('surname')} className="input" placeholder="Karimova" />
+                <input {...register('surname')} className="input notranslate" translate="no" placeholder="Karimova" />
                 {errors.surname && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.surname.message}</p>}
               </div>
             </div>
 
             <div>
               <label className="label">{t('email')}</label>
-              <input {...register('email')} type="email" className="input" placeholder="you@example.com" />
+              <input {...register('email')} type="email" className="input notranslate" translate="no" placeholder="you@example.com" />
               {errors.email && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.email.message}</p>}
             </div>
 
@@ -102,7 +120,8 @@ export default function RegisterPage() {
                 <input
                   {...register('password')}
                   type={showPass ? 'text' : 'password'}
-                  className="input pr-12"
+                  className="input pr-12 notranslate"
+                  translate="no"
                   placeholder="Min. 6 characters"
                 />
                 <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
@@ -117,7 +136,8 @@ export default function RegisterPage() {
               <input
                 {...register('confirmPassword')}
                 type={showPass ? 'text' : 'password'}
-                className="input"
+                className="input notranslate"
+                translate="no"
                 placeholder="Repeat password"
               />
               {errors.confirmPassword && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.confirmPassword.message}</p>}
@@ -133,6 +153,8 @@ export default function RegisterPage() {
               {t('alreadyHaveAccount')}{' '}
               <Link href="/login" style={{ color: 'var(--accent)' }} className="font-medium hover:underline">{t('signIn')}</Link>
             </p>
+          </div>
+            </div>
           </div>
         </div>
       </div>

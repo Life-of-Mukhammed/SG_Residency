@@ -1,9 +1,12 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
 import { useAppStore } from '@/store/appStore';
-import { Shield, Globe, Moon, Sun, Bell, User, Check } from 'lucide-react';
+import { Bell, Check, Globe, Lock, Moon, Save, Shield, Sun, User } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 const LANGS = [
   { code: 'uz' as const, label: "O'zbek", flag: '🇺🇿' },
@@ -11,192 +14,277 @@ const LANGS = [
   { code: 'en' as const, label: 'English', flag: '🇬🇧' },
 ];
 
+const EMPTY_FORM = {
+  name: '',
+  surname: '',
+  email: '',
+  avatar: '',
+  currentPassword: '',
+  newPassword: '',
+};
+
 export default function SettingsPage() {
-  const { data: session } = useSession();
-  const user = session?.user as any;
   const { t, lang, setLang, theme, setTheme } = useAppStore();
+  const { update } = useSession();
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [profile, setProfile] = useState<any>(null);
+  const [startup, setStartup] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    axios.get('/api/profile')
+      .then((res) => {
+        const user = res.data.user;
+        setProfile(user);
+        setStartup(res.data.startup ?? null);
+        setForm({
+          name: user?.name ?? '',
+          surname: user?.surname ?? '',
+          email: user?.email ?? '',
+          avatar: user?.avatar ?? '',
+          currentPassword: '',
+          newPassword: '',
+        });
+      })
+      .catch(() => toast.error('Failed to load profile'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const setField = (key: keyof typeof EMPTY_FORM) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  const saveProfile = async () => {
+    setSaving(true);
+    try {
+      const res = await axios.patch('/api/profile', form);
+      setProfile(res.data.user);
+      setForm((prev) => ({ ...prev, currentPassword: '', newPassword: '' }));
+      await update({
+        name: `${res.data.user.name} ${res.data.user.surname}`,
+        email: res.data.user.email,
+      });
+      toast.success('Profile updated');
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const permissions = [
+    { label: 'Edit own profile', has: true },
+    { label: 'Change password', has: true },
+    { label: 'Apply to residency', has: profile?.role === 'user' },
+    { label: 'View reports, meetings, sprint, GTM', has: profile?.role !== 'user' || startup?.status === 'active' },
+    { label: 'Manage startups', has: ['manager', 'super_admin'].includes(profile?.role) },
+    { label: 'Review reports', has: ['manager', 'super_admin'].includes(profile?.role) },
+    { label: 'User role management', has: profile?.role === 'super_admin' },
+  ];
+
+  if (loading) {
+    return (
+      <div>
+        <Header title={t('settings')} subtitle="Profile and workspace preferences" />
+        <div className="p-8 max-w-5xl mx-auto space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton h-36 rounded-2xl" />)}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in">
-      <Header title={t('settings')} subtitle="Manage your account and preferences" />
-      <div className="p-8 max-w-2xl mx-auto space-y-6">
+      <Header title={t('settings')} subtitle="Profile and workspace preferences" />
+      <div className="p-8 max-w-5xl mx-auto grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="space-y-6">
+          <div className="card">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.15)' }}>
+                <User size={18} style={{ color: 'var(--accent)' }} />
+              </div>
+              <div>
+                <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('profile')}</h3>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Keep your personal information up to date.</p>
+              </div>
+            </div>
 
-        {/* Profile */}
-        <div className="card">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'rgba(99,102,241,0.15)' }}>
-              <User size={16} style={{ color: 'var(--accent)' }} />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="label">First name</label>
+                <input value={form.name} onChange={setField('name')} className="input notranslate" translate="no" />
+              </div>
+              <div>
+                <label className="label">Last name</label>
+                <input value={form.surname} onChange={setField('surname')} className="input notranslate" translate="no" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="label">Email</label>
+                <input value={form.email} onChange={setField('email')} className="input notranslate" translate="no" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="label">Avatar URL</label>
+                <input value={form.avatar} onChange={setField('avatar')} className="input notranslate" translate="no" placeholder="https://..." />
+              </div>
             </div>
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('profile')}</h3>
-          </div>
-          <div className="flex items-center gap-4 mb-6 p-4 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold text-white"
-              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
-              {user?.name?.[0]?.toUpperCase()}
-            </div>
-            <div>
-              <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{user?.name}</p>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{user?.email}</p>
-              <span className={`badge mt-1 capitalize ${user?.role === 'super_admin' ? 'badge-rejected' : user?.role === 'manager' ? 'badge-mvp' : 'badge-active'}`}>
-                {user?.role?.replace('_', ' ')}
-              </span>
-            </div>
-          </div>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            To update your profile details, contact your program manager.
-          </p>
-        </div>
 
-        {/* Language */}
-        <div className="card">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'rgba(99,102,241,0.15)' }}>
-              <Globe size={16} style={{ color: 'var(--accent)' }} />
-            </div>
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('language')}</h3>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {LANGS.map(l => (
-              <button
-                key={l.code}
-                onClick={() => setLang(l.code)}
-                className="flex items-center gap-3 p-4 rounded-xl border-2 transition-all"
-                style={{
-                  borderColor: lang === l.code ? 'var(--accent)' : 'var(--border)',
-                  background:  lang === l.code ? 'rgba(99,102,241,0.08)' : 'var(--bg-secondary)',
-                }}
-              >
-                <span className="text-2xl">{l.flag}</span>
-                <div className="text-left flex-1">
-                  <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{l.label}</p>
+            <div className="mt-6 pt-6 border-t" style={{ borderColor: 'var(--border)' }}>
+              <div className="flex items-center gap-3 mb-4">
+                <Lock size={16} style={{ color: 'var(--accent)' }} />
+                <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Password update</p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="label">Current password</label>
+                  <input value={form.currentPassword} onChange={setField('currentPassword')} type="password" className="input" />
                 </div>
-                {lang === l.code && (
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'var(--accent)' }}>
-                    <Check size={11} className="text-white" />
+                <div>
+                  <label className="label">New password</label>
+                  <input value={form.newPassword} onChange={setField('newPassword')} type="password" className="input" />
+                </div>
+              </div>
+            </div>
+
+            <button onClick={saveProfile} disabled={saving} className="btn-primary mt-6 flex items-center gap-2">
+              {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Save size={15} /> Save profile</>}
+            </button>
+          </div>
+
+          <div className="card">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.15)' }}>
+                <Globe size={18} style={{ color: 'var(--accent)' }} />
+              </div>
+              <div>
+                <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('language')}</h3>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Switch both app labels and Google page translation.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {LANGS.map((item) => (
+                <button
+                  key={item.code}
+                  onClick={() => setLang(item.code)}
+                  className="flex items-center gap-3 p-4 rounded-xl border-2 transition-all"
+                  style={{
+                    borderColor: lang === item.code ? 'var(--accent)' : 'var(--border)',
+                    background: lang === item.code ? 'rgba(99,102,241,0.08)' : 'var(--bg-secondary)',
+                  }}
+                >
+                  <span className="text-2xl notranslate" translate="no">{item.flag}</span>
+                  <div className="text-left flex-1">
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{item.label}</p>
                   </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Theme */}
-        <div className="card">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'rgba(99,102,241,0.15)' }}>
-              {theme === 'dark' ? <Moon size={16} style={{ color: 'var(--accent)' }} /> : <Sun size={16} style={{ color: 'var(--accent)' }} />}
+                  {lang === item.code && (
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--accent)' }}>
+                      <Check size={11} className="text-white" />
+                    </div>
+                  )}
+                </button>
+              ))}
             </div>
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('theme')}</h3>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {(['dark', 'light'] as const).map(th => (
-              <button
-                key={th}
-                onClick={() => setTheme(th)}
-                className="flex items-center gap-4 p-5 rounded-xl border-2 transition-all"
-                style={{
-                  borderColor: theme === th ? 'var(--accent)' : 'var(--border)',
-                  background:  theme === th ? 'rgba(99,102,241,0.08)' : 'var(--bg-secondary)',
-                }}
-              >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ background: th === 'dark' ? '#0d0d1a' : '#f8f9fc', border: '1px solid var(--border)' }}>
-                  {th === 'dark'
-                    ? <Moon size={18} style={{ color: '#6366f1' }} />
-                    : <Sun  size={18} style={{ color: '#f59e0b' }} />}
-                </div>
-                <div className="text-left flex-1">
-                  <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    {th === 'dark' ? t('darkMode') : t('lightMode')}
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                    {th === 'dark' ? 'Easy on the eyes at night' : 'Clean and bright'}
-                  </p>
-                </div>
-                {theme === th && (
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'var(--accent)' }}>
-                    <Check size={11} className="text-white" />
+
+          <div className="card">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.15)' }}>
+                {theme === 'dark' ? <Moon size={18} style={{ color: 'var(--accent)' }} /> : <Sun size={18} style={{ color: 'var(--accent)' }} />}
+              </div>
+              <div>
+                <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('theme')}</h3>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Choose the interface mood that suits you best.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {(['dark', 'light'] as const).map((item) => (
+                <button
+                  key={item}
+                  onClick={() => setTheme(item)}
+                  className="flex items-center gap-4 p-5 rounded-xl border-2 transition-all"
+                  style={{
+                    borderColor: theme === item ? 'var(--accent)' : 'var(--border)',
+                    background: theme === item ? 'rgba(99,102,241,0.08)' : 'var(--bg-secondary)',
+                  }}
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: item === 'dark' ? '#0d0d1a' : '#f8f9fc', border: '1px solid var(--border)' }}>
+                    {item === 'dark' ? <Moon size={18} style={{ color: '#6366f1' }} /> : <Sun size={18} style={{ color: '#f59e0b' }} />}
                   </div>
-                )}
-              </button>
-            ))}
+                  <div className="text-left">
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{item === 'dark' ? t('darkMode') : t('lightMode')}</p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item === 'dark' ? 'Deep contrast for long sessions' : 'Bright, clean, and airy'}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Permissions */}
-        <div className="card">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'rgba(99,102,241,0.15)' }}>
-              <Shield size={16} style={{ color: 'var(--accent)' }} />
-            </div>
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Role & Permissions</h3>
-          </div>
-          <div className="space-y-2">
-            {[
-              { label: 'Submit startup application',   has: true },
-              { label: 'Submit weekly reports',        has: true },
-              { label: 'Book meetings',                has: true },
-              { label: 'GTM resources access',         has: true },
-              { label: 'Sprint roadmap',               has: true },
-              { label: 'Library access',               has: true },
-              { label: 'Manage startups',              has: ['manager','super_admin'].includes(user?.role) },
-              { label: 'Review & accept reports',      has: ['manager','super_admin'].includes(user?.role) },
-              { label: 'Create meeting slots',         has: ['manager','super_admin'].includes(user?.role) },
-              { label: 'GTM & Sprint CRUD',            has: ['manager','super_admin'].includes(user?.role) },
-              { label: 'System-wide analytics',        has: user?.role === 'super_admin' },
-              { label: 'User role management',         has: user?.role === 'super_admin' },
-            ].map(({ label, has }) => (
-              <div key={label} className="flex items-center justify-between py-2.5 border-b"
-                style={{ borderColor: 'var(--border)' }}>
-                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{label}</span>
-                <span className="text-xs font-semibold" style={{ color: has ? '#10b981' : '#64748b' }}>
-                  {has ? '✓ Allowed' : '✗ Restricted'}
+        <div className="space-y-6">
+          <div className="card">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-3xl flex items-center justify-center text-xl font-bold text-white notranslate" translate="no" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                {profile?.name?.[0]?.toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-bold truncate notranslate" translate="no" style={{ color: 'var(--text-primary)' }}>
+                  {profile?.name} {profile?.surname}
+                </p>
+                <p className="text-sm truncate notranslate" translate="no" style={{ color: 'var(--text-muted)' }}>{profile?.email}</p>
+                <span className={`badge mt-2 capitalize ${profile?.role === 'super_admin' ? 'badge-rejected' : profile?.role === 'manager' ? 'badge-mvp' : 'badge-active'}`}>
+                  {profile?.role?.replace('_', ' ')}
                 </span>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
 
-        {/* Notifications */}
-        <div className="card">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'rgba(99,102,241,0.15)' }}>
-              <Bell size={16} style={{ color: 'var(--accent)' }} />
+          <div className="card">
+            <div className="flex items-center gap-3 mb-5">
+              <Bell size={17} style={{ color: 'var(--accent)' }} />
+              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Residency access</h3>
             </div>
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('notifications')}</h3>
+            {startup ? (
+              <div className="space-y-3">
+                <div className="p-4 rounded-2xl" style={{ background: 'var(--bg-secondary)' }}>
+                  <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Startup</p>
+                  <p className="font-semibold notranslate" translate="no" style={{ color: 'var(--text-primary)' }}>{startup.startup_name}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 rounded-2xl" style={{ background: 'var(--bg-secondary)' }}>
+                    <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Status</p>
+                    <span className={`badge badge-${startup.status}`}>{startup.status}</span>
+                  </div>
+                  <div className="p-4 rounded-2xl" style={{ background: 'var(--bg-secondary)' }}>
+                    <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Stage</p>
+                    <span className={`badge badge-${startup.stage}`}>{startup.stage}</span>
+                  </div>
+                </div>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  {startup.status === 'active'
+                    ? 'Your startup is approved. Reports, meetings, sprint, and GTM are unlocked.'
+                    : 'Your application is still waiting for approval. Core founder tools stay locked until manager or admin approval.'}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No residency application submitted yet.</p>
+            )}
           </div>
-          {[
-            { label: 'Weekly report reminder',  desc: 'Every Saturday at 9:00 AM',             on: true  },
-            { label: 'Meeting notifications',   desc: 'When a meeting is booked or cancelled', on: true  },
-            { label: 'Report feedback',         desc: 'When manager reviews your report',       on: true  },
-            { label: 'New meeting booking',     desc: '(Manager) When founder books a slot',   on: user?.role !== 'user' },
-          ].map(n => (
-            <div key={n.label} className="flex items-start justify-between gap-4 py-3 border-b"
-              style={{ borderColor: 'var(--border)' }}>
-              <div>
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{n.label}</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{n.desc}</p>
-              </div>
-              <div
-                className="flex-shrink-0 w-10 h-6 rounded-full flex items-center transition-all cursor-pointer"
-                style={{
-                  background: n.on ? 'var(--accent)' : 'var(--bg-secondary)',
-                  border: '1px solid var(--border)',
-                  padding: '2px',
-                }}
-              >
-                <div className="w-4 h-4 rounded-full bg-white transition-transform"
-                  style={{ transform: n.on ? 'translateX(16px)' : 'translateX(0)' }} />
-              </div>
+
+          <div className="card">
+            <div className="flex items-center gap-3 mb-5">
+              <Shield size={17} style={{ color: 'var(--accent)' }} />
+              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Role permissions</h3>
             </div>
-          ))}
+            <div className="space-y-2">
+              {permissions.map(({ label, has }) => (
+                <div key={label} className="flex items-center justify-between py-2.5 border-b" style={{ borderColor: 'var(--border)' }}>
+                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{label}</span>
+                  <span className="text-xs font-semibold" style={{ color: has ? '#10b981' : '#64748b' }}>
+                    {has ? '✓ Allowed' : '✗ Locked'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

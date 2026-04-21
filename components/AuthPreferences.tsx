@@ -4,9 +4,9 @@ import { Globe, Moon, Sun } from 'lucide-react';
 import { useAppStore } from '@/store/appStore';
 
 const LANG_OPTIONS = [
-  { code: 'uz', label: "O'z" },
-  { code: 'ru', label: 'Ру' },
-  { code: 'en', label: 'En' },
+  { code: 'uz', label: 'UZB' },
+  { code: 'ru', label: 'RUS' },
+  { code: 'en', label: 'ENG' },
 ] as const;
 
 export function AuthPreferences() {
@@ -14,7 +14,11 @@ export function AuthPreferences() {
 
   return (
     <div className="flex items-center justify-between gap-3 mb-6">
-      <div className="flex items-center gap-2 rounded-2xl p-1.5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <div
+        className="flex items-center gap-2 rounded-2xl p-1.5 notranslate"
+        translate="no"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+      >
         <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ color: 'var(--text-muted)' }}>
           <Globe size={16} />
         </span>
@@ -23,7 +27,8 @@ export function AuthPreferences() {
             key={option.code}
             type="button"
             onClick={() => setLang(option.code)}
-            className="rounded-xl px-3 py-2 text-sm font-medium transition-all"
+            className="rounded-xl px-3 py-2 text-sm font-medium transition-all notranslate"
+            translate="no"
             style={{
               background: lang === option.code ? 'rgba(99,102,241,0.15)' : 'transparent',
               color: lang === option.code ? 'var(--accent)' : 'var(--text-secondary)',

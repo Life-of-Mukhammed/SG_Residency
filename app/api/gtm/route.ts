@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/db';
 import GtmItem from '@/models/GtmItem';
+import { hasActiveStartup } from '@/lib/access';
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,6 +11,10 @@ export async function GET(req: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await connectDB();
+    const user = session.user as { id: string; role: string };
+    if (user.role === 'user' && !(await hasActiveStartup(user.id))) {
+      return NextResponse.json({ items: [] });
+    }
     const { searchParams } = new URL(req.url);
     const type = searchParams.get('type') || '';
 

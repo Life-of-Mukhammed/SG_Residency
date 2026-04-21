@@ -14,6 +14,7 @@ export default function MeetingsPage() {
   const { data: session } = useSession();
   const user = session?.user as any;
   const isManager = ['manager','super_admin'].includes(user?.role);
+  const [startup, setStartup]         = useState<any>(null);
 
   // Shared state
   const [meetings, setMeetings]       = useState<any[]>([]);
@@ -44,6 +45,11 @@ export default function MeetingsPage() {
   }, []);
 
   useEffect(() => { fetchMeetings(); }, [fetchMeetings]);
+  useEffect(() => {
+    if (!isManager) {
+      axios.get('/api/startups?limit=1').then((res) => setStartup(res.data.startups?.[0] ?? null)).catch(() => {});
+    }
+  }, [isManager]);
 
   // When user selects a date, load available slots
   useEffect(() => {
@@ -121,6 +127,23 @@ export default function MeetingsPage() {
 
   // ─── USER VIEW ────────────────────────────────────────────────────────────
   if (!isManager) {
+    if (startup && startup.status !== 'active') {
+      return (
+        <div className="animate-fade-in">
+          <Header title="Book a Meeting" subtitle="Approval required" />
+          <div className="p-6">
+            <div className="card max-w-2xl mx-auto text-center py-14">
+              <Calendar size={32} className="mx-auto mb-4" style={{ color: '#f59e0b' }} />
+              <p className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Meetings are locked</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                Your startup must be approved before you can book meetings with the manager.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="animate-fade-in">
         <Header title="Book a Meeting" subtitle="Schedule time with your program manager" />

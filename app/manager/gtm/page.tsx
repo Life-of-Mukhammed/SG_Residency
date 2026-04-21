@@ -5,6 +5,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
 import { Plus, Trash2, Edit2, X, Check, Copy, Search, Rocket } from 'lucide-react';
+import { useAppStore } from '@/store/appStore';
 
 const TYPES = ['prompt', 'campaign', 'kpi', 'daily'] as const;
 type GtmType = typeof TYPES[number];
@@ -37,6 +38,7 @@ interface GtmItem {
 const EMPTY = { type: 'prompt' as GtmType, category: '', title: '', content: '', tags: '' };
 
 export default function ManagerGtmPage() {
+  const { lang } = useAppStore();
   const [items, setItems]       = useState<GtmItem[]>([]);
   const [loading, setLoading]   = useState(true);
   const [typeFilter, setTypeFilter] = useState<GtmType | ''>('');
@@ -72,7 +74,7 @@ export default function ManagerGtmPage() {
 
   const save = async () => {
     if (!form.title.trim() || !form.content.trim() || !form.category) {
-      toast.error('Title, content and category are required');
+      toast.error(t('required'));
       return;
     }
     setSaving(true);
@@ -80,33 +82,62 @@ export default function ManagerGtmPage() {
       const payload = { ...form, tags: form.tags.split(',').map(t => t.trim()).filter(Boolean) };
       if (modal === 'edit' && editItem) {
         await axios.patch(`/api/gtm/${editItem._id}`, payload);
-        toast.success('Updated!');
+        toast.success(t('updated'));
       } else {
         await axios.post('/api/gtm', payload);
-        toast.success('Added!');
+        toast.success(t('added'));
       }
       setModal(null);
       load();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed');
+      toast.error(err.response?.data?.error || t('failed'));
     } finally { setSaving(false); }
   };
 
   const remove = async (id: string) => {
-    if (!confirm('Delete this item?')) return;
+    if (!confirm(t('deleteConfirm'))) return;
     try {
       await axios.delete(`/api/gtm/${id}`);
-      toast.success('Deleted');
+      toast.success(t('deleted'));
       load();
-    } catch { toast.error('Failed'); }
+    } catch { toast.error(t('failed')); }
   };
 
   const copy = async (content: string, id: string) => {
     await navigator.clipboard.writeText(content);
     setCopied(id);
-    toast.success('Copied!');
+    toast.success(t('copied'));
     setTimeout(() => setCopied(null), 2000);
   };
+
+  const T = {
+    title: { uz: 'GTM Menejeri', ru: 'GTM Менеджер', en: 'GTM Manager' },
+    subtitle: { uz: 'Promptlar, kampaniyalar, KPI va kunlik vazifalarni boshqaring', ru: 'Управляйте промптами, кампаниями, KPI и ежедневными задачами', en: 'Manage content prompts, campaigns, KPIs and daily tasks' },
+    search: { uz: 'Elementlarni qidirish...', ru: 'Поиск элементов...', en: 'Search items...' },
+    all: { uz: 'Barchasi', ru: 'Все', en: 'All' },
+    addItem: { uz: "Element qo'shish", ru: 'Добавить элемент', en: 'Add Item' },
+    required: { uz: 'Sarlavha, kontent va kategoriya kerak', ru: 'Название, контент и категория обязательны', en: 'Title, content and category are required' },
+    updated: { uz: 'Yangilandi', ru: 'Обновлено', en: 'Updated!' },
+    added: { uz: "Qo'shildi", ru: 'Добавлено', en: 'Added!' },
+    failed: { uz: 'Xatolik yuz berdi', ru: 'Произошла ошибка', en: 'Failed' },
+    deleted: { uz: "O'chirildi", ru: 'Удалено', en: 'Deleted' },
+    copied: { uz: 'Nusxa olindi', ru: 'Скопировано', en: 'Copied!' },
+    deleteConfirm: { uz: "Bu element o'chirilsinmi?", ru: 'Удалить этот элемент?', en: 'Delete this item?' },
+    noItems: { uz: "Hozircha elementlar yo'q", ru: 'Пока элементов нет', en: 'No items yet' },
+    addFirst: { uz: 'Birinchi GTM elementini qo‘shing', ru: 'Добавьте первый GTM элемент', en: 'Add your first GTM item' },
+    editItem: { uz: 'Elementni tahrirlash', ru: 'Редактировать элемент', en: 'Edit Item' },
+    addGtmItem: { uz: "GTM elementi qo'shish", ru: 'Добавить GTM элемент', en: 'Add GTM Item' },
+    type: { uz: 'Turi', ru: 'Тип', en: 'Type' },
+    category: { uz: 'Kategoriya', ru: 'Категория', en: 'Category' },
+    select: { uz: 'Tanlang...', ru: 'Выберите...', en: 'Select...' },
+    itemTitle: { uz: 'Sarlavha', ru: 'Заголовок', en: 'Title' },
+    content: { uz: 'Kontent', ru: 'Контент', en: 'Content' },
+    tags: { uz: 'Teglar (vergul bilan)', ru: 'Теги (через запятую)', en: 'Tags (comma separated)' },
+    cancel: { uz: 'Bekor qilish', ru: 'Отмена', en: 'Cancel' },
+    saveChanges: { uz: "O'zgarishlarni saqlash", ru: 'Сохранить изменения', en: 'Save Changes' },
+    itemStats: { uz: 'element', ru: 'элементов', en: 'items' },
+  };
+  const t = (key: keyof typeof T) => T[key][lang] ?? T[key].en;
 
   const filtered = items.filter(item =>
     !search || item.title.toLowerCase().includes(search.toLowerCase()) || item.content.toLowerCase().includes(search.toLowerCase())
@@ -114,7 +145,7 @@ export default function ManagerGtmPage() {
 
   return (
     <div className="animate-fade-in">
-      <Header title="GTM Manager" subtitle="Manage content prompts, campaigns, KPIs and daily tasks" />
+      <Header title={t('title')} subtitle={t('subtitle')} />
       <div className="p-8 space-y-6">
 
         {/* Controls */}
@@ -122,26 +153,26 @@ export default function ManagerGtmPage() {
           <div className="relative flex-1 min-w-48">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
             <input value={search} onChange={e => setSearch(e.target.value)}
-              className="input pl-9 text-sm" placeholder="Search items..." />
+              className="input pl-9 text-sm" placeholder={t('search')} />
           </div>
 
           <div className="flex gap-2">
-            {(['', ...TYPES] as const).map(t => (
-              <button key={t || 'all'}
-                onClick={() => setTypeFilter(t as GtmType | '')}
+            {(['', ...TYPES] as const).map(typeOption => (
+              <button key={typeOption || 'all'}
+                onClick={() => setTypeFilter(typeOption as GtmType | '')}
                 className="px-3 py-2 rounded-xl text-xs font-medium transition-all"
                 style={{
-                  background: typeFilter === t ? 'var(--accent)' : 'var(--bg-card)',
-                  color:      typeFilter === t ? 'white'         : 'var(--text-muted)',
+                  background: typeFilter === typeOption ? 'var(--accent)' : 'var(--bg-card)',
+                  color:      typeFilter === typeOption ? 'white'         : 'var(--text-muted)',
                   border:     '1px solid var(--border)',
                 }}>
-                {t ? TYPE_LABELS[t as GtmType].split(' ')[1] : 'All'}
+                {typeOption ? TYPE_LABELS[typeOption as GtmType].split(' ')[1] : t('all')}
               </button>
             ))}
           </div>
 
           <button onClick={openAdd} className="btn-primary flex items-center gap-2 text-sm">
-            <Plus size={15} /> Add Item
+            <Plus size={15} /> {t('addItem')}
           </button>
         </div>
 
@@ -166,10 +197,10 @@ export default function ManagerGtmPage() {
         ) : filtered.length === 0 ? (
           <div className="card text-center py-16">
             <Rocket size={40} className="mx-auto mb-3 opacity-20" />
-            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>No items yet</p>
-            <p className="text-sm mt-1 mb-4" style={{ color: 'var(--text-muted)' }}>Add your first GTM item</p>
+            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('noItems')}</p>
+            <p className="text-sm mt-1 mb-4" style={{ color: 'var(--text-muted)' }}>{t('addFirst')}</p>
             <button onClick={openAdd} className="btn-primary mx-auto flex items-center gap-2">
-              <Plus size={15} /> Add Item
+              <Plus size={15} /> {t('addItem')}
             </button>
           </div>
         ) : (
@@ -225,9 +256,9 @@ export default function ManagerGtmPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
           <div className="card p-8 w-full max-w-lg animate-fade-in">
-            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-6">
               <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>
-                {modal === 'edit' ? 'Edit Item' : 'Add GTM Item'}
+                {modal === 'edit' ? t('editItem') : t('addGtmItem')}
               </h3>
               <button onClick={() => setModal(null)}
                 className="w-8 h-8 rounded-full flex items-center justify-center"
@@ -239,46 +270,46 @@ export default function ManagerGtmPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Type *</label>
+                  <label className="label">{t('type')} *</label>
                   <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value as GtmType, category: '' }))} className="input text-sm">
                     {TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="label">Category *</label>
+                  <label className="label">{t('category')} *</label>
                   <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="input text-sm">
-                    <option value="">Select...</option>
+                    <option value="">{t('select')}</option>
                     {(CATEGORIES[form.type] || []).map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="label">Title *</label>
+                <label className="label">{t('itemTitle')} *</label>
                 <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
                   className="input text-sm" placeholder="e.g. LinkedIn founder story post" />
               </div>
 
               <div>
-                <label className="label">Content *</label>
+                <label className="label">{t('content')} *</label>
                 <textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))}
                   className="input min-h-24 resize-none text-sm"
                   placeholder="Write the prompt, description, or content here..." />
               </div>
 
               <div>
-                <label className="label">Tags (comma separated)</label>
+                <label className="label">{t('tags')}</label>
                 <input value={form.tags} onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
                   className="input text-sm" placeholder="linkedin, founder, story" />
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setModal(null)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={() => setModal(null)} className="btn-secondary flex-1">{t('cancel')}</button>
               <button onClick={save} disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
                 {saving
                   ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  : modal === 'edit' ? 'Save Changes' : 'Add Item'}
+                  : modal === 'edit' ? t('saveChanges') : t('addItem')}
               </button>
             </div>
           </div>

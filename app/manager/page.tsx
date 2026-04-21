@@ -241,16 +241,16 @@ export default function ManagerPage() {
                         </div>
                         <div>
                           <p className="text-sm font-semibold group-hover:underline" style={{ color: 'var(--accent)' }}>
-                            {s.startup_name}
-                          </p>
+                          <span className="notranslate" translate="no">{s.startup_name}</span>
+                        </p>
                           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{s.startup_sphere}</p>
                         </div>
                       </div>
                     </Link>
                   </td>
                   <td>
-                    <p className="text-sm">{s.founder_name}</p>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{s.phone}</p>
+                    <p className="text-sm notranslate" translate="no">{s.founder_name}</p>
+                    <p className="text-xs notranslate" translate="no" style={{ color: 'var(--text-muted)' }}>{s.phone}</p>
                   </td>
                   <td>
                     <span className="text-xs px-2 py-1 rounded-lg"
@@ -259,7 +259,7 @@ export default function ManagerPage() {
                     </span>
                   </td>
                   <td><span className={`badge badge-${s.stage} capitalize`}>{s.stage}</span></td>
-                  <td className="font-mono text-sm">${s.mrr?.toLocaleString() ?? 0}</td>
+                  <td className="font-mono text-sm notranslate" translate="no">${s.mrr?.toLocaleString() ?? 0}</td>
                   <td className="text-sm">{s.users_count?.toLocaleString() ?? 0}</td>
                   <td>
                     <select value={s.status} onChange={e => updateStatus(s._id, e.target.value)}

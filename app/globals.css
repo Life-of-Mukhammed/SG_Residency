@@ -25,6 +25,25 @@ body {
   color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   min-height: 100vh;
+  top: 0 !important;
+}
+
+.goog-te-banner-frame.skiptranslate,
+iframe.skiptranslate {
+  display: none !important;
+}
+
+body > .skiptranslate,
+.goog-te-gadget,
+.goog-logo-link {
+  display: none !important;
+}
+
+.goog-te-spinner-pos,
+#goog-gt-tt,
+.goog-tooltip,
+.goog-text-highlight {
+  display: none !important;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }

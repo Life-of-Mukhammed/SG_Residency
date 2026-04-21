@@ -5,6 +5,7 @@ import connectDB from '@/lib/db';
 import Report from '@/models/Report';
 import Startup from '@/models/Startup';
 import mongoose from 'mongoose';
+import { getActiveStartup } from '@/lib/access';
 
 export async function GET(req: NextRequest) {
   try {
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
     const query: Record<string, any> = {};
 
     if (user.role === 'user') {
-      const startup = await Startup.findOne({ userId: user.id }).select('_id').lean();
+      const startup = await getActiveStartup(user.id);
       if (!startup) {
         return NextResponse.json({
           reports: [],
@@ -66,11 +67,11 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    const startup = await Startup.findOne({ userId: user.id }).select('_id').lean();
+    const startup = await getActiveStartup(user.id);
     if (!startup) {
       return NextResponse.json(
-        { error: 'No startup found. Please submit an application first.' },
-        { status: 404 }
+        { error: 'Your startup must be approved before submitting reports.' },
+        { status: 403 }
       );
     }
 

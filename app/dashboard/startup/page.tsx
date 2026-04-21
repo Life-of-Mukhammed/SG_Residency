@@ -56,11 +56,12 @@ export default function MyStartupPage() {
   );
 
   const metrics = [
-    { label: 'MRR',               value: `$${startup.mrr?.toLocaleString() ?? 0}`,              icon: <DollarSign size={18} />, color: '#10b981' },
+    { label: 'MRR',               value: `$${startup.mrr?.toLocaleString() ?? 0}`,              icon: <DollarSign size={18} />, color: '#10b981', noTranslate: true },
     { label: 'Users',             value: startup.users_count?.toLocaleString() ?? '0',           icon: <Users size={18} />,      color: '#6366f1' },
-    { label: 'Investment Raised', value: `$${startup.investment_raised?.toLocaleString() ?? 0}`, icon: <TrendingUp size={18} />, color: '#f59e0b' },
+    { label: 'Investment Raised', value: `$${startup.investment_raised?.toLocaleString() ?? 0}`, icon: <TrendingUp size={18} />, color: '#f59e0b', noTranslate: true },
     { label: 'Team Size',         value: startup.team_size ?? '—',                              icon: <Users size={18} />,      color: '#ec4899' },
   ];
+  const isApproved = startup.status === 'active';
 
   return (
     <div className="animate-fade-in">
@@ -77,7 +78,7 @@ export default function MyStartupPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap mb-2">
                 <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {startup.startup_name}
+                  <span className="notranslate" translate="no">{startup.startup_name}</span>
                 </h2>
                 <span className={`badge badge-${startup.status}`}>{startup.status}</span>
                 <span className={`badge badge-${startup.stage}`}>{startup.stage}</span>
@@ -87,13 +88,13 @@ export default function MyStartupPage() {
               </p>
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
-                  <Phone size={13} /> {startup.phone}
+                  <Phone size={13} /> <span className="notranslate" translate="no">{startup.phone}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
-                  <MessageCircle size={13} /> {startup.telegram}
+                  <MessageCircle size={13} /> <span className="notranslate" translate="no">{startup.telegram}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
-                  <Globe size={13} /> {startup.gmail}
+                  <Globe size={13} /> <span className="notranslate" translate="no">{startup.gmail}</span>
                 </div>
                 {startup.pitch_deck && (
                   <a href={startup.pitch_deck} target="_blank" rel="noreferrer"
@@ -108,13 +109,13 @@ export default function MyStartupPage() {
 
         {/* Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {metrics.map(({ label, value, icon, color }) => (
+          {metrics.map(({ label, value, icon, color, noTranslate }) => (
             <div key={label} className="card">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
                 style={{ background: `${color}22`, color }}>
                 {icon}
               </div>
-              <p className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{value}</p>
+              <p className={`text-xl font-bold ${noTranslate ? 'notranslate' : ''}`} translate={noTranslate ? 'no' : undefined} style={{ color: 'var(--text-primary)' }}>{value}</p>
               <p className="text-xs mt-1"        style={{ color: 'var(--text-muted)'    }}>{label}</p>
             </div>
           ))}
@@ -125,7 +126,7 @@ export default function MyStartupPage() {
           <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Startup Details</h3>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: 'Founder',     value: startup.founder_name },
+              { label: 'Founder',     value: startup.founder_name, noTranslate: true },
               { label: 'Region',      value: startup.region },
               { label: 'Sphere',      value: startup.startup_sphere },
               { label: 'Stage',       value: startup.stage },
@@ -133,10 +134,10 @@ export default function MyStartupPage() {
               { label: 'Team Size',   value: `${startup.team_size} people` },
               { label: 'Applied',     value: format(new Date(startup.createdAt), 'MMM d, yyyy') },
               { label: 'Status',      value: startup.status },
-            ].map(({ label, value }) => (
+            ].map(({ label, value, noTranslate }) => (
               <div key={label} className="p-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
                 <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
-                <p className="text-sm font-medium capitalize" style={{ color: 'var(--text-primary)' }}>{value}</p>
+                <p className={`text-sm font-medium capitalize ${noTranslate ? 'notranslate' : ''}`} translate={noTranslate ? 'no' : undefined} style={{ color: 'var(--text-primary)' }}>{value}</p>
               </div>
             ))}
           </div>
@@ -145,9 +146,9 @@ export default function MyStartupPage() {
         {/* Quick links */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { label: 'Sprint Roadmap', desc: 'Track your task progress', href: '/dashboard/sprint',     icon: <Target size={18} />,   color: '#6366f1' },
-            { label: 'Submit Report',  desc: 'Weekly progress update',   href: '/dashboard/reports/new',icon: <FileText size={18} />, color: '#10b981' },
-            { label: 'Book Meeting',   desc: 'Schedule with manager',    href: '/dashboard/meetings',   icon: <Globe size={18} />,    color: '#f59e0b' },
+            { label: 'Sprint Roadmap', desc: isApproved ? 'Track your task progress' : 'Unlocks after approval', href: isApproved ? '/dashboard/sprint' : '/dashboard/settings',     icon: <Target size={18} />,   color: '#6366f1' },
+            { label: 'Submit Report',  desc: isApproved ? 'Weekly progress update' : 'Unlocks after approval',   href: isApproved ? '/dashboard/reports/new' : '/dashboard/settings',icon: <FileText size={18} />, color: '#10b981' },
+            { label: 'Book Meeting',   desc: isApproved ? 'Schedule with manager' : 'Unlocks after approval',    href: isApproved ? '/dashboard/meetings' : '/dashboard/settings',   icon: <Globe size={18} />,    color: '#f59e0b' },
           ].map(({ label, desc, href, icon, color }) => (
             <Link key={label} href={href}>
               <div className="card cursor-pointer group flex items-center gap-3">

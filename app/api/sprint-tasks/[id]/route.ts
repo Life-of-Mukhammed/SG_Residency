@@ -18,7 +18,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     await connectDB();
 
     const task = await SprintTask.findByIdAndUpdate(
-      params.id, { $set: body }, { new: true }
+      params.id,
+      { $set: body },
+      { new: true }
     ).lean();
 
     if (!task) return NextResponse.json({ error: 'Not found' }, { status: 404 });

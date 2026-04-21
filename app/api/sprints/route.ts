@@ -3,10 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/db';
 import TaskProgress from '@/models/TaskProgress';
-import Startup from '@/models/Startup';
-import User from '@/models/User';
-import Notification from '@/models/Notification';
 import mongoose from 'mongoose';
+import { getActiveStartup } from '@/lib/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +15,7 @@ export async function GET(_req: NextRequest) {
 
     await connectDB();
     const user    = session.user as { id: string; role: string };
-    const startup = await Startup.findOne({ userId: user.id }).select('_id').lean();
+    const startup = await getActiveStartup(user.id);
     if (!startup)  return NextResponse.json({ tasks: [] });
 
     const startupId = (startup as any)._id as mongoose.Types.ObjectId;
@@ -44,8 +42,10 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    const startup = await Startup.findOne({ userId: user.id }).select('_id startup_name').lean();
-    if (!startup) return NextResponse.json({ error: 'No startup found' }, { status: 404 });
+    const startup = await getActiveStartup(user.id);
+    if (!startup) {
+      return NextResponse.json({ error: 'Your startup must be approved before using sprint.' }, { status: 403 });
+    }
 
     const startupId = (startup as any)._id as mongoose.Types.ObjectId;
 
@@ -63,19 +63,6 @@ export async function POST(req: NextRequest) {
       },
       { upsert: true, new: true }
     ).lean();
-
-    // Notify manager when task completed
-    if (completed && comment?.trim()) {
-      const mgr = await User.findOne({ role: { $in: ['manager', 'super_admin'] } }).lean();
-      if (mgr) {
-        await Notification.create({
-          managerId: (mgr as any)._id.toString(),
-          title:    '✅ Vazifa bajarildi',
-          message:  `${(startup as any).startup_name}: "${taskId.slice(0,20)}" — "${comment.slice(0,60)}"`,
-          type: 'report',
-        });
-      }
-    }
 
     return NextResponse.json({ task });
   } catch (err) {

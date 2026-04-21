@@ -6,19 +6,22 @@ import { signOut, useSession } from 'next-auth/react';
 import {
   Rocket, Target, BookOpen, Settings, LogOut, LayoutDashboard,
   Calendar, FileText, Users, BarChart3, Shield, ChevronRight,
-  Clock, Menu, X, TrendingUp
+  Clock, Menu, X, Sun, Moon, Bell, ChevronDown, Star, TrendingUp
 } from 'lucide-react';
 import { useAppStore } from '@/store/appStore';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 type NavKey = 'dashboard'|'sprint'|'gtm'|'reports'|'meetings'|'books'|'myStartup'|'settings'|
               'managerPanel'|'schedule'|'analytics'|'superAdmin'|'gtmManager'|'sprintManager'|'progressTracker';
 
 const USER_NAV: { key: NavKey; href: string; icon: React.ReactNode }[] = [
   { key: 'dashboard', href: '/dashboard',          icon: <LayoutDashboard size={17}/> },
+  { key: 'sprint',    href: '/dashboard/sprint',   icon: <Target size={17}/> },
+  { key: 'gtm',       href: '/dashboard/gtm',      icon: <Rocket size={17}/> },
   { key: 'reports',   href: '/dashboard/reports',  icon: <FileText size={17}/> },
   { key: 'meetings',  href: '/dashboard/meetings', icon: <Calendar size={17}/> },
   { key: 'books',     href: '/dashboard/books',    icon: <BookOpen size={17}/> },
+  { key: 'myStartup', href: '/dashboard/startup',  icon: <Star size={17}/> },
   { key: 'settings',  href: '/dashboard/settings', icon: <Settings size={17}/> },
 ];
 
@@ -62,10 +65,16 @@ export default function Sidebar() {
   const { data: session } = useSession();
   const role = (session?.user as any)?.role || 'user';
 
-  const { lang, sidebarOpen, toggleSidebar, _hydrated } = useAppStore();
+  const { lang, setLang, theme, toggleTheme, sidebarOpen, toggleSidebar,
+          notifications, markAllRead, _hydrated } = useAppStore();
+
+  const [showNotifs, setShowNotifs] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+
+  const unread = notifications.filter(n => !n.read).length;
+  const currentLangLabel = lang === 'uz' ? 'UZB' : lang === 'ru' ? 'RUS' : 'ENG';
 
   const label = (key: NavKey) => NAV_LABELS[key]?.[lang] ?? NAV_LABELS[key]?.en ?? key;
 
@@ -157,17 +166,77 @@ export default function Sidebar() {
           )}
         </nav>
 
-        {/* Bottom area */}
+        {/* Bottom controls */}
         <div className="border-t px-2 py-3 space-y-1" style={{ borderColor: 'var(--border)' }}>
+          {/* Controls row */}
+          <div className={`flex items-center gap-1.5 mb-2 ${open ? 'px-1' : 'flex-col'}`}>
+            <button
+              onClick={toggleTheme}
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+              title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            >
+              {theme === 'dark' ? <Sun size={14}/> : <Moon size={14}/>}
+            </button>
+
+            <button
+              onClick={() => setLang(lang === 'uz' ? 'ru' : lang === 'ru' ? 'en' : 'uz')}
+              className="h-8 rounded-lg flex items-center justify-center flex-shrink-0 px-2.5 text-xs font-semibold"
+              style={{ color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+              title="Language"
+            >
+              {open ? `${currentLangLabel}` : currentLangLabel}
+            </button>
+
+            {/* Notifications */}
+            <div className="relative flex-shrink-0">
+              <button
+                onClick={() => { setShowNotifs(!showNotifs); if (!showNotifs) markAllRead(); }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center relative"
+                style={{ color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                <Bell size={14}/>
+                {unread > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white font-bold flex items-center justify-center"
+                    style={{ background: '#ef4444', fontSize: 9 }}>
+                    {unread > 9 ? '9+' : unread}
+                  </span>
+                )}
+              </button>
+              {showNotifs && (
+                <div className="absolute bottom-10 left-0 rounded-xl shadow-2xl z-50"
+                  style={{ width: 280, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                  <div className="px-4 py-3 border-b text-sm font-semibold"
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+                    Bildirishnomalar
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                        Bildirishnoma yo&apos;q
+                      </div>
+                    ) : notifications.slice(0, 10).map(n => (
+                      <div key={n.id} className="px-4 py-3 border-b"
+                        style={{ borderColor: 'var(--border)', background: n.read ? 'transparent' : 'rgba(99,102,241,0.06)' }}>
+                        <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{n.title}</p>
+                        <p className="text-xs mt-0.5"         style={{ color: 'var(--text-muted)'   }}>{n.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* User info */}
-          <div className="flex items-center gap-2 px-2 py-2 rounded-xl" style={{ background: 'var(--bg-card)' }}>
+          <Link href="/dashboard/settings" className="block">
+            <div className="flex items-center gap-2 px-2 py-2 rounded-xl cursor-pointer" style={{ background: 'var(--bg-card)' }}>
             <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
               style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
               {session?.user?.name?.[0]?.toUpperCase() || 'U'}
             </div>
             {open && (
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                <p className="text-xs font-medium truncate notranslate" translate="no" style={{ color: 'var(--text-primary)' }}>
                   {session?.user?.name}
                 </p>
                 <p className="text-xs truncate capitalize" style={{ color: 'var(--text-muted)' }}>
@@ -175,7 +244,8 @@ export default function Sidebar() {
                 </p>
               </div>
             )}
-          </div>
+            </div>
+          </Link>
 
           {/* Sign out */}
           <button onClick={() => signOut({ callbackUrl: '/login' })}
