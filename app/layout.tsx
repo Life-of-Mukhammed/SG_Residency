@@ -1,18 +1,25 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import { Providers } from '@/components/Providers';
 import { ThemeInitializer } from '@/components/ThemeInitializer';
 import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
-  title: 'Startup Residency — Accelerator Platform',
+  title: 'SG Residency — Accelerator Platform',
   description: 'Manage your startup accelerator program with ease',
+  icons: {
+    icon: '/sg-mark.svg',
+    shortcut: '/sg-mark.svg',
+    apple: '/sg-mark.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased">
+        <div id="google_translate_element" className="hidden" />
         <Providers>
           <ThemeInitializer />
           {children}
@@ -32,6 +39,49 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }}
           />
         </Providers>
+        <Script id="google-translate-init" strategy="afterInteractive">
+          {`
+            window.googleTranslateElementInit = function () {
+              new window.google.translate.TranslateElement(
+                {
+                  pageLanguage: 'uz',
+                  includedLanguages: 'uz,ru,en',
+                  autoDisplay: false,
+                  layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE
+                },
+                'google_translate_element'
+              );
+
+              const savedLang = window.localStorage.getItem('residency_lang') || document.documentElement.getAttribute('data-lang') || 'uz';
+              if (window.__setGoogleTranslateLanguage) {
+                window.__setGoogleTranslateLanguage(savedLang);
+              }
+            };
+
+            window.__setGoogleTranslateLanguage = function (lang) {
+              const apply = () => {
+                const combo = document.querySelector('.goog-te-combo');
+                if (!combo) return false;
+                if (combo.value !== lang) {
+                  combo.value = lang;
+                  combo.dispatchEvent(new Event('change'));
+                }
+                return true;
+              };
+
+              if (apply()) return;
+              let tries = 0;
+              const timer = setInterval(() => {
+                tries += 1;
+                if (apply() || tries > 20) clearInterval(timer);
+              }, 400);
+            };
+          `}
+        </Script>
+        <Script
+          src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

@@ -60,6 +60,7 @@ export default function ManagerSprintPage() {
     saveChanges: { uz: "O'zgarishlarni saqlash", ru: 'Сохранить изменения', en: 'Save Changes' },
     saveNames: { uz: 'Nomlarni saqlash', ru: 'Сохранить названия', en: 'Save names' },
     namesSaved: { uz: 'Nomlar saqlandi', ru: 'Названия сохранены', en: 'Names saved' },
+    addQuarter: { uz: "Quarter qo'shish", ru: 'Добавить квартал', en: 'Add quarter' },
   };
   const t = (key: keyof typeof T) => T[key][lang] ?? T[key].en;
 
@@ -163,6 +164,27 @@ export default function ManagerSprintPage() {
     }));
   };
 
+  const addQuarter = () => {
+    setConfig((prev) => {
+      const nextQuarter = (prev.quarters.at(-1)?.quarter || 0) + 1;
+      return {
+        quarters: [
+          ...prev.quarters,
+          {
+            quarter: nextQuarter,
+            name: `Q${nextQuarter}`,
+            months: [
+              { month: 1, name: 'Month 1' },
+              { month: 2, name: 'Month 2' },
+              { month: 3, name: 'Month 3' },
+            ],
+          },
+        ],
+      };
+    });
+    setExpanded((prev) => ({ ...prev, [`q${config.quarters.length + 1}`]: true }));
+  };
+
   return (
     <div className="animate-fade-in">
       <Header title={t('title')} subtitle={t('subtitle')} />
@@ -179,6 +201,9 @@ export default function ManagerSprintPage() {
             <button onClick={saveConfig} className="btn-secondary flex items-center gap-2" disabled={savingConfig}>
               {savingConfig ? <div className="w-4 h-4 border-2 border-slate-400/30 border-t-slate-500 rounded-full animate-spin" /> : <Save size={15} />}
               {t('saveNames')}
+            </button>
+            <button onClick={addQuarter} className="btn-secondary flex items-center gap-2">
+              <Plus size={15} /> {t('addQuarter')}
             </button>
             <button onClick={() => openAdd()} className="btn-primary flex items-center gap-2">
               <Plus size={15} /> {t('addTask')}

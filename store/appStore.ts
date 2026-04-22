@@ -34,6 +34,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     set({ lang });
     if (typeof localStorage !== 'undefined') localStorage.setItem('residency_lang', lang);
     if (typeof document !== 'undefined') document.documentElement.setAttribute('data-lang', lang);
+    if (typeof window !== 'undefined') {
+      (window as any).__setGoogleTranslateLanguage?.(lang);
+    }
   },
   t: (key) => {
     const { lang } = get();

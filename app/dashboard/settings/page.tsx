@@ -32,6 +32,21 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((prev) => ({ ...prev, avatar: String(reader.result || '') }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   useEffect(() => {
     axios.get('/api/profile')
       .then((res) => {
@@ -63,6 +78,7 @@ export default function SettingsPage() {
       await update({
         name: `${res.data.user.name} ${res.data.user.surname}`,
         email: res.data.user.email,
+        image: res.data.user.avatar || null,
       });
       toast.success('Profile updated');
     } catch (error: any) {
@@ -110,6 +126,20 @@ export default function SettingsPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
+              <div className="md:col-span-2 flex items-center gap-4 p-4 rounded-2xl" style={{ background: 'var(--bg-secondary)' }}>
+                {form.avatar ? (
+                  <img src={form.avatar} alt="Avatar preview" className="w-20 h-20 rounded-3xl object-cover" />
+                ) : (
+                  <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-2xl font-bold text-white" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                    {form.name?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                )}
+                <div className="flex-1">
+                  <label className="label">Avatar image</label>
+                  <input type="file" accept="image/*" onChange={handleAvatarUpload} className="input py-2" />
+                  <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Upload JPG, PNG or WebP image from your device.</p>
+                </div>
+              </div>
               <div>
                 <label className="label">First name</label>
                 <input value={form.name} onChange={setField('name')} className="input notranslate" translate="no" />
@@ -121,10 +151,6 @@ export default function SettingsPage() {
               <div className="md:col-span-2">
                 <label className="label">Email</label>
                 <input value={form.email} onChange={setField('email')} className="input notranslate" translate="no" />
-              </div>
-              <div className="md:col-span-2">
-                <label className="label">Avatar URL</label>
-                <input value={form.avatar} onChange={setField('avatar')} className="input notranslate" translate="no" placeholder="https://..." />
               </div>
             </div>
 
@@ -222,9 +248,13 @@ export default function SettingsPage() {
         <div className="space-y-6">
           <div className="card">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-3xl flex items-center justify-center text-xl font-bold text-white notranslate" translate="no" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
-                {profile?.name?.[0]?.toUpperCase()}
-              </div>
+              {profile?.avatar ? (
+                <img src={profile.avatar} alt={profile?.name || 'User avatar'} className="w-16 h-16 rounded-3xl object-cover" />
+              ) : (
+                <div className="w-16 h-16 rounded-3xl flex items-center justify-center text-xl font-bold text-white notranslate" translate="no" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                  {profile?.name?.[0]?.toUpperCase()}
+                </div>
+              )}
               <div className="min-w-0">
                 <p className="text-lg font-bold truncate notranslate" translate="no" style={{ color: 'var(--text-primary)' }}>
                   {profile?.name} {profile?.surname}

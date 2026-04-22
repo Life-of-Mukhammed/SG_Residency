@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/db';
 import TaskProgress from '@/models/TaskProgress';
 import mongoose from 'mongoose';
-import { getActiveStartup } from '@/lib/access';
+import { getUserStartup } from '@/lib/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +15,7 @@ export async function GET(_req: NextRequest) {
 
     await connectDB();
     const user    = session.user as { id: string; role: string };
-    const startup = await getActiveStartup(user.id);
+    const startup = await getUserStartup(user.id);
     if (!startup)  return NextResponse.json({ tasks: [] });
 
     const startupId = (startup as any)._id as mongoose.Types.ObjectId;
@@ -42,12 +42,17 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    const startup = await getActiveStartup(user.id);
+    const startup = await getUserStartup(user.id);
     if (!startup) {
-      return NextResponse.json({ error: 'Your startup must be approved before using sprint.' }, { status: 403 });
+      return NextResponse.json({ error: 'Please submit your residency application first.' }, { status: 403 });
     }
 
     const startupId = (startup as any)._id as mongoose.Types.ObjectId;
+    const existing = await TaskProgress.findOne({ userId: user.id, startupId, taskId }).lean();
+
+    if (existing?.completed) {
+      return NextResponse.json({ error: 'task_locked' }, { status: 409 });
+    }
 
     const task = await TaskProgress.findOneAndUpdate(
       { userId: user.id, startupId, taskId },
@@ -57,7 +62,7 @@ export async function POST(req: NextRequest) {
         taskId,
         quarter,
         month,
-        completed,
+        completed: Boolean(completed),
         comment:     comment || '',
         completedAt: completed ? new Date() : undefined,
         reviewed:    false,

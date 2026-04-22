@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { signIn } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -28,6 +29,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const { t, theme } = useAppStore();
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
@@ -43,12 +45,49 @@ export default function RegisterPage() {
         email: data.email,
         password: data.password,
       });
-      toast.success('Account created! Please sign in.');
-      router.push('/login');
+
+      const res = await signIn('credentials', {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        toast.success('Account created. Please sign in.');
+        router.push('/login');
+        return;
+      }
+
+      toast.success('Account created successfully!');
+      router.push('/dashboard');
+      router.refresh();
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Registration failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleRegister = async () => {
+    setGoogleLoading(true);
+    try {
+      const res = await signIn('google', {
+        callbackUrl: '/dashboard',
+        redirect: false,
+      });
+
+      if (res?.error) {
+        toast.error('Google sign-in is not configured yet. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env.local and restart the server.');
+        return;
+      }
+
+      if (res?.url) {
+        router.push(res.url);
+      }
+    } catch {
+      toast.error('Google sign in failed');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -93,6 +132,50 @@ export default function RegisterPage() {
                 <h1 className="text-3xl font-bold mt-3" style={{ color: 'var(--text-primary)' }}>{t('createAccount')}</h1>
                 <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Join the residency program today.</p>
               </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleRegister}
+            disabled={googleLoading || loading}
+            className="w-full rounded-2xl border px-4 py-3 text-sm font-medium transition hover:translate-y-[-1px] mb-4 flex items-center justify-center gap-3"
+            style={{
+              borderColor: theme === 'light' ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.12)',
+              background: theme === 'light' ? '#ffffff' : 'rgba(255,255,255,0.05)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            {googleLoading ? (
+              <div className="w-4 h-4 border-2 border-current/20 border-t-current rounded-full animate-spin" />
+            ) : (
+              <>
+                <span className="text-base leading-none">G</span>
+                <span>Continue with Google</span>
+              </>
+            )}
+          </button>
+
+          <div className="relative my-5">
+            <div
+              className="absolute inset-0 flex items-center"
+              aria-hidden="true"
+            >
+              <div
+                className="w-full border-t"
+                style={{ borderColor: theme === 'light' ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.1)' }}
+              />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase tracking-[0.24em]">
+              <span
+                className="px-3"
+                style={{
+                  background: theme === 'light' ? 'rgba(255,255,255,0.9)' : 'rgba(11, 18, 32, 0.9)',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                or register with email
+              </span>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -143,7 +226,7 @@ export default function RegisterPage() {
               {errors.confirmPassword && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.confirmPassword.message}</p>}
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 py-3 mt-2">
+            <button type="submit" disabled={loading || googleLoading} className="btn-primary w-full flex items-center justify-center gap-2 py-3 mt-2">
               {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>{t('createAccount')} <ArrowRight size={16} /></>}
             </button>
           </form>

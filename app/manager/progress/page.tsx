@@ -26,7 +26,7 @@ export default function ProgressPage() {
 
   const labels = {
     title:       { uz: "Founder Progress",     ru: "Прогресс стартапов",    en: "Founder Progress"    },
-    subtitle:    { uz: "Barcha founderlar vazifalarining holati", ru: "Статус задач всех основателей", en: "Task completion status for all founders" },
+    subtitle:    { uz: "Jami sprint tasklarga nisbatan founder progress", ru: "Прогресс фаундеров относительно всех sprint задач", en: "Founder progress against all sprint tasks" },
     noData:      { uz: "Aktiv startaplar yo'q", ru: "Нет активных стартапов", en: "No active startups" },
     completed:   { uz: "Bajarildi",             ru: "Выполнено",              en: "Completed"          },
     progress:    { uz: "Jarayon",               ru: "Прогресс",               en: "Progress"           },
@@ -216,6 +216,21 @@ export default function ProgressPage() {
                           )}
                         </div>
                       )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="p-4 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                          <p className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>Total Sprint Tasks</p>
+                          <p className="text-2xl font-bold mt-2" style={{ color: 'var(--text-primary)' }}>{d.totalTasks}</p>
+                        </div>
+                        <div className="p-4 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                          <p className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>Completed</p>
+                          <p className="text-2xl font-bold mt-2" style={{ color: '#10b981' }}>{d.completed}</p>
+                        </div>
+                        <div className="p-4 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                          <p className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>Completion</p>
+                          <p className="text-2xl font-bold mt-2" style={{ color: 'var(--accent)' }}>{d.pct}%</p>
+                        </div>
+                      </div>
 
                       {/* Recent tasks list */}
                       {d.recentTasks.length > 0 && (

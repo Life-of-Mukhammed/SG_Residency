@@ -41,6 +41,7 @@ export async function GET(req: NextRequest) {
     const stage  = searchParams.get('stage')  || '';
     const status = searchParams.get('status') || '';
     const sphere = searchParams.get('sphere') || '';
+    const region = searchParams.get('region') || '';
 
     const user = session.user as { id: string; role: string };
     const query: Record<string, unknown> = {};
@@ -56,6 +57,7 @@ export async function GET(req: NextRequest) {
     if (stage)  query.stage  = stage;
     if (status) query.status = status;
     if (sphere) query.startup_sphere = sphere;
+    if (region) query.region = { $regex: `^${region}$`, $options: 'i' };
 
     const total    = await Startup.countDocuments(query);
     const startups = await Startup.find(query)

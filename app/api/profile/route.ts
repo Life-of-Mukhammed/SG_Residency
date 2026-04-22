@@ -10,7 +10,10 @@ const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   surname: z.string().min(2, 'Surname must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  avatar: z.string().url('Avatar must be a valid URL').or(z.literal('')).optional(),
+  avatar: z.string().refine(
+    (value) => !value || value.startsWith('data:image/') || /^https?:\/\//.test(value),
+    'Avatar must be a valid image URL or uploaded image'
+  ).optional(),
   currentPassword: z.string().optional(),
   newPassword: z.string().min(6, 'New password must be at least 6 characters').optional().or(z.literal('')),
 }).superRefine((data, ctx) => {

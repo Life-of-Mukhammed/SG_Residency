@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/db';
 import TaskProgress from '@/models/TaskProgress';
 import Startup from '@/models/Startup';
+import SprintTask from '@/models/SprintTask';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,9 @@ export async function GET(_req: NextRequest) {
       .populate('userId', 'name surname email')
       .lean();
 
+    const allSprintTasks = await SprintTask.find({}).select('_id quarter month title').lean();
+    const totalAvailableTasks = allSprintTasks.length;
+
     const result = await Promise.all(
       startups.map(async (s: any) => {
         const tasks = await TaskProgress.find({ startupId: s._id })
@@ -32,12 +36,13 @@ export async function GET(_req: NextRequest) {
           .lean();
         const completed = tasks.filter((t: any) => t.completed).length;
         const lastTask  = tasks.find((t: any) => t.completed);
+        const completionPct = totalAvailableTasks > 0 ? Math.round((completed / totalAvailableTasks) * 100) : 0;
         return {
           startup:     { _id: s._id, startup_name: s.startup_name, stage: s.stage, region: s.region },
           founder:     s.userId,
-          totalTasks:  tasks.length,
+          totalTasks:  totalAvailableTasks,
           completed,
-          pct:         tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0,
+          pct:         completionPct,
           lastActivity: lastTask ? { taskId: lastTask.taskId, comment: (lastTask as any).comment, completedAt: lastTask.completedAt } : null,
           recentTasks: tasks.slice(0, 5),
         };

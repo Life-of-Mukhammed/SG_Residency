@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { Sun, Moon, Globe, Bell, X } from 'lucide-react';
+import { Sun, Moon, Globe, Bell, X, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 
@@ -32,12 +32,16 @@ export default function Header({ title = 'Dashboard', subtitle }: HeaderProps) {
     <header
       className="sticky top-0 z-30 flex items-center justify-between px-6 py-3"
       style={{
-        background: 'rgba(var(--bg-primary-rgb, 13,13,26), 0.9)',
+        background: 'linear-gradient(180deg, rgba(15,23,42,0.9), rgba(15,23,42,0.72))',
         backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid var(--border)',
+        borderBottom: '1px solid rgba(148,163,184,0.12)',
       }}
     >
       <div>
+        <div className="inline-flex items-center gap-2 mb-1 text-[11px] uppercase tracking-[0.18em]" style={{ color: 'var(--accent)' }}>
+          <Sparkles size={12} />
+          SG-Residency
+        </div>
         <h1 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h1>
         {subtitle && (
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
@@ -56,7 +60,7 @@ export default function Header({ title = 'Dashboard', subtitle }: HeaderProps) {
               if (!showNotifs) markAllRead();
             }}
             className="w-9 h-9 rounded-xl flex items-center justify-center relative"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(148,163,184,0.12)' }}
           >
             <Bell size={15} />
             {unread > 0 && (
@@ -97,7 +101,7 @@ export default function Header({ title = 'Dashboard', subtitle }: HeaderProps) {
           <button
             onClick={() => setShowLang(!showLang)}
             className="px-3 py-2 rounded-xl text-xs"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(148,163,184,0.12)' }}
           >
             🌐 {lang}
           </button>
@@ -125,7 +129,7 @@ export default function Header({ title = 'Dashboard', subtitle }: HeaderProps) {
         <button
           onClick={toggleTheme}
           className="w-9 h-9 rounded-xl flex items-center justify-center"
-          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(148,163,184,0.12)' }}
         >
           {mounted && theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
         </button>

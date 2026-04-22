@@ -7,12 +7,15 @@ import Header from '@/components/dashboard/Header';
 import { Shield, Users, Edit2, RefreshCw, Search } from 'lucide-react';
 import { format } from 'date-fns';
 
+const REGIONS = ['Tashkent', 'Samarkand', 'Bukhara', 'Namangan', 'Andijan', 'Fergana', 'Nukus', 'Other'];
+
 export default function SuperAdminPage() {
   const [users, setUsers]         = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [regionFilter, setRegionFilter] = useState('');
   const [editUser, setEditUser]   = useState<any | null>(null);
   const [newRole, setNewRole]     = useState('');
   const [saving, setSaving]       = useState(false);
@@ -21,14 +24,17 @@ export default function SuperAdminPage() {
     setLoading(true);
     try {
       const [uRes, aRes] = await Promise.all([
-        axios.get(`/api/users${roleFilter ? `?role=${roleFilter}` : ''}`),
+        axios.get(`/api/users?${new URLSearchParams({
+          ...(roleFilter ? { role: roleFilter } : {}),
+          ...(regionFilter ? { region: regionFilter } : {}),
+        }).toString()}`),
         axios.get('/api/analytics'),
       ]);
       setUsers(uRes.data.users     ?? []);
       setAnalytics(aRes.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }, [roleFilter]);
+  }, [regionFilter, roleFilter]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -173,6 +179,13 @@ export default function SuperAdminPage() {
                 <option value="manager">Managers</option>
                 <option value="super_admin">Super Admins</option>
               </select>
+              <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)}
+                className="input py-2 text-sm w-auto">
+                <option value="">All Regions</option>
+                {REGIONS.map((region) => (
+                  <option key={region} value={region}>{region}</option>
+                ))}
+              </select>
               <button onClick={fetchData} className="btn-secondary p-2">
                 <RefreshCw size={14} />
               </button>
@@ -183,21 +196,21 @@ export default function SuperAdminPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>User</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th>
+                  <th>User</th><th>Email</th><th>Region</th><th>Role</th><th>Joined</th><th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   Array.from({ length: 6 }).map((_, i) => (
                     <tr key={i}>
-                      {Array.from({ length: 5 }).map((_, j) => (
+                      {Array.from({ length: 6 }).map((_, j) => (
                         <td key={j}><div className="skeleton h-4 w-full" /></td>
                       ))}
                     </tr>
                   ))
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-10"
+                    <td colSpan={6} className="text-center py-10"
                       style={{ color: 'var(--text-muted)' }}>No users found</td>
                   </tr>
                 ) : filtered.map((u) => (
@@ -213,6 +226,7 @@ export default function SuperAdminPage() {
                       </div>
                     </td>
                     <td className="text-sm" style={{ color: 'var(--text-muted)' }}>{u.email}</td>
+                    <td className="text-sm" style={{ color: 'var(--text-muted)' }}>{u.region || '—'}</td>
                     <td>
                       <span className={`badge ${roleColors[u.role] ?? 'badge-inactive'} capitalize`}>
                         {u.role?.replace('_', ' ')}

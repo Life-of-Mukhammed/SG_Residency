@@ -5,6 +5,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
 import { Plus, Trash2, Edit2, X, Check, Copy, Search, Rocket, Save } from 'lucide-react';
+import { extractKeyValueRows, extractPipeTable, splitContentBlocks } from '@/lib/gtm-display';
 
 const TYPES = ['prompt', 'campaign', 'kpi', 'daily'] as const;
 const SECTIONS = ['guide', 'plan', 'system'] as const;
@@ -56,6 +57,7 @@ export default function ManagerGtmPage() {
   const [saving, setSaving] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [selected, setSelected] = useState<GtmItem | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -166,6 +168,9 @@ export default function ManagerGtmPage() {
     title: config?.sections.find((item) => item.key === sectionKey)?.title || SECTION_LABELS[sectionKey],
     items: filtered.filter((item) => (item.section || 'guide') === sectionKey),
   }));
+  const tableData = selected ? extractPipeTable(selected.content) : null;
+  const keyRows = selected ? extractKeyValueRows(selected.content).slice(0, 6) : [];
+  const blocks = selected ? splitContentBlocks(selected.content) : [];
 
   return (
     <div className="animate-fade-in">
@@ -262,20 +267,20 @@ export default function ManagerGtmPage() {
                     </div>
                   ) : (
                     section.items.map((item) => (
-                      <div key={item._id} className="p-4 rounded-2xl" style={{ background: 'var(--bg-secondary)' }}>
+                      <div key={item._id} onClick={() => setSelected(item)} className="p-4 rounded-2xl w-full text-left cursor-pointer" style={{ background: 'var(--bg-secondary)' }}>
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{item.title}</p>
                             <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{item.category} · {TYPE_LABELS[item.type]}</p>
                           </div>
                           <div className="flex items-center gap-1">
-                            <button onClick={() => copy(item.content, item._id)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-card)' }}>
+                            <button onClick={(event) => { event.stopPropagation(); copy(item.content, item._id); }} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-card)' }}>
                               {copied === item._id ? <Check size={13} style={{ color: '#10b981' }} /> : <Copy size={13} />}
                             </button>
-                            <button onClick={() => openEdit(item)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-card)', color: 'var(--accent)' }}>
+                            <button onClick={(event) => { event.stopPropagation(); openEdit(item); }} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-card)', color: 'var(--accent)' }}>
                               <Edit2 size={13} />
                             </button>
-                            <button onClick={() => remove(item._id)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                            <button onClick={(event) => { event.stopPropagation(); remove(item._id); }} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
                               <Trash2 size={13} />
                             </button>
                           </div>
@@ -351,6 +356,58 @@ export default function ManagerGtmPage() {
               <button onClick={save} disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
                 {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : modal === 'edit' ? 'Save Changes' : 'Add Item'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
+          <div className="card w-full max-w-4xl p-8 animate-fade-in">
+            <div className="flex items-start justify-between gap-4 mb-5">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--accent)' }}>{selected.category}</p>
+                <h3 className="text-2xl font-bold mt-2" style={{ color: 'var(--text-primary)' }}>{selected.title}</h3>
+              </div>
+              <button onClick={() => setSelected(null)} className="btn-secondary">Close</button>
+            </div>
+
+            {keyRows.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                {keyRows.map((row) => (
+                  <div key={`${row.key}-${row.value}`} className="p-4 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
+                    <p className="text-[11px] uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>{row.key}</p>
+                    <p className="text-sm mt-2" style={{ color: 'var(--text-primary)' }}>{row.value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {tableData && (
+              <div className="table-container mb-4">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      {tableData.headers.map((header) => <th key={header}>{header}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tableData.rows.map((row, index) => (
+                      <tr key={`${index}-${row.join('-')}`}>
+                        {row.map((cell, cellIndex) => <td key={`${cellIndex}-${cell}`}>{cell}</td>)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="grid gap-3">
+              {blocks.map((block, index) => (
+                <div key={`${index}-${block.slice(0, 12)}`} className="p-4 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
+                  <p className="text-sm whitespace-pre-wrap leading-7" style={{ color: 'var(--text-secondary)' }}>{block}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>

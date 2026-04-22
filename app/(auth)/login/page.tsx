@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Rocket, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAppStore } from '@/store/appStore';
@@ -22,6 +23,14 @@ export default function LoginPage() {
   const router = useRouter();
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [resetStep, setResetStep] = useState<'login' | 'request' | 'verify'>('login');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [requestLoading, setRequestLoading] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
   const { t, theme } = useAppStore();
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
@@ -47,6 +56,90 @@ export default function LoginPage() {
       toast.error('Something went wrong');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    try {
+      const res = await signIn('google', {
+        callbackUrl: '/dashboard',
+        redirect: false,
+      });
+
+      if (res?.error) {
+        toast.error('Google sign-in is not configured yet. Check GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.');
+        return;
+      }
+
+      if (res?.url) {
+        router.push(res.url);
+      }
+    } catch {
+      toast.error('Google sign in failed');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleResetRequest = async () => {
+    if (!resetEmail) {
+      toast.error('Email kiriting');
+      return;
+    }
+
+    setRequestLoading(true);
+    try {
+      const res = await axios.post('/api/auth/forgot-password/request', {
+        email: resetEmail,
+      });
+      toast.success(res.data.message || 'Code sent');
+      setResetStep('verify');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Could not send reset code');
+    } finally {
+      setRequestLoading(false);
+    }
+  };
+
+  const handleResetVerify = async () => {
+    if (!resetEmail || !resetCode || !resetPassword) {
+      toast.error('Barcha maydonlarni to‘ldiring');
+      return;
+    }
+
+    if (resetPassword !== resetConfirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    setVerifyLoading(true);
+    try {
+      await axios.post('/api/auth/forgot-password/verify', {
+        email: resetEmail,
+        code: resetCode,
+        password: resetPassword,
+      });
+
+      const res = await signIn('credentials', {
+        email: resetEmail,
+        password: resetPassword,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        toast.success('Password changed. Endi login qiling.');
+        setResetStep('login');
+        return;
+      }
+
+      toast.success('Password updated successfully!');
+      router.push('/dashboard');
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Could not verify reset code');
+    } finally {
+      setVerifyLoading(false);
     }
   };
 
@@ -101,6 +194,48 @@ export default function LoginPage() {
                 <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>{t('welcomeBack')} — let&apos;s build something great.</p>
               </div>
 
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={googleLoading || loading || requestLoading || verifyLoading}
+            className="w-full rounded-2xl border px-4 py-3 text-sm font-medium transition hover:translate-y-[-1px] mb-4 flex items-center justify-center gap-3"
+            style={{
+              borderColor: theme === 'light' ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.12)',
+              background: theme === 'light' ? '#ffffff' : 'rgba(255,255,255,0.05)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            {googleLoading ? (
+              <div className="w-4 h-4 border-2 border-current/20 border-t-current rounded-full animate-spin" />
+            ) : (
+              <>
+                <span className="text-base leading-none">G</span>
+                <span>Continue with Google</span>
+              </>
+            )}
+          </button>
+
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div
+                className="w-full border-t"
+                style={{ borderColor: theme === 'light' ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.1)' }}
+              />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase tracking-[0.24em]">
+              <span
+                className="px-3"
+                style={{
+                  background: theme === 'light' ? 'rgba(255,255,255,0.88)' : 'rgba(12, 15, 33, 0.88)',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                {resetStep === 'login' ? 'or sign in with email' : 'password recovery'}
+              </span>
+            </div>
+          </div>
+
+          {resetStep === 'login' ? (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
               <label className="label">{t('email')}</label>
@@ -140,7 +275,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || googleLoading}
               className="btn-primary w-full flex items-center justify-center gap-2 py-3"
             >
               {loading ? (
@@ -149,7 +284,121 @@ export default function LoginPage() {
                 <>{t('signIn')} <ArrowRight size={16} /></>
               )}
             </button>
+
+            <button
+              type="button"
+              onClick={() => setResetStep('request')}
+              className="w-full text-sm font-medium"
+              style={{ color: 'var(--accent)' }}
+            >
+              Forgot password?
+            </button>
           </form>
+          ) : null}
+
+          {resetStep === 'request' ? (
+            <div className="space-y-4">
+              <div>
+                <label className="label">Registered email</label>
+                <input
+                  type="email"
+                  className="input notranslate"
+                  translate="no"
+                  placeholder="you@example.com"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleResetRequest}
+                disabled={requestLoading}
+                className="btn-primary w-full flex items-center justify-center gap-2 py-3"
+              >
+                {requestLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Send code'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setResetStep('login')}
+                className="w-full text-sm font-medium"
+                style={{ color: 'var(--accent)' }}
+              >
+                Back to login
+              </button>
+            </div>
+          ) : null}
+
+          {resetStep === 'verify' ? (
+            <div className="space-y-4">
+              <div>
+                <label className="label">Email</label>
+                <input
+                  type="email"
+                  className="input notranslate"
+                  translate="no"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="label">6-digit code</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  className="input notranslate"
+                  translate="no"
+                  placeholder="123456"
+                  value={resetCode}
+                  onChange={(e) => setResetCode(e.target.value.replace(/\D/g, ''))}
+                />
+              </div>
+              <div>
+                <label className="label">New password</label>
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  className="input notranslate"
+                  translate="no"
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="label">Confirm new password</label>
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  className="input notranslate"
+                  translate="no"
+                  value={resetConfirmPassword}
+                  onChange={(e) => setResetConfirmPassword(e.target.value)}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleResetVerify}
+                disabled={verifyLoading}
+                className="btn-primary w-full flex items-center justify-center gap-2 py-3"
+              >
+                {verifyLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Verify code and login'}
+              </button>
+              <div className="flex items-center justify-between text-sm">
+                <button
+                  type="button"
+                  onClick={() => setResetStep('request')}
+                  style={{ color: 'var(--accent)' }}
+                >
+                  Resend code
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setResetStep('login')}
+                  style={{ color: 'var(--accent)' }}
+                >
+                  Back to login
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-6 text-center">
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>

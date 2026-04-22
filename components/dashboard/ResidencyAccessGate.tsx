@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAppStore } from '@/store/appStore';
 
-const ALLOWED_PATHS = ['/dashboard', '/dashboard/apply', '/dashboard/settings'];
+const ALLOWED_PATHS = ['/dashboard', '/dashboard/apply'];
 
 export default function ResidencyAccessGate() {
   const pathname = usePathname();
@@ -15,7 +15,7 @@ export default function ResidencyAccessGate() {
   const hydrated = useAppStore((state) => state._hydrated);
   const [mounted, setMounted] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [hasStartup, setHasStartup] = useState(false);
+  const [startupStatus, setStartupStatus] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -25,9 +25,9 @@ export default function ResidencyAccessGate() {
     const load = async () => {
       try {
         const res = await axios.get('/api/startups?limit=1');
-        setHasStartup(Boolean(res.data.startups?.[0]));
+        setStartupStatus(res.data.startups?.[0]?.status ?? null);
       } catch {
-        setHasStartup(false);
+        setStartupStatus(null);
       } finally {
         setChecking(false);
       }
@@ -36,7 +36,7 @@ export default function ResidencyAccessGate() {
     load();
   }, []);
 
-  if (!mounted || checking || hasStartup || ALLOWED_PATHS.includes(pathname)) return null;
+  if (!mounted || checking || startupStatus === 'active' || ALLOWED_PATHS.includes(pathname)) return null;
 
   const left = hydrated ? (sidebarOpen ? 240 : 64) : 240;
 
@@ -61,7 +61,7 @@ export default function ResidencyAccessGate() {
           Apply to Residency First
         </h2>
         <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-          Sprint, GTM, reports, meetings and the rest of the workspace will open after you submit your residency application.
+          Apply to residency first. Sprint, GTM and the rest of the workspace unlock after approval.
         </p>
         <Link href="/dashboard/apply">
           <button className="btn-primary inline-flex items-center gap-2">

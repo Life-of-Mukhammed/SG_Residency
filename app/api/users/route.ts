@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
+import Startup from '@/models/Startup';
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,13 +18,33 @@ export async function GET(req: NextRequest) {
     await connectDB();
     const { searchParams } = new URL(req.url);
     const role = searchParams.get('role') || '';
+    const region = searchParams.get('region') || '';
 
     const query: Record<string, unknown> = {};
     if (role) query.role = role;
 
-    const users = await User.find(query).select('-password').sort({ createdAt: -1 }).lean();
+    if (region) {
+      const startupUsers = await Startup.find({
+        region: { $regex: `^${region}$`, $options: 'i' },
+      }).distinct('userId');
+      query._id = { $in: startupUsers };
+    }
 
-    return NextResponse.json({ users });
+    const users = await User.find(query).select('-password').sort({ createdAt: -1 }).lean();
+    const startupRegions = await Startup.find({
+      userId: { $in: users.map((item: any) => item._id) },
+    }).select('userId region').lean();
+
+    const regionMap = new Map(
+      startupRegions.map((item: any) => [String(item.userId), item.region])
+    );
+
+    const usersWithRegion = users.map((item: any) => ({
+      ...item,
+      region: regionMap.get(String(item._id)) || '',
+    }));
+
+    return NextResponse.json({ users: usersWithRegion });
   } catch (err) {
     console.error('[GET /api/users]', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

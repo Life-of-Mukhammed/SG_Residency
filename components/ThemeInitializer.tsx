@@ -19,6 +19,10 @@ export function ThemeInitializer() {
 
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-lang', lang);
+
+    window.setTimeout(() => {
+      (window as any).__setGoogleTranslateLanguage?.(lang);
+    }, 700);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

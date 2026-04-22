@@ -194,15 +194,17 @@ export default function SprintPage() {
     setSaving(taskId);
     try {
       const res = await axios.post('/api/sprints', { taskId, quarter, month, completed, comment: cmt });
-      if (res.data.error === 'comment_required') {
-        toast.error(t('commentSub'));
-        return;
-      }
-
       setProgress((prev) => ({ ...prev, [taskId]: { completed, comment: cmt } }));
       if (completed) toast.success('OK');
     } catch (error: any) {
-      toast.error(error.response?.data?.error === 'comment_required' ? t('commentSub') : 'Error');
+      const serverError = error.response?.data?.error;
+      toast.error(
+        serverError === 'comment_required'
+          ? t('commentSub')
+          : serverError === 'task_locked'
+            ? 'This task is already completed and cannot be changed.'
+            : 'Error'
+      );
     } finally {
       setSaving(null);
       setCommentModal(null);
@@ -211,7 +213,6 @@ export default function SprintPage() {
 
   const tryComplete = (task: PendingTask) => {
     if (progress[task.taskId]?.completed) {
-      doSave(task.taskId, task.quarter, task.month, false, '');
       return;
     }
 
@@ -246,7 +247,7 @@ export default function SprintPage() {
     <div className="animate-fade-in">
       <Header title={t('title')} subtitle={t('subtitle')} />
 
-      {startup && startup.status !== 'active' ? (
+      {!startup ? (
         <div className="p-6">
           <div className="card max-w-2xl mx-auto text-center py-14">
             <Lock size={32} className="mx-auto mb-4" style={{ color: '#f59e0b' }} />
@@ -254,7 +255,7 @@ export default function SprintPage() {
               {t('lockedTitle')}
             </p>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              {t('lockedText')}
+              Submit your residency application to start tracking sprint progress.
             </p>
           </div>
         </div>
@@ -388,6 +389,7 @@ export default function SprintPage() {
                                     <div
                                       key={taskId}
                                       onClick={() =>
+                                        !done &&
                                         !isSaving &&
                                         tryComplete({
                                           taskId,
@@ -396,11 +398,12 @@ export default function SprintPage() {
                                           title: task.title,
                                         })
                                       }
-                                      className="flex items-start gap-3 px-4 py-3.5 border-t transition-colors group cursor-pointer"
+                                      className="flex items-start gap-3 px-4 py-3.5 border-t transition-colors group"
                                       style={{
                                         borderColor: 'var(--border)',
                                         background: done ? 'rgba(16,185,129,0.04)' : 'rgba(99,102,241,0.02)',
                                         borderLeft: '2px solid rgba(99,102,241,0.3)',
+                                        cursor: done ? 'default' : 'pointer',
                                       }}
                                     >
                                       <div className="mt-0.5 flex-shrink-0">
@@ -462,7 +465,7 @@ export default function SprintPage() {
                                             }}
                                           >
                                             <CheckCircle size={11} />
-                                            {reviewed ? t('reviewed') : t('pendingReview')}
+                                            {reviewed ? t('reviewed') : 'Completed'}
                                           </div>
                                         )}
                                       </div>

@@ -12,8 +12,8 @@ export interface ISprintTask extends Document {
 
 const SprintTaskSchema = new Schema<ISprintTask>(
   {
-    quarter:     { type: Number, required: true, min: 1, max: 4 },
-    month:       { type: Number, required: true, min: 1, max: 3 },
+    quarter:     { type: Number, required: true, min: 1 },
+    month:       { type: Number, required: true, min: 1, max: 12 },
     title:       { type: String, required: true },
     description: { type: String, default: '' },
     createdBy:   { type: Schema.Types.ObjectId, ref: 'User', required: true },
