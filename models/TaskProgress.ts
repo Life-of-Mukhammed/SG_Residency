@@ -8,6 +8,9 @@ export interface ITaskProgress extends Document {
   month: number;
   completed: boolean;
   comment: string;
+  reviewed: boolean;
+  reviewedBy?: mongoose.Types.ObjectId;
+  reviewedAt?: Date;
   completedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -22,6 +25,9 @@ const TaskProgressSchema = new Schema<ITaskProgress>(
     month:       { type: Number, required: true },
     completed:   { type: Boolean, default: false },
     comment:     { type: String, default: '' },
+    reviewed:    { type: Boolean, default: false },
+    reviewedBy:  { type: Schema.Types.ObjectId, ref: 'User' },
+    reviewedAt:  { type: Date },
     completedAt: { type: Date },
   },
   { timestamps: true }

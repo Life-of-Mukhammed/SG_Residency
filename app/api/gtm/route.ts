@@ -17,13 +17,15 @@ export async function GET(req: NextRequest) {
     }
     const { searchParams } = new URL(req.url);
     const type = searchParams.get('type') || '';
+    const section = searchParams.get('section') || '';
 
     const query: Record<string, string> = {};
     if (type) query.type = type;
+    if (section) query.section = section;
 
     const items = await GtmItem.find(query)
       .populate('createdBy', 'name surname')
-      .sort({ createdAt: -1 })
+      .sort({ section: 1, sortOrder: 1, createdAt: 1 })
       .lean();
 
     return NextResponse.json({ items });
@@ -44,8 +46,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    if (!body.title || !body.content || !body.type || !body.category) {
-      return NextResponse.json({ error: 'title, content, type and category are required' }, { status: 400 });
+    if (!body.title || !body.content || !body.type || !body.category || !body.section) {
+      return NextResponse.json({ error: 'title, content, type, category and section are required' }, { status: 400 });
     }
 
     await connectDB();

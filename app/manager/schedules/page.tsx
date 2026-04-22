@@ -364,7 +364,7 @@ export default function SchedulesPage() {
               {selectedMeeting.meetingType === 'online' && selectedMeeting.status === 'booked' && (
                 <a href={selectedMeeting.meetLink} target="_blank" rel="noreferrer" className="flex-1">
                   <button className="btn-primary w-full flex items-center justify-center gap-2">
-                    <Video size={14} /> Join Meeting
+                    <Video size={14} /> Open Meeting Link
                   </button>
                 </a>
               )}

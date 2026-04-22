@@ -287,7 +287,7 @@ export default function DashboardHome() {
                     </div>
                   </div>
                   <a href={m.meetLink} target="_blank" rel="noreferrer">
-                    <button className="btn-primary text-xs py-1.5">Join</button>
+                    <button className="btn-primary text-xs py-1.5">Open Link</button>
                   </a>
                 </div>
               ))}

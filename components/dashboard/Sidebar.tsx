@@ -4,14 +4,16 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import {
-  Rocket, Target, BookOpen, Settings, LogOut, LayoutDashboard,
+  Rocket, Target, Settings, LogOut, LayoutDashboard,
   Calendar, FileText, Users, BarChart3, Shield, ChevronRight,
   Clock, Menu, X, Sun, Moon, Bell, ChevronDown, Star, TrendingUp
 } from 'lucide-react';
 import { useAppStore } from '@/store/appStore';
 import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { isGtmUnlockedBySprint } from '@/lib/sprint-unlock';
 
-type NavKey = 'dashboard'|'sprint'|'gtm'|'reports'|'meetings'|'books'|'myStartup'|'settings'|
+type NavKey = 'dashboard'|'sprint'|'gtm'|'reports'|'meetings'|'myStartup'|'settings'|
               'managerPanel'|'schedule'|'analytics'|'superAdmin'|'gtmManager'|'sprintManager'|'progressTracker';
 
 const USER_NAV: { key: NavKey; href: string; icon: React.ReactNode }[] = [
@@ -46,7 +48,6 @@ const NAV_LABELS: Record<NavKey, Record<string, string>> = {
   gtm:           { uz: 'GTM',         ru: 'GTM',              en: 'GTM'            },
   reports:       { uz: 'Hisobotlar',  ru: 'Отчёты',           en: 'Reports'        },
   meetings:      { uz: 'Uchrashuvlar',ru: 'Встречи',           en: 'Meetings'       },
-  books:         { uz: 'Kitoblar',    ru: 'Книги',             en: 'Books'          },
   myStartup:     { uz: 'Startapim',   ru: 'Мой стартап',      en: 'My Startup'     },
   settings:      { uz: 'Sozlamalar',  ru: 'Настройки',         en: 'Settings'       },
   managerPanel:  { uz: 'Panel',       ru: 'Панель',            en: 'Panel'          },
@@ -69,8 +70,35 @@ export default function Sidebar() {
 
   const [showNotifs, setShowNotifs] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [hasStartup, setHasStartup] = useState(true);
+  const [gtmUnlocked, setGtmUnlocked] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (role !== 'user') return;
+
+    const load = async () => {
+      try {
+        const [startupRes, progressRes, taskRes] = await Promise.all([
+          axios.get('/api/startups?limit=1'),
+          axios.get('/api/sprints'),
+          axios.get('/api/sprint-tasks'),
+        ]);
+        const startup = startupRes.data.startups?.[0] ?? null;
+        setHasStartup(Boolean(startup));
+        setGtmUnlocked(
+          Boolean(startup?.status === 'active') &&
+            isGtmUnlockedBySprint(taskRes.data.tasks ?? [], progressRes.data.tasks ?? [])
+        );
+      } catch {
+        setHasStartup(false);
+        setGtmUnlocked(false);
+      }
+    };
+
+    load();
+  }, [role]);
 
   const unread = notifications.filter(n => !n.read).length;
   const currentLangLabel = lang === 'uz' ? 'UZB' : lang === 'ru' ? 'RUS' : 'ENG';
@@ -86,11 +114,27 @@ export default function Sidebar() {
   const open = mounted && _hydrated ? sidebarOpen : true;
   const w = open ? 240 : 64;
 
-  const NavLink = ({ item }: { item: { key: NavKey; href: string; icon: React.ReactNode } }) => (
-    <Link href={item.href}>
+  const isUserLockedItem = (item: { key: NavKey; href: string }) => {
+    if (role !== 'user') return false;
+    if (!hasStartup) return !['dashboard', 'settings'].includes(item.key);
+    if (item.key === 'gtm' && !gtmUnlocked) return true;
+    return false;
+  };
+
+  const NavLink = ({ item }: { item: { key: NavKey; href: string; icon: React.ReactNode } }) => {
+    const disabled = isUserLockedItem(item);
+
+    return (
+    <Link href={disabled ? '/dashboard' : item.href}>
       <div
         className={`sidebar-link ${isActive(item.href) ? 'active' : ''}`}
-        style={{ justifyContent: open ? 'flex-start' : 'center', padding: open ? '10px 12px' : '12px' }}
+        style={{
+          justifyContent: open ? 'flex-start' : 'center',
+          padding: open ? '10px 12px' : '12px',
+          opacity: disabled ? 0.45 : 1,
+          filter: disabled ? 'grayscale(0.9)' : 'none',
+          pointerEvents: disabled ? 'auto' : 'auto',
+        }}
         title={!open ? label(item.key) : undefined}
       >
         <span className="flex-shrink-0">{item.icon}</span>
@@ -98,7 +142,7 @@ export default function Sidebar() {
         {open && isActive(item.href) && <ChevronRight size={13} className="ml-auto flex-shrink-0" />}
       </div>
     </Link>
-  );
+  )};
 
   const Section = ({ title, items }: { title: string; items: typeof MGR_NAV }) => (
     <>

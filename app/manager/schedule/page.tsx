@@ -335,8 +335,8 @@ export default function ManagerSchedulePage() {
               <li>• Founders see your available days and time slots in a Calendly-style calendar</li>
               <li>• Each slot is <strong>{schedule.slotDuration} minutes</strong> long</li>
               <li>• Already-booked slots are automatically hidden from founders</li>
-              <li>• A Google Meet link is auto-generated when a meeting is confirmed</li>
-              <li>• Founders must provide their startup name and meeting topic when booking</li>
+              <li>• A valid meeting link is generated automatically when a meeting is confirmed</li>
+              <li>• Founders only enter the meeting topic when booking</li>
             </ul>
           </div>
         </div>

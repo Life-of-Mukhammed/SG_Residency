@@ -11,6 +11,15 @@ const startupUpdateSchema = z.object({
   managerId: z.string().optional(),
 }).strict();
 
+const startupOwnerUpdateSchema = z.object({
+  startup_name: z.string().min(1).optional(),
+  pitch_deck: z.string().optional(),
+  mrr: z.coerce.number().min(0).optional(),
+  users_count: z.coerce.number().min(0).optional(),
+  investment_raised: z.coerce.number().min(0).optional(),
+  team_size: z.coerce.number().min(1).optional(),
+}).strict();
+
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
@@ -44,19 +53,39 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const user = session.user as { id: string; role: string };
-    if (!['manager', 'super_admin'].includes(user.role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const body = await req.json();
-    const parsed = startupUpdateSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid update payload' }, { status: 400 });
-    }
     await connectDB();
 
     const current = await Startup.findById(params.id).lean();
     if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+    if (user.role === 'user') {
+      if (String(current.userId) !== user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      const parsed = startupOwnerUpdateSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ error: 'Invalid update payload' }, { status: 400 });
+      }
+
+      const startup = await Startup.findByIdAndUpdate(
+        params.id,
+        { $set: parsed.data },
+        { new: true }
+      ).populate('userId', 'name surname email').lean();
+
+      return NextResponse.json({ startup });
+    }
+
+    if (!['manager', 'super_admin'].includes(user.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const parsed = startupUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid update payload' }, { status: 400 });
+    }
 
     const patch: Record<string, unknown> = { ...parsed.data };
     if (parsed.data.status === 'active' && !current.managerId) {

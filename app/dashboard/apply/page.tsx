@@ -113,7 +113,7 @@ export default function ApplyPage() {
                 <div><label className="label">Last Name *</label><input value={form.surname} onChange={set('surname')} className="input" placeholder="Karimova" /><Err f="surname" /></div>
               </div>
               <div><label className="label">Gmail Address *</label><input type="email" value={form.gmail} onChange={set('gmail')} className="input" placeholder="you@gmail.com" /><Err f="gmail" /></div>
-              <div><label className="label">Founder Name (as displayed) *</label><input value={form.founder_name} onChange={set('founder_name')} className="input" placeholder="Aisha Karimova" /><Err f="founder_name" /></div>
+              <div><label className="label">Your role in this startup *</label><input value={form.founder_name} onChange={set('founder_name')} className="input" placeholder="CEO / Founder / CTO" /><Err f="founder_name" /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="label">Phone Number *</label><input value={form.phone} onChange={set('phone')} className="input" placeholder="+998 90 123 45 67" /><Err f="phone" /></div>
                 <div><label className="label">Telegram Username *</label><input value={form.telegram} onChange={set('telegram')} className="input" placeholder="@username" /><Err f="telegram" /></div>

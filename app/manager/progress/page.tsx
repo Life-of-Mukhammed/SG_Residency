@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
 import { CheckCircle, Clock, TrendingUp, MessageSquare, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
@@ -14,7 +15,7 @@ interface ProgressData {
   completed:    number;
   pct:          number;
   lastActivity: { taskId: string; comment: string; completedAt: string } | null;
-  recentTasks:  any[];
+    recentTasks:  any[];
 }
 
 export default function ProgressPage() {
@@ -32,6 +33,9 @@ export default function ProgressPage() {
     lastTask:    { uz: "Oxirgi vazifa",          ru: "Последняя задача",       en: "Last task"          },
     comment:     { uz: "Kommentariya",           ru: "Комментарий",            en: "Comment"            },
     recentTasks: { uz: "So'nggi vazifalar",      ru: "Недавние задачи",        en: "Recent tasks"       },
+    review:      { uz: "Ko'rildi deb belgilash", ru: "Отметить просмотренным", en: "Mark as reviewed"  },
+    reviewed:    { uz: "Ko'rildi",               ru: "Проверено",              en: "Reviewed"           },
+    reviewSaved: { uz: "Tasdiqlandi",            ru: "Подтверждено",           en: "Confirmed"          },
   };
   const l = (k: keyof typeof labels) => labels[k][lang] ?? labels[k].en;
 
@@ -45,6 +49,17 @@ export default function ProgressPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const markReviewed = async (taskProgressId: string) => {
+    try {
+      await axios.patch('/api/progress', { taskProgressId, reviewed: true });
+      toast.success(l('reviewSaved'));
+      await load();
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed');
+    }
+  };
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => {
@@ -221,6 +236,15 @@ export default function ProgressPage() {
                                     <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
                                       Q{t.quarter} M{t.month}
                                     </span>
+                                    <span
+                                      className="text-[10px] px-2 py-0.5 rounded-full"
+                                      style={{
+                                        background: t.reviewed ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)',
+                                        color: t.reviewed ? '#10b981' : '#f59e0b',
+                                      }}
+                                    >
+                                      {t.reviewed ? l('reviewed') : l('review')}
+                                    </span>
                                   </div>
                                   {t.comment && (
                                     <p className="text-xs mt-0.5 italic" style={{ color: 'var(--text-muted)' }}>
@@ -228,9 +252,20 @@ export default function ProgressPage() {
                                     </p>
                                   )}
                                 </div>
-                                <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
-                                  {t.completedAt ? format(new Date(t.completedAt), 'MMM d') : ''}
-                                </span>
+                                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                                    {t.completedAt ? format(new Date(t.completedAt), 'MMM d') : ''}
+                                  </span>
+                                  {!t.reviewed && (
+                                    <button
+                                      onClick={() => markReviewed(t._id)}
+                                      className="text-[11px] px-2.5 py-1 rounded-lg"
+                                      style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--accent)' }}
+                                    >
+                                      {l('review')}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             ))}
                           </div>

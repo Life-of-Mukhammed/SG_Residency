@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
 import { useSession } from 'next-auth/react';
 import { Calendar, Video, Clock, ChevronLeft, ChevronRight, Check, Plus, X, Trash2 } from 'lucide-react';
-import { format, addDays, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isBefore, startOfDay, addMonths, subMonths } from 'date-fns';
+import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isBefore, startOfDay, addMonths, subMonths } from 'date-fns';
 
 const DAYS_SHORT = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
 
@@ -27,7 +27,7 @@ export default function MeetingsPage() {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [managerId, setManagerId]       = useState<string>('');
   const [bookModal, setBookModal]       = useState<{ date: Date; time: string } | null>(null);
-  const [bookForm, setBookForm]         = useState({ startupName: '', topic: '', meetingType: 'online', officeAddress: '' });
+  const [bookForm, setBookForm]         = useState({ topic: '', meetingType: 'online', officeAddress: '' });
   const [booking, setBooking]           = useState(false);
   const [confirmedMeeting, setConfirmedMeeting] = useState<any>(null);
 
@@ -76,14 +76,13 @@ export default function MeetingsPage() {
         date:        dateStr,
         time:        bookModal.time,
         topic:       bookForm.topic,
-        startupName: bookForm.startupName,
         managerId,
         meetingType: bookForm.meetingType,
         officeAddress: bookForm.officeAddress,
       });
       setConfirmedMeeting(res.data.meeting);
       setBookModal(null);
-      setBookForm({ startupName: '', topic: '', meetingType: 'online', officeAddress: '' });
+      setBookForm({ topic: '', meetingType: 'online', officeAddress: '' });
       setSlots(prev => prev.filter(s => s !== bookModal.time));
       fetchMeetings();
       toast.success('Meeting booked! 🎉');
@@ -95,8 +94,9 @@ export default function MeetingsPage() {
   const deleteMeeting = async (id: string) => {
     try {
       await axios.delete(`/api/meetings/${id}`);
-      toast.success('Deleted');
+      toast.success(isManager ? 'Deleted' : 'Cancelled');
       fetchMeetings();
+      setConfirmedMeeting(null);
     } catch { toast.error('Failed to delete'); }
   };
 
@@ -159,7 +159,7 @@ export default function MeetingsPage() {
                 </div>
                 <div className="flex items-center gap-2 mb-4">
                   <Video size={16} style={{ color: 'var(--text-muted)' }} />
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Google Meet link provided upon confirmation</span>
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Meeting link opens after booking confirmation</span>
                 </div>
                 <div className="h-px w-full mb-4" style={{ background: 'var(--border)' }} />
                 <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Program Manager Session</p>
@@ -181,11 +181,24 @@ export default function MeetingsPage() {
                           {format(new Date(m.scheduledAt), 'EEE, MMM d · HH:mm')}
                         </p>
                         <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{m.topic}</p>
-                        <a href={m.meetLink} target="_blank" rel="noreferrer"
-                          className="inline-flex items-center gap-1 mt-2 text-xs"
-                          style={{ color: 'var(--accent)' }}>
-                          <Video size={11} /> Join Google Meet
-                        </a>
+                        {m.meetingType === 'online' ? (
+                          <a href={m.meetLink} target="_blank" rel="noreferrer"
+                            className="inline-flex items-center gap-1 mt-2 text-xs"
+                            style={{ color: 'var(--accent)' }}>
+                            <Video size={11} /> Open meeting link
+                          </a>
+                        ) : (
+                          <p className="inline-flex items-center gap-1 mt-2 text-xs" style={{ color: 'var(--accent)' }}>
+                            <Video size={11} /> {m.meetLink}
+                          </p>
+                        )}
+                        <button
+                          onClick={() => deleteMeeting(m._id)}
+                          className="inline-flex items-center gap-1 mt-2 ml-3 text-xs"
+                          style={{ color: '#ef4444' }}
+                        >
+                          <X size={11} /> Cancel booking
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -328,15 +341,6 @@ export default function MeetingsPage() {
 
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="label">Startup Name</label>
-                  <input
-                    value={bookForm.startupName}
-                    onChange={e => setBookForm(p => ({ ...p, startupName: e.target.value }))}
-                    className="input"
-                    placeholder="Your startup name"
-                  />
-                </div>
-                <div>
                   <label className="label">Meeting Topic *</label>
                   <textarea
                     value={bookForm.topic}
@@ -376,13 +380,22 @@ export default function MeetingsPage() {
                 {format(new Date(confirmedMeeting.scheduledAt), 'EEEE, MMMM d · HH:mm')} · 30 min
               </p>
               <div className="p-4 rounded-xl mb-6 text-left" style={{ background: 'var(--bg-secondary)' }}>
-                <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Google Meet Link</p>
-                <a href={confirmedMeeting.meetLink} target="_blank" rel="noreferrer"
-                  className="text-sm break-all" style={{ color: 'var(--accent)' }}>
-                  {confirmedMeeting.meetLink}
-                </a>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Meeting link</p>
+                {confirmedMeeting.meetingType === 'online' ? (
+                  <a href={confirmedMeeting.meetLink} target="_blank" rel="noreferrer"
+                    className="text-sm break-all" style={{ color: 'var(--accent)' }}>
+                    {confirmedMeeting.meetLink}
+                  </a>
+                ) : (
+                  <p className="text-sm break-all" style={{ color: 'var(--accent)' }}>
+                    {confirmedMeeting.meetLink}
+                  </p>
+                )}
               </div>
-              <button onClick={() => setConfirmedMeeting(null)} className="btn-primary w-full">Done</button>
+              <div className="flex gap-3">
+                <button onClick={() => deleteMeeting(confirmedMeeting._id)} className="btn-secondary flex-1">Cancel booking</button>
+                <button onClick={() => setConfirmedMeeting(null)} className="btn-primary flex-1">Done</button>
+              </div>
             </div>
           </div>
         )}

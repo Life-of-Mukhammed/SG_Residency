@@ -5,12 +5,8 @@ import connectDB from '@/lib/db';
 import Meeting from '@/models/Meeting';
 import Notification from '@/models/Notification';
 import { getActiveStartup } from '@/lib/access';
-
-function genMeetLink(): string {
-  const c = 'abcdefghijklmnopqrstuvwxyz';
-  const s = (n: number) => Array.from({ length: n }, () => c[Math.floor(Math.random() * c.length)]).join('');
-  return `https://meet.google.com/${s(3)}-${s(4)}-${s(3)}`;
-}
+import User from '@/models/User';
+import { createGoogleMeetEvent, isGoogleMeetConfigured } from '@/lib/google-calendar';
 
 export async function GET(req: NextRequest) {
   try {
@@ -58,7 +54,7 @@ export async function POST(req: NextRequest) {
 
     // USER BOOKING
     if (user.role === 'user') {
-      const { date, time, topic, startupName, managerId, meetingType, officeAddress } = body;
+      const { date, time, topic, managerId, meetingType, officeAddress } = body;
       if (!date || !time || !topic || !managerId) {
         return NextResponse.json({ error: 'date, time, topic and managerId are required' }, { status: 400 });
       }
@@ -80,15 +76,44 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Your startup must be approved before booking meetings.' }, { status: 403 });
       }
 
+      const startupName = (startup as any)?.startup_name || 'Startup meeting';
+      const manager = await User.findById(managerId).select('email').lean();
+      let meetLink = `Offline meeting - ${officeAddress || 'Office'}`;
+      let googleEventId: string | undefined;
+
+      if (meetingType !== 'offline') {
+        if (!isGoogleMeetConfigured()) {
+          return NextResponse.json({ error: 'Google Meet is not configured yet. Add Google Calendar credentials first.' }, { status: 500 });
+        }
+        
+        try {
+          const conference = await createGoogleMeetEvent({
+            title: `${startupName} Meeting`,
+            topic,
+            scheduledAt,
+            duration: 30,
+            founderEmail: session.user?.email || undefined,
+            managerEmail: (manager as any)?.email,
+          });
+          meetLink = conference.meetLink;
+          googleEventId = conference.eventId;
+        } catch (googleError: any) {
+          console.error('[POST /api/meetings] Google Calendar error:', googleError?.message || googleError);
+          // Fallback: create meeting without Google Meet
+          meetLink = `Meeting scheduled for ${date} at ${time}. Google Meet link will be provided separately.`;
+        }
+      }
+
       const meeting = await Meeting.create({
         managerId,
         userId:        user.id,
         startupId:     startup ? (startup as any)._id : undefined,
-        title:         startupName || (startup as any)?.startup_name || 'Meeting',
+        title:         startupName,
         topic,
         scheduledAt,
         duration:      30,
-        meetLink:      meetingType === 'offline' ? 'Oflayn - ' + (officeAddress || 'Ofisda') : genMeetLink(),
+        meetLink,
+        googleEventId,
         meetingType:   meetingType || 'online',
         officeAddress: meetingType === 'offline' ? officeAddress : undefined,
         status:        'booked',
@@ -97,7 +122,7 @@ export async function POST(req: NextRequest) {
       await Notification.create({
         managerId,
         title: 'Yangi uchrashuv!',
-        message: `${startupName || 'Startup'} — ${date} ${time} da uchrashuv belgiladi: "${topic}"`,
+        message: `${startupName} — ${date} ${time} da uchrashuv belgiladi: "${topic}"`,
         type: 'meeting',
       });
 
@@ -120,7 +145,7 @@ export async function POST(req: NextRequest) {
         title:       body.title,
         scheduledAt: new Date(body.scheduledAt),
         duration:    body.duration || 30,
-        meetLink:    genMeetLink(),
+        meetLink:    'Google Meet will be created after founder books this slot',
         meetingType: 'online',
         status:      'available',
       });
@@ -130,6 +155,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   } catch (err) {
     console.error('[POST /api/meetings]', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -19,7 +19,7 @@ import Header from '@/components/dashboard/Header';
 import { useAppStore } from '@/store/appStore';
 
 interface ProgressMap {
-  [taskId: string]: { completed: boolean; comment: string };
+  [taskId: string]: { completed: boolean; comment: string; reviewed?: boolean; reviewedAt?: string };
 }
 
 interface CustomTask {
@@ -39,6 +39,7 @@ interface PendingTask {
 
 type GroupedQuarter = {
   quarter: number;
+  name: string;
   months: Array<{ month: number; tasks: CustomTask[] }>;
 };
 
@@ -52,6 +53,7 @@ export default function SprintPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [commentModal, setCommentModal] = useState<PendingTask | null>(null);
   const [comment, setComment] = useState('');
+  const [config, setConfig] = useState<any>(null);
 
   const L = {
     title: { uz: 'Sprint', ru: 'Спринт', en: 'Sprint' },
@@ -76,6 +78,8 @@ export default function SprintPage() {
     cancel: { uz: 'Bekor qilish', ru: 'Отмена', en: 'Cancel' },
     complete: { uz: 'Yakunlash', ru: 'Завершить', en: 'Complete' },
     custom: { uz: 'Custom', ru: 'Custom', en: 'Custom' },
+    reviewed: { uz: 'Admin ko‘rdi', ru: 'Проверено админом', en: 'Reviewed by admin' },
+    pendingReview: { uz: 'Admin ko‘rib chiqadi', ru: 'Ожидает проверки', en: 'Waiting for admin review' },
     quarter: { uz: 'Chorak', ru: 'Квартал', en: 'Quarter' },
     month: { uz: 'Oy', ru: 'Месяц', en: 'Month' },
     emptyTitle: {
@@ -105,20 +109,27 @@ export default function SprintPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [progressRes, startupRes, customRes] = await Promise.all([
+        const [progressRes, startupRes, customRes, configRes] = await Promise.all([
           axios.get('/api/sprints'),
           axios.get('/api/startups?limit=1'),
           axios.get('/api/sprint-tasks'),
+          axios.get('/api/sprint-config'),
         ]);
 
         const map: ProgressMap = {};
         (progressRes.data.tasks ?? []).forEach((item: any) => {
-          map[item.taskId] = { completed: item.completed, comment: item.comment || '' };
+          map[item.taskId] = {
+            completed: item.completed,
+            comment: item.comment || '',
+            reviewed: item.reviewed || false,
+            reviewedAt: item.reviewedAt,
+          };
         });
 
         setProgress(map);
         setStartup(startupRes.data.startups?.[0] ?? null);
         setCustom(customRes.data.tasks ?? []);
+        setConfig(configRes.data.config ?? null);
       } catch (error) {
         console.error(error);
       } finally {
@@ -144,11 +155,12 @@ export default function SprintPage() {
       .sort((a, b) => a[0] - b[0])
       .map(([quarter, months]) => ({
         quarter,
+        name: config?.quarters?.find((item: any) => item.quarter === quarter)?.name || `Q${quarter}`,
         months: Array.from(months.entries())
           .sort((a, b) => a[0] - b[0])
           .map(([month, tasks]) => ({ month, tasks })),
       }));
-  }, [custom]);
+  }, [config, custom]);
 
   useEffect(() => {
     if (grouped.length === 0) return;
@@ -312,7 +324,7 @@ export default function SprintPage() {
                       </div>
                       <div>
                         <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                          {t('quarter')} {group.quarter}
+                          {group.name}
                         </p>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                           {qDone}/{qTasks.length} · {qPct}%
@@ -351,7 +363,7 @@ export default function SprintPage() {
                               <div className="flex items-center gap-2">
                                 <Target size={14} style={{ color: 'var(--accent)' }} />
                                 <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-                                  {t('month')} {monthGroup.month}
+                                  {config?.quarters?.find((item: any) => item.quarter === group.quarter)?.months?.find((item: any) => item.month === monthGroup.month)?.name || `${t('month')} ${monthGroup.month}`}
                                 </span>
                                 <span
                                   className="text-xs px-2 py-0.5 rounded-full"
@@ -370,6 +382,7 @@ export default function SprintPage() {
                                   const done = !!progress[taskId]?.completed;
                                   const isSaving = saving === taskId;
                                   const cmt = progress[taskId]?.comment;
+                                  const reviewed = !!progress[taskId]?.reviewed;
 
                                   return (
                                     <div
@@ -438,6 +451,18 @@ export default function SprintPage() {
                                             style={{ background: 'rgba(16,185,129,0.08)', color: '#10b981' }}
                                           >
                                             💬 &ldquo;{cmt}&rdquo;
+                                          </div>
+                                        )}
+                                        {done && (
+                                          <div
+                                            className="inline-flex items-center gap-1.5 mt-2 text-xs px-2 py-1 rounded-full"
+                                            style={{
+                                              background: reviewed ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)',
+                                              color: reviewed ? '#10b981' : '#f59e0b',
+                                            }}
+                                          >
+                                            <CheckCircle size={11} />
+                                            {reviewed ? t('reviewed') : t('pendingReview')}
                                           </div>
                                         )}
                                       </div>

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth-options';
 import Sidebar from '@/components/dashboard/Sidebar';
 import DynamicMain from '@/components/dashboard/DynamicMain';
+import ResidencyAccessGate from '@/components/dashboard/ResidencyAccessGate';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <DynamicMain>{children}</DynamicMain>
+      <DynamicMain>
+        {children}
+        <ResidencyAccessGate />
+      </DynamicMain>
     </div>
   );
 }

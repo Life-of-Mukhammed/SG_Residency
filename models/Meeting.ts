@@ -9,6 +9,7 @@ export interface IMeeting extends Document {
   scheduledAt: Date;
   duration: number;
   meetLink: string;
+  googleEventId?: string;
   meetingType: 'online' | 'offline';
   officeAddress?: string;
   status: 'available' | 'booked' | 'completed' | 'cancelled';
@@ -27,6 +28,7 @@ const MeetingSchema = new Schema<IMeeting>(
     scheduledAt:   { type: Date, required: true },
     duration:      { type: Number, default: 30 },
     meetLink:      { type: String, required: true },
+    googleEventId: { type: String },
     meetingType:   { type: String, enum: ['online', 'offline'], default: 'online' },
     officeAddress: { type: String },
     status:        { type: String, enum: ['available','booked','completed','cancelled'], default: 'available' },

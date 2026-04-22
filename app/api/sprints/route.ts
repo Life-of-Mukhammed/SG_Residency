@@ -60,6 +60,9 @@ export async function POST(req: NextRequest) {
         completed,
         comment:     comment || '',
         completedAt: completed ? new Date() : undefined,
+        reviewed:    false,
+        reviewedBy:  undefined,
+        reviewedAt:  undefined,
       },
       { upsert: true, new: true }
     ).lean();

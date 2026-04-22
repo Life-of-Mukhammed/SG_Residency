@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
-import { Plus, Trash2, Edit2, X, Target, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Target, ChevronDown, ChevronRight, Save } from 'lucide-react';
 import { useAppStore } from '@/store/appStore';
 
 interface CustomTask {
@@ -16,34 +16,37 @@ interface CustomTask {
   createdBy?: { name: string; surname: string };
 }
 
-const QUARTERS = [
-  { q: 1, label: 'Q1 — Foundation', months: ['Month 1 — Discovery', 'Month 2 — Validation', 'Month 3 — Build'] },
-  { q: 2, label: 'Q2 — Growth', months: ['Month 4 — Traction', 'Month 5 — Revenue', 'Month 6 — Scale Prep'] },
-  { q: 3, label: 'Q3 — Scale', months: ['Month 7 — Investment', 'Month 8 — Team', 'Month 9 — Operations'] },
-  { q: 4, label: 'Q4 — Dominate', months: ['Month 10 — Leadership', 'Month 11 — Consolidation', 'Month 12 — Next Level'] },
-];
+interface SprintConfig {
+  quarters: Array<{
+    quarter: number;
+    name: string;
+    months: Array<{ month: number; name: string }>;
+  }>;
+}
 
 const EMPTY = { quarter: 1, month: 1, title: '', description: '' };
 
 export default function ManagerSprintPage() {
   const { lang } = useAppStore();
   const [tasks, setTasks] = useState<CustomTask[]>([]);
+  const [config, setConfig] = useState<SprintConfig>({ quarters: [] });
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ q1: true });
   const [modal, setModal] = useState<'add' | 'edit' | null>(null);
   const [editTask, setEditTask] = useState<CustomTask | null>(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [savingConfig, setSavingConfig] = useState(false);
 
   const T = {
     title: { uz: 'Sprint Menejeri', ru: 'Sprint Менеджер', en: 'Sprint Manager' },
-    subtitle: { uz: 'Founderlar uchun sprint vazifalarini boshqaring', ru: 'Управляйте sprint задачами для фаундеров', en: 'Manage sprint tasks for founders' },
-    customTasks: { uz: "Qo'shimcha vazifalar", ru: 'Дополнительные задачи', en: 'Custom tasks added' },
-    tip: { uz: "Bu yerda qo'shilgan vazifalar founder sprint sahifasida static roadmap bilan birga ko'rinadi.", ru: 'Добавленные здесь задачи показываются у фаундеров вместе со статической дорожной картой.', en: 'Tasks added here appear on the founder sprint page alongside the static roadmap.' },
+    subtitle: { uz: 'Quarter, oy nomlari va sprint tasklarni boshqaring', ru: 'Управляйте кварталами, названиями месяцев и задачами спринта', en: 'Manage quarter names, month names and sprint tasks' },
+    customTasks: { uz: "Sprint vazifalari", ru: 'Sprint задачи', en: 'Sprint tasks' },
+    tip: { uz: "Bu yerda quarter va oy nomlarini o'zgartirib, founderlar ko'radigan sprint strukturasini moslashtirasiz.", ru: 'Здесь вы меняете названия кварталов и месяцев для фаундеров.', en: 'Customize the quarter and month names founders will see.' },
     addTask: { uz: "Vazifa qo'shish", ru: 'Добавить задачу', en: 'Add Task' },
     editTask: { uz: 'Vazifani tahrirlash', ru: 'Редактировать задачу', en: 'Edit Task' },
-    quarter: { uz: 'Kvartal', ru: 'Квартал', en: 'Quarter' },
-    month: { uz: 'Oy', ru: 'Месяц', en: 'Month' },
+    quarter: { uz: 'Quarter nomi', ru: 'Название квартала', en: 'Quarter name' },
+    month: { uz: 'Oy nomi', ru: 'Название месяца', en: 'Month name' },
     taskTitle: { uz: 'Vazifa nomi', ru: 'Название задачи', en: 'Task Title' },
     description: { uz: 'Tavsif', ru: 'Описание', en: 'Description' },
     taskTitleReq: { uz: 'Vazifa nomi kerak', ru: 'Название задачи обязательно', en: 'Title is required' },
@@ -51,18 +54,24 @@ export default function ManagerSprintPage() {
     added: { uz: "Qo'shildi", ru: 'Добавлено', en: 'Added!' },
     deleted: { uz: "O'chirildi", ru: 'Удалено', en: 'Deleted' },
     failed: { uz: 'Xatolik yuz berdi', ru: 'Произошла ошибка', en: 'Failed' },
-    noTasks: { uz: "Hozircha vazifa yo'q", ru: 'Пока задач нет', en: 'No custom tasks yet' },
+    noTasks: { uz: "Hozircha vazifa yo'q", ru: 'Пока задач нет', en: 'No tasks yet' },
     by: { uz: 'muallif', ru: 'автор', en: 'by' },
     cancel: { uz: 'Bekor qilish', ru: 'Отмена', en: 'Cancel' },
     saveChanges: { uz: "O'zgarishlarni saqlash", ru: 'Сохранить изменения', en: 'Save Changes' },
+    saveNames: { uz: 'Nomlarni saqlash', ru: 'Сохранить названия', en: 'Save names' },
+    namesSaved: { uz: 'Nomlar saqlandi', ru: 'Названия сохранены', en: 'Names saved' },
   };
   const t = (key: keyof typeof T) => T[key][lang] ?? T[key].en;
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/sprint-tasks');
-      setTasks(res.data.tasks ?? []);
+      const [tasksRes, configRes] = await Promise.all([
+        axios.get('/api/sprint-tasks'),
+        axios.get('/api/sprint-config'),
+      ]);
+      setTasks(tasksRes.data.tasks ?? []);
+      setConfig(configRes.data.config ?? { quarters: [] });
     } catch (e) {
       console.error(e);
     } finally {
@@ -109,6 +118,18 @@ export default function ManagerSprintPage() {
     }
   };
 
+  const saveConfig = async () => {
+    setSavingConfig(true);
+    try {
+      await axios.patch('/api/sprint-config', { quarters: config.quarters });
+      toast.success(t('namesSaved'));
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || t('failed'));
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
   const remove = async (id: string) => {
     try {
       await axios.delete(`/api/sprint-tasks/${id}`);
@@ -121,11 +142,32 @@ export default function ManagerSprintPage() {
 
   const getTasksForMonth = (quarter: number, month: number) => tasks.filter((task) => task.quarter === quarter && task.month === month);
 
+  const updateQuarterName = (quarter: number, value: string) => {
+    setConfig((prev) => ({
+      quarters: prev.quarters.map((item) => item.quarter === quarter ? { ...item, name: value } : item),
+    }));
+  };
+
+  const updateMonthName = (quarter: number, month: number, value: string) => {
+    setConfig((prev) => ({
+      quarters: prev.quarters.map((item) =>
+        item.quarter === quarter
+          ? {
+              ...item,
+              months: item.months.map((monthItem) =>
+                monthItem.month === month ? { ...monthItem, name: value } : monthItem
+              ),
+            }
+          : item
+      ),
+    }));
+  };
+
   return (
     <div className="animate-fade-in">
       <Header title={t('title')} subtitle={t('subtitle')} />
       <div className="p-8 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="card py-3 px-5 flex items-center gap-3">
             <Target size={18} style={{ color: 'var(--accent)' }} />
             <div>
@@ -133,22 +175,28 @@ export default function ManagerSprintPage() {
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('customTasks')}</p>
             </div>
           </div>
-          <button onClick={() => openAdd()} className="btn-primary flex items-center gap-2">
-            <Plus size={15} /> {t('addTask')}
-          </button>
+          <div className="flex items-center gap-3">
+            <button onClick={saveConfig} className="btn-secondary flex items-center gap-2" disabled={savingConfig}>
+              {savingConfig ? <div className="w-4 h-4 border-2 border-slate-400/30 border-t-slate-500 rounded-full animate-spin" /> : <Save size={15} />}
+              {t('saveNames')}
+            </button>
+            <button onClick={() => openAdd()} className="btn-primary flex items-center gap-2">
+              <Plus size={15} /> {t('addTask')}
+            </button>
+          </div>
         </div>
 
         <div className="card p-4 text-sm" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid var(--border)' }}>
           <p style={{ color: 'var(--text-secondary)' }}>{t('tip')}</p>
         </div>
 
-        {QUARTERS.map(({ q, label, months }) => {
-          const qKey = `q${q}`;
+        {config.quarters.map((quarterItem) => {
+          const qKey = `q${quarterItem.quarter}`;
           const qOpen = expanded[qKey];
-          const qTotal = tasks.filter((task) => task.quarter === q).length;
+          const qTotal = tasks.filter((task) => task.quarter === quarterItem.quarter).length;
 
           return (
-            <div key={q} className="card p-0 overflow-hidden">
+            <div key={qKey} className="card p-0 overflow-hidden">
               <button
                 onClick={() => toggle(qKey)}
                 className="w-full flex items-center justify-between p-5 text-left"
@@ -156,32 +204,31 @@ export default function ManagerSprintPage() {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold text-white" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
-                    Q{q}
+                    Q{quarterItem.quarter}
                   </div>
                   <div>
-                    <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{label}</p>
+                    <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{quarterItem.name}</p>
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{qTotal} {t('customTasks').toLowerCase()}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); openAdd(q, 1); }}
-                    className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg"
-                    style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--accent)' }}
-                  >
-                    <Plus size={12} /> {t('addTask')}
-                  </button>
-                  {qOpen ? <ChevronDown size={16} style={{ color: 'var(--text-muted)' }} /> : <ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />}
-                </div>
+                {qOpen ? <ChevronDown size={16} style={{ color: 'var(--text-muted)' }} /> : <ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />}
               </button>
 
               {qOpen && (
                 <div className="border-t px-5 pb-5 pt-4 space-y-4" style={{ borderColor: 'var(--border)' }}>
-                  {months.map((monthLabel, index) => {
-                    const month = index + 1;
-                    const mKey = `q${q}m${month}`;
+                  <div className="card" style={{ background: 'var(--bg-secondary)' }}>
+                    <label className="label">{t('quarter')}</label>
+                    <input
+                      value={quarterItem.name}
+                      onChange={(e) => updateQuarterName(quarterItem.quarter, e.target.value)}
+                      className="input"
+                    />
+                  </div>
+
+                  {quarterItem.months.map((monthItem) => {
+                    const mKey = `q${quarterItem.quarter}m${monthItem.month}`;
                     const mOpen = expanded[mKey] !== false;
-                    const monthTasks = getTasksForMonth(q, month);
+                    const monthTasks = getTasksForMonth(quarterItem.quarter, monthItem.month);
 
                     return (
                       <div key={mKey} className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
@@ -192,14 +239,14 @@ export default function ManagerSprintPage() {
                         >
                           <div className="flex items-center gap-2">
                             <Target size={14} style={{ color: 'var(--accent)' }} />
-                            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{monthLabel}</span>
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{monthItem.name}</span>
                             <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--accent)' }}>
                               {monthTasks.length}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={(e) => { e.stopPropagation(); openAdd(q, month); }}
+                              onClick={(e) => { e.stopPropagation(); openAdd(quarterItem.quarter, monthItem.month); }}
                               className="w-6 h-6 rounded-full flex items-center justify-center"
                               style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--accent)' }}
                             >
@@ -211,6 +258,15 @@ export default function ManagerSprintPage() {
 
                         {mOpen && (
                           <div>
+                            <div className="px-4 pt-4">
+                              <label className="label">{t('month')}</label>
+                              <input
+                                value={monthItem.name}
+                                onChange={(e) => updateMonthName(quarterItem.quarter, monthItem.month, e.target.value)}
+                                className="input"
+                              />
+                            </div>
+
                             {loading ? (
                               <div className="px-4 py-4"><div className="skeleton h-12 rounded-xl" /></div>
                             ) : monthTasks.length === 0 ? (
@@ -272,13 +328,15 @@ export default function ManagerSprintPage() {
                 <div>
                   <label className="label">{t('quarter')} *</label>
                   <select value={form.quarter} onChange={(e) => setForm((prev) => ({ ...prev, quarter: Number(e.target.value) }))} className="input text-sm">
-                    {[1, 2, 3, 4].map((quarter) => <option key={quarter} value={quarter}>Q{quarter}</option>)}
+                    {config.quarters.map((quarter) => <option key={quarter.quarter} value={quarter.quarter}>{quarter.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="label">{t('month')} *</label>
                   <select value={form.month} onChange={(e) => setForm((prev) => ({ ...prev, month: Number(e.target.value) }))} className="input text-sm">
-                    {[1, 2, 3].map((month) => <option key={month} value={month}>{t('month')} {month}</option>)}
+                    {(config.quarters.find((item) => item.quarter === form.quarter)?.months ?? []).map((month) => (
+                      <option key={month.month} value={month.month}>{month.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>

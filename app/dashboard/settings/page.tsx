@@ -269,22 +269,7 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <div className="card">
-            <div className="flex items-center gap-3 mb-5">
-              <Shield size={17} style={{ color: 'var(--accent)' }} />
-              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Role permissions</h3>
-            </div>
-            <div className="space-y-2">
-              {permissions.map(({ label, has }) => (
-                <div key={label} className="flex items-center justify-between py-2.5 border-b" style={{ borderColor: 'var(--border)' }}>
-                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{label}</span>
-                  <span className="text-xs font-semibold" style={{ color: has ? '#10b981' : '#64748b' }}>
-                    {has ? '✓ Allowed' : '✗ Locked'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          
         </div>
       </div>
     </div>
