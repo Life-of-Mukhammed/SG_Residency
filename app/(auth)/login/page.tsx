@@ -9,7 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Rocket, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAppStore } from '@/store/appStore';
 import { AuthPreferences } from '@/components/AuthPreferences';
 
@@ -164,11 +164,14 @@ export default function LoginPage() {
         <div className="hidden lg:flex flex-col justify-between p-10 xl:p-14">
           <div className="max-w-xl">
             <div className="inline-flex items-center gap-3 mb-8 rounded-2xl px-4 py-3" style={{ background: theme === 'light' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.06)', border: theme === 'light' ? '1px solid rgba(99,102,241,0.12)' : '1px solid rgba(255,255,255,0.08)' }}>
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #22d3ee, #6366f1)' }}>
-                <Rocket size={22} className="text-white" />
-              </div>
+              <img
+                src="/sg-logo.png"
+                alt="SG Residency"
+                className="w-12 h-12 rounded-2xl object-cover border"
+                style={{ borderColor: theme === 'light' ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.08)' }}
+              />
               <div>
-                <p className="text-lg font-bold" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>Residency</p>
+                <p className="text-lg font-bold" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>SG Residency</p>
                 <p className="text-xs" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.6)' : 'rgba(255,255,255,0.6)' }}>Startup Accelerator OS</p>
               </div>
             </div>

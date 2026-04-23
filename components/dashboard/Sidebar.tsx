@@ -218,9 +218,10 @@ export default function Sidebar() {
           {open ? (
             <div className="flex items-center gap-3 min-w-0 ml-1">
               <img
-                src="/sg-mark.svg"
+                src="/sg-logo.png"
                 alt="SG Residency"
-                className="w-9 h-9 rounded-2xl object-cover flex-shrink-0"
+                className="w-10 h-10 rounded-[18px] object-cover flex-shrink-0 border"
+                style={{ borderColor: theme === 'light' ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.1)' }}
               />
               <div className="min-w-0">
                 <p className="text-sm font-bold truncate" style={{ color: '#f8fafc' }}>
@@ -233,9 +234,10 @@ export default function Sidebar() {
             </div>
           ) : (
             <img
-              src="/sg-mark.svg"
+              src="/sg-logo.png"
               alt="SG Residency"
-              className="w-10 h-10 rounded-2xl object-cover"
+              className="w-10 h-10 rounded-[18px] object-cover border"
+              style={{ borderColor: theme === 'light' ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.1)' }}
             />
           )}
 

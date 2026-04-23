@@ -9,9 +9,12 @@ export const metadata: Metadata = {
   title: 'SG Residency — Accelerator Platform',
   description: 'Manage your startup accelerator program with ease',
   icons: {
-    icon: '/sg-mark.svg',
-    shortcut: '/sg-mark.svg',
-    apple: '/sg-mark.svg',
+    icon: [
+      { url: '/sg-logo.png', type: 'image/png', sizes: '512x512' },
+      { url: '/sg-mark.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/sg-logo.png',
+    apple: '/sg-logo.png',
   },
 };
 

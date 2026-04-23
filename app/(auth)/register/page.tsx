@@ -9,7 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Rocket, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAppStore } from '@/store/appStore';
 import { AuthPreferences } from '@/components/AuthPreferences';
 
@@ -111,6 +111,18 @@ export default function RegisterPage() {
       <div className="relative min-h-screen grid lg:grid-cols-[0.95fr_1.05fr]">
         <div className="hidden lg:flex items-end p-10 xl:p-14">
           <div className="max-w-xl">
+            <div className="inline-flex items-center gap-3 mb-8 rounded-2xl px-4 py-3" style={{ background: theme === 'light' ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.06)', border: theme === 'light' ? '1px solid rgba(99,102,241,0.12)' : '1px solid rgba(255,255,255,0.08)' }}>
+              <img
+                src="/sg-logo.png"
+                alt="SG Residency"
+                className="w-12 h-12 rounded-2xl object-cover border"
+                style={{ borderColor: theme === 'light' ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.08)' }}
+              />
+              <div>
+                <p className="text-lg font-bold" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>SG Residency</p>
+                <p className="text-xs" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.6)' : 'rgba(255,255,255,0.6)' }}>Startup Accelerator OS</p>
+              </div>
+            </div>
             <p className="text-xs uppercase tracking-[0.3em]" style={{ color: theme === 'light' ? '#059669' : '#6ee7b7' }}>Join residency</p>
             <h1 className="text-5xl font-bold leading-tight mt-4" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>Bitta account bilan founder workflow’ni to‘liq ishga tushiring.</h1>
             <div className="grid grid-cols-3 gap-4 mt-8">
