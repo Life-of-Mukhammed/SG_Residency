@@ -223,11 +223,11 @@ function LoginPageContent() {
             <p className="text-base mt-5 max-w-lg" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.72)' : 'rgba(255,255,255,0.7)' }}>Profil, residency approval, weekly reporting, meetings, sprint va GTM bir joyda boshqariladi.</p>
           </div>
           <div className="grid grid-cols-3 gap-4 max-w-xl">
-            {['Approval workflow', 'Manager visibility', 'Weekly execution'].map((item) => (
+            {/* {['Approval workflow', 'Manager visibility', 'Weekly execution'].map((item) => (
               <div key={item} className="rounded-2xl p-4" style={{ background: theme === 'light' ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.05)', border: theme === 'light' ? '1px solid rgba(99,102,241,0.12)' : '1px solid rgba(255,255,255,0.08)' }}>
                 <p className="text-sm font-medium" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>{item}</p>
               </div>
-            ))}
+            ))} */}
           </div>
         </div>
 
@@ -463,10 +463,10 @@ function LoginPageContent() {
             </p>
           </div>
             </div>
-            <div className="mt-4 p-4 rounded-2xl text-center" style={{ background: theme === 'light' ? 'rgba(255,255,255,0.74)' : 'rgba(255,255,255,0.06)', border: theme === 'light' ? '1px solid rgba(99,102,241,0.12)' : '1px solid rgba(255,255,255,0.08)' }}>
+            {/* <div className="mt-4 p-4 rounded-2xl text-center" style={{ background: theme === 'light' ? 'rgba(255,255,255,0.74)' : 'rgba(255,255,255,0.06)', border: theme === 'light' ? '1px solid rgba(99,102,241,0.12)' : '1px solid rgba(255,255,255,0.08)' }}>
               <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>New here?</p>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('createAccount')} to get started</p>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
