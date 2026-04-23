@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,6 +21,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -31,11 +32,44 @@ export default function LoginPage() {
   const [resetConfirmPassword, setResetConfirmPassword] = useState('');
   const [requestLoading, setRequestLoading] = useState(false);
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const [googleConfigured, setGoogleConfigured] = useState(true);
+  const [smtpConfigured, setSmtpConfigured] = useState(true);
   const { t, theme } = useAppStore();
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const res = await fetch('/api/auth/config', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        setGoogleConfigured(Boolean(data.googleConfigured));
+        setSmtpConfigured(Boolean(data.smtpConfigured));
+      } catch {
+        setGoogleConfigured(true);
+        setSmtpConfigured(true);
+      }
+    };
+
+    loadConfig();
+  }, []);
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (!error) return;
+
+    const messages: Record<string, string> = {
+      OAuthSignin: 'Google sign-in is not configured correctly on this deployment. Check Vercel env and Google redirect URI.',
+      OAuthCallback: 'Google callback failed. Verify your production redirect URI in Google Cloud Console.',
+      AccessDenied: 'Access was denied during sign-in.',
+      Configuration: 'Authentication configuration is incomplete on this deployment.',
+    };
+
+    toast.error(messages[error] || 'Authentication failed. Please try again.');
+  }, [searchParams]);
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -60,6 +94,11 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    if (!googleConfigured) {
+      toast.error('Google sign-in is not configured on this deployment yet.');
+      return;
+    }
+
     setGoogleLoading(true);
     try {
       const res = await signIn('google', {
@@ -83,6 +122,11 @@ export default function LoginPage() {
   };
 
   const handleResetRequest = async () => {
+    if (!smtpConfigured) {
+      toast.error('Forgot password is not configured on this deployment yet.');
+      return;
+    }
+
     if (!resetEmail) {
       toast.error('Email kiriting');
       return;
@@ -200,12 +244,13 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={handleGoogleLogin}
-            disabled={googleLoading || loading || requestLoading || verifyLoading}
+            disabled={!googleConfigured || googleLoading || loading || requestLoading || verifyLoading}
             className="w-full rounded-2xl border px-4 py-3 text-sm font-medium transition hover:translate-y-[-1px] mb-4 flex items-center justify-center gap-3"
             style={{
               borderColor: theme === 'light' ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.12)',
               background: theme === 'light' ? '#ffffff' : 'rgba(255,255,255,0.05)',
               color: 'var(--text-primary)',
+              opacity: googleConfigured ? 1 : 0.55,
             }}
           >
             {googleLoading ? (
@@ -213,10 +258,16 @@ export default function LoginPage() {
             ) : (
               <>
                 <span className="text-base leading-none">G</span>
-                <span>Continue with Google</span>
+                <span>{googleConfigured ? 'Continue with Google' : 'Google sign-in unavailable'}</span>
               </>
             )}
           </button>
+
+          {!googleConfigured && (
+            <p className="text-xs mb-4" style={{ color: 'var(--danger)' }}>
+              Google OAuth is missing in this deployment. Add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and the production redirect URI in Vercel.
+            </p>
+          )}
 
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center" aria-hidden="true">

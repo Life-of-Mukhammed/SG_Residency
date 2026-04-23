@@ -1,14 +1,26 @@
 import nodemailer from 'nodemailer';
 
-const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
-const smtpPort = Number(process.env.SMTP_PORT || 465);
-const smtpUser = process.env.SMTP_USER;
-const smtpPass = process.env.SMTP_PASS;
-const smtpFrom = process.env.SMTP_FROM || smtpUser;
+function getSmtpConfig() {
+  const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const smtpPort = Number(process.env.SMTP_PORT || 465);
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const smtpFrom = process.env.SMTP_FROM || smtpUser;
+
+  return {
+    smtpHost,
+    smtpPort,
+    smtpUser,
+    smtpPass,
+    smtpFrom,
+  };
+}
 
 function getTransporter() {
+  const { smtpHost, smtpPort, smtpUser, smtpPass } = getSmtpConfig();
+
   if (!smtpUser || !smtpPass) {
-    throw new Error('SMTP is not configured. Please add SMTP_USER and SMTP_PASS to .env.local');
+    throw new Error('SMTP is not configured on this deployment. Add SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and SMTP_FROM in your environment variables.');
   }
 
   return nodemailer.createTransport({
@@ -23,6 +35,7 @@ function getTransporter() {
 }
 
 export async function sendPasswordResetCode(email: string, code: string) {
+  const { smtpFrom } = getSmtpConfig();
   const transporter = getTransporter();
 
   await transporter.sendMail({

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
@@ -27,14 +27,44 @@ type FormData = z.infer<typeof schema>;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleConfigured, setGoogleConfigured] = useState(true);
   const { t, theme } = useAppStore();
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const res = await fetch('/api/auth/config', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        setGoogleConfigured(Boolean(data.googleConfigured));
+      } catch {
+        setGoogleConfigured(true);
+      }
+    };
+
+    loadConfig();
+  }, []);
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (!error) return;
+
+    const messages: Record<string, string> = {
+      OAuthSignin: 'Google sign-up is not configured correctly on this deployment.',
+      OAuthCallback: 'Google callback failed. Verify your production redirect URI in Google Cloud Console.',
+      Configuration: 'Authentication configuration is incomplete on this deployment.',
+    };
+
+    toast.error(messages[error] || 'Authentication failed. Please try again.');
+  }, [searchParams]);
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -69,6 +99,11 @@ export default function RegisterPage() {
   };
 
   const handleGoogleRegister = async () => {
+    if (!googleConfigured) {
+      toast.error('Google sign-in is not configured on this deployment yet.');
+      return;
+    }
+
     setGoogleLoading(true);
     try {
       const res = await signIn('google', {
@@ -148,12 +183,13 @@ export default function RegisterPage() {
           <button
             type="button"
             onClick={handleGoogleRegister}
-            disabled={googleLoading || loading}
+            disabled={!googleConfigured || googleLoading || loading}
             className="w-full rounded-2xl border px-4 py-3 text-sm font-medium transition hover:translate-y-[-1px] mb-4 flex items-center justify-center gap-3"
             style={{
               borderColor: theme === 'light' ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.12)',
               background: theme === 'light' ? '#ffffff' : 'rgba(255,255,255,0.05)',
               color: 'var(--text-primary)',
+              opacity: googleConfigured ? 1 : 0.55,
             }}
           >
             {googleLoading ? (
@@ -161,10 +197,16 @@ export default function RegisterPage() {
             ) : (
               <>
                 <span className="text-base leading-none">G</span>
-                <span>Continue with Google</span>
+                <span>{googleConfigured ? 'Continue with Google' : 'Google sign-in unavailable'}</span>
               </>
             )}
           </button>
+
+          {!googleConfigured && (
+            <p className="text-xs mb-4" style={{ color: 'var(--danger)' }}>
+              Google OAuth is missing in this deployment. Add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and the production redirect URI in Vercel.
+            </p>
+          )}
 
           <div className="relative my-5">
             <div
