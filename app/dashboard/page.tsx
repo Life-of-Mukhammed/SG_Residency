@@ -3,6 +3,8 @@ import { authOptions } from '@/lib/auth-options';
 import { redirect } from 'next/navigation';
 import Header from '@/components/dashboard/Header';
 import DashboardHome from '@/components/dashboard/DashboardHome';
+import connectDB from '@/lib/db';
+import { getUserStartup } from '@/lib/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +16,12 @@ export default async function DashboardPage() {
   // Managers and admins → redirect to their panel
   if (user.role && ['manager', 'super_admin'].includes(user.role)) {
     redirect('/manager');
+  }
+
+  await connectDB();
+  const startup = await getUserStartup((session.user as { id: string }).id);
+  if (!startup) {
+    redirect('/dashboard/apply');
   }
 
   return (

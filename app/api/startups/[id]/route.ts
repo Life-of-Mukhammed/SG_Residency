@@ -9,6 +9,7 @@ import { z } from 'zod';
 const startupUpdateSchema = z.object({
   status: z.enum(['pending', 'active', 'inactive', 'rejected']).optional(),
   managerId: z.string().optional(),
+  rejectionReason: z.string().trim().max(500).optional(),
 }).strict();
 
 const startupOwnerUpdateSchema = z.object({
@@ -87,9 +88,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: 'Invalid update payload' }, { status: 400 });
     }
 
+    if (parsed.data.status === 'rejected' && !parsed.data.rejectionReason?.trim()) {
+      return NextResponse.json({ error: 'Rejection reason is required' }, { status: 400 });
+    }
+
     const patch: Record<string, unknown> = { ...parsed.data };
     if (parsed.data.status === 'active' && !current.managerId) {
       patch.managerId = user.id;
+    }
+    if (parsed.data.status === 'active') {
+      patch.rejectionReason = '';
+    }
+    if (parsed.data.status === 'pending') {
+      patch.rejectionReason = '';
     }
 
     const startup = await Startup.findByIdAndUpdate(
@@ -116,7 +127,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         parsed.data.status === 'active'
           ? `${startup.startup_name} has been approved. Reports, meetings, sprint, and GTM are now open for you.`
           : parsed.data.status === 'rejected'
-            ? `${startup.startup_name} was rejected. Please update your profile and re-apply when ready.`
+            ? `${startup.startup_name} was rejected. Reason: ${parsed.data.rejectionReason?.trim() || 'No reason provided.'}`
             : `${startup.startup_name} status changed to ${parsed.data.status}.`;
 
       await notifyUsers([userId], { title, message, type: 'info' });

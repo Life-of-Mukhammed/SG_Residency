@@ -139,6 +139,19 @@ export default function MyStartupPage() {
                 <span className={`badge badge-${startup.status}`}>{startup.status}</span>
                 <span className={`badge badge-${startup.stage}`}>{startup.stage}</span>
               </div>
+              {startup.status === 'rejected' && startup.rejectionReason && (
+                <div
+                  className="rounded-2xl p-4 mb-4"
+                  style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}
+                >
+                  <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: '#ef4444' }}>
+                    Reject Reason
+                  </p>
+                  <p className="text-sm leading-6" style={{ color: 'var(--text-primary)' }}>
+                    {startup.rejectionReason}
+                  </p>
+                </div>
+              )}
               <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
                 {startup.description}
               </p>

@@ -21,6 +21,7 @@ export interface IStartup extends Document {
   users_count: number;
   investment_raised: number;
   status: 'pending' | 'active' | 'inactive' | 'rejected';
+  rejectionReason?: string;
   managerId?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -48,6 +49,7 @@ const StartupSchema = new Schema<IStartup>(
     users_count: { type: Number, default: 0 },
     investment_raised: { type: Number, default: 0 },
     status: { type: String, enum: ['pending', 'active', 'inactive', 'rejected'], default: 'pending' },
+    rejectionReason: { type: String, trim: true },
     managerId: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import axios from 'axios';
 import {
   Rocket, Target, FileText, Calendar,
-  CheckCircle, Clock, AlertCircle, ArrowRight, Users, DollarSign
+  CheckCircle, Clock, AlertCircle, ArrowRight, Users, DollarSign, Lock
 } from 'lucide-react';
 
 export default function DashboardHome() {
@@ -45,6 +45,75 @@ export default function DashboardHome() {
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="skeleton h-36" />
         ))}
+      </div>
+    );
+  }
+
+  if (startup && startup.status !== 'active') {
+    const isRejected = startup.status === 'rejected';
+
+    return (
+      <div className="max-w-3xl mx-auto">
+        <div className="card text-center py-16 px-8">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
+            style={{ background: isRejected ? 'rgba(239,68,68,0.14)' : 'rgba(245,158,11,0.14)' }}
+          >
+            {isRejected ? (
+              <AlertCircle size={28} style={{ color: '#ef4444' }} />
+            ) : (
+              <Clock size={28} style={{ color: '#f59e0b' }} />
+            )}
+          </div>
+          <span className={`badge ${isRejected ? 'badge-rejected' : 'badge-pending'} mb-4`}>
+            {isRejected ? 'Rejected' : 'On Progress'}
+          </span>
+          <h2 className="text-3xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+            {isRejected ? 'Your application was rejected' : 'Your application is on progress'}
+          </h2>
+          <p className="text-sm max-w-xl mx-auto leading-6" style={{ color: 'var(--text-muted)' }}>
+            {isRejected
+              ? 'Admin yoki manager sizning arizangizni rad etdi. Dashboard approval bo‘lmaguncha ochilmaydi.'
+              : 'Arizangiz yuborildi. Hozircha lead sifatida ko‘rib chiqilyapsiz. Admin yoki manager accept qilgandan keyin dashboard to‘liq ochiladi.'}
+          </p>
+
+          {startup.rejectionReason && (
+            <div
+              className="mt-6 mx-auto max-w-xl rounded-2xl p-4 text-left"
+              style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}
+            >
+              <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: '#ef4444' }}>
+                Reject Reason
+              </p>
+              <p className="text-sm leading-6" style={{ color: 'var(--text-primary)' }}>
+                {startup.rejectionReason}
+              </p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 text-left">
+            <div className="card">
+              <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: 'var(--text-muted)' }}>
+                Lead
+              </p>
+              <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {startup.startup_name}
+              </p>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+                {startup.startup_sphere} · {startup.region}
+              </p>
+            </div>
+            <div className="card">
+              <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: 'var(--text-muted)' }}>
+                Workspace Access
+              </p>
+              <div className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                <Lock size={16} />
+                <span className="text-sm">Sprint, GTM, reports va meetings hozircha yopiq</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

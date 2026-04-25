@@ -5,7 +5,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
 import Link from 'next/link';
-import { Search, ChevronUp, ChevronDown, Trash2, Eye, RefreshCw, Users, TrendingUp, FileText, Calendar } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Trash2, Eye, RefreshCw, Users, TrendingUp, FileText, Calendar, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAppStore } from '@/store/appStore';
 
@@ -29,6 +29,9 @@ export default function ManagerPage() {
   const [sortDir, setSortDir]       = useState<SortDir>('desc');
   const [page, setPage]             = useState(1);
   const [pagination, setPagination] = useState({ total: 0, pages: 1 });
+  const [rejectTarget, setRejectTarget] = useState<any | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
 
   const L = {
     title:    { uz: 'Menejer paneli',   ru: 'Панель менеджера',    en: 'Manager Panel'    },
@@ -71,12 +74,40 @@ export default function ManagerPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const updateStatus = async (id: string, s: string) => {
+  const updateStatus = async (id: string, s: string, rejectionReason?: string) => {
+    await axios.patch(`/api/startups/${id}`, { status: s, rejectionReason });
+    fetchData();
+  };
+
+  const acceptLead = async (startup: any) => {
+    setReviewLoading(true);
     try {
-      await axios.patch(`/api/startups/${id}`, { status: s });
-      toast.success(`Status → ${s}`);
-      fetchData();
-    } catch { toast.error('Failed'); }
+      await updateStatus(startup._id, 'active');
+      toast.success(`${startup.startup_name} accepted`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to accept lead');
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const rejectLead = async () => {
+    if (!rejectTarget || !rejectReason.trim()) {
+      toast.error('Reject reason is required');
+      return;
+    }
+
+    setReviewLoading(true);
+    try {
+      await updateStatus(rejectTarget._id, 'rejected', rejectReason.trim());
+      toast.success(`${rejectTarget.startup_name} rejected`);
+      setRejectTarget(null);
+      setRejectReason('');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to reject lead');
+    } finally {
+      setReviewLoading(false);
+    }
   };
 
   const deleteStartup = async (id: string) => {
@@ -118,10 +149,10 @@ export default function ManagerPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { icon: <Users size={18}/>,      label: t('total'),   value: analytics.totalStartups,  color: '#6366f1' },
-              { icon: <TrendingUp size={18}/>,  label: t('active'),  value: analytics.activeStartups, color: '#10b981' },
-              { icon: <FileText size={18}/>,    label: lang === 'uz' ? 'Kutuvchi' : lang === 'ru' ? 'Ожидают' : 'Pending Reports',
+            { icon: <TrendingUp size={18}/>,  label: t('active'),  value: analytics.activeStartups, color: '#10b981' },
+            { icon: <FileText size={18}/>,    label: lang === 'uz' ? 'Kutuvchi' : lang === 'ru' ? 'Ожидают' : 'Pending Reports',
                 value: analytics.pendingReports, color: '#f59e0b' },
-              { icon: <Calendar size={18}/>,    label: lang === 'uz' ? 'Uchrashuvlar' : lang === 'ru' ? 'Встречи' : 'Meetings',
+            { icon: <Calendar size={18}/>,    label: lang === 'uz' ? 'Uchrashuvlar' : lang === 'ru' ? 'Встречи' : 'Meetings',
                 value: analytics.totalMeetings,  color: '#ec4899' },
             ].map(s => (
               <div key={s.label} className="card flex items-center gap-3 py-4">
@@ -184,7 +215,7 @@ export default function ManagerPage() {
         <div className="flex gap-5 text-sm flex-wrap">
           <span style={{ color: 'var(--text-muted)' }}>{t('total')}: <strong style={{ color: 'var(--text-primary)' }}>{pagination.total}</strong></span>
           <span style={{ color: 'var(--text-muted)' }}>{t('active')}: <strong style={{ color: '#10b981' }}>{startups.filter(s => s.status === 'active').length}</strong></span>
-          <span style={{ color: 'var(--text-muted)' }}>{t('pending')}: <strong style={{ color: '#f59e0b' }}>{startups.filter(s => s.status === 'pending').length}</strong></span>
+          <span style={{ color: 'var(--text-muted)' }}>Leads: <strong style={{ color: '#f59e0b' }}>{startups.filter(s => s.status === 'pending').length}</strong></span>
         </div>
 
         {/* Table */}
@@ -262,17 +293,40 @@ export default function ManagerPage() {
                   <td className="font-mono text-sm notranslate" translate="no">${s.mrr?.toLocaleString() ?? 0}</td>
                   <td className="text-sm">{s.users_count?.toLocaleString() ?? 0}</td>
                   <td>
-                    <select value={s.status} onChange={e => updateStatus(s._id, e.target.value)}
-                      className="text-xs px-2.5 py-1.5 rounded-lg border cursor-pointer capitalize"
-                      style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-                      {STATUSES.map(st => <option key={st} value={st}>{st}</option>)}
-                    </select>
+                    <span className={`badge ${s.status === 'pending' ? 'badge-pending' : `badge-${s.status}`}`}>
+                      {s.status === 'pending' ? 'lead' : s.status}
+                    </span>
+                    {s.status === 'rejected' && s.rejectionReason && (
+                      <p className="text-xs mt-2 max-w-52 leading-5" style={{ color: '#ef4444' }}>
+                        {s.rejectionReason}
+                      </p>
+                    )}
                   </td>
                   <td className="text-xs" style={{ color: 'var(--text-muted)' }}>
                     {s.createdAt ? format(new Date(s.createdAt), 'MMM d, yyyy') : '—'}
                   </td>
                   <td>
                     <div className="flex items-center gap-1">
+                      {s.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => acceptLead(s)}
+                            className="p-1.5 rounded-lg"
+                            style={{ color: '#10b981', background: 'rgba(16,185,129,0.1)' }}
+                            title="Accept lead"
+                          >
+                            <Check size={13}/>
+                          </button>
+                          <button
+                            onClick={() => { setRejectTarget(s); setRejectReason(''); }}
+                            className="p-1.5 rounded-lg"
+                            style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}
+                            title="Reject lead"
+                          >
+                            <X size={13}/>
+                          </button>
+                        </>
+                      )}
                       <Link href={`/manager/startup/${s._id}`}>
                         <button className="p-1.5 rounded-lg" style={{ color: 'var(--accent)', background: 'rgba(99,102,241,0.1)' }} title="View">
                           <Eye size={13}/>
@@ -307,6 +361,33 @@ export default function ManagerPage() {
           </div>
         )}
       </div>
+
+      {rejectTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)' }}>
+          <div className="card w-full max-w-lg p-8">
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+              Reject Lead
+            </h3>
+            <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>
+              {rejectTarget.startup_name} uchun reject sababini yozing. User dashboard ocholmaydi va shu sababni ko‘radi.
+            </p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              className="input min-h-28 resize-none"
+              placeholder="Why is this lead rejected? What should they improve?"
+            />
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => { setRejectTarget(null); setRejectReason(''); }} className="btn-secondary flex-1">
+                Cancel
+              </button>
+              <button onClick={rejectLead} disabled={reviewLoading || !rejectReason.trim()} className="btn-danger flex-1">
+                {reviewLoading ? 'Saving...' : 'Reject Lead'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
