@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/db';
 import Report from '@/models/Report';
+import { notifyUsers } from '@/lib/notifications';
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -40,6 +41,22 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       .lean();
 
     if (!report) return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+
+    const founderId =
+      typeof report.userId === 'object' && report.userId && '_id' in report.userId
+        ? String(report.userId._id)
+        : '';
+
+    if (founderId) {
+      await notifyUsers([founderId], {
+        title: status === 'accepted' ? 'Weekly report accepted' : 'Weekly report needs updates',
+        message:
+          status === 'accepted'
+            ? `${(report.startupId as any)?.startup_name || 'Your startup'} weekly report has been accepted.`
+            : `${(report.startupId as any)?.startup_name || 'Your startup'} weekly report was rejected. ${rejectionReason?.trim() || ''}`.trim(),
+        type: 'report',
+      });
+    }
 
     return NextResponse.json({ report });
   } catch (err) {

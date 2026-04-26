@@ -371,7 +371,7 @@ export default function ManagerPage() {
               Reject Lead
             </h3>
             <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>
-              {rejectTarget.startup_name} uchun reject sababini yozing. User dashboard ocholmaydi va shu sababni ko‘radi.
+              Enter the rejection reason for {rejectTarget.startup_name}. The founder will see this message in their dashboard.
             </p>
             <textarea
               value={rejectReason}

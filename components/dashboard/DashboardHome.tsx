@@ -84,8 +84,8 @@ export default function DashboardHome() {
 
     return (
       <>
-      <div className="max-w-3xl mx-auto">
-        <div className="card text-center py-16 px-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="card text-center py-16 px-8 relative overflow-hidden" style={{ background: 'radial-gradient(circle at top left, rgba(99,102,241,0.14), transparent 28%), radial-gradient(circle at bottom right, rgba(16,185,129,0.12), transparent 28%)' }}>
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
             style={{ background: isRejected ? 'rgba(239,68,68,0.14)' : 'rgba(245,158,11,0.14)' }}

@@ -184,10 +184,10 @@ export default function MeetingsPage() {
                   <Video size={16} style={{ color: 'var(--text-muted)' }} />
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                     {lang === 'uz'
-                      ? 'Link booking tasdiqlangandan keyin chiqadi'
+                      ? 'Booking tasdiqlangach doimiy Google Meet link beriladi'
                       : lang === 'ru'
-                        ? 'Ссылка появится после подтверждения'
-                        : 'The link appears after booking confirmation'}
+                        ? 'После подтверждения появится постоянная ссылка Google Meet'
+                        : 'A permanent Google Meet link appears after confirmation'}
                   </span>
                 </div>
                 <div className="h-px w-full mb-4" style={{ background: 'var(--border)' }} />
@@ -215,7 +215,7 @@ export default function MeetingsPage() {
               {upcomingMy.length > 0 && (
                 <div className="card">
                   <p className="font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>
-                    Your Upcoming Meetings
+                    Upcoming meetings
                   </p>
                   <div className="space-y-3">
                     {upcomingMy.map(m => (
@@ -376,7 +376,7 @@ export default function MeetingsPage() {
             style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
             <div className="card p-8 w-full max-w-md animate-fade-in">
               <h3 className="font-bold text-lg mb-1" style={{ color: 'var(--text-primary)' }}>
-                Confirm Your Meeting
+                Confirm your meeting
               </h3>
               <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
                 {format(bookModal.date, 'EEEE, MMMM d, yyyy')} · {bookModal.time} · 30 min

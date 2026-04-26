@@ -3,10 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/db';
 import Meeting from '@/models/Meeting';
-import Notification from '@/models/Notification';
 import { getMeetingEligibleStartup } from '@/lib/access';
-import User from '@/models/User';
-import { createGoogleMeetEvent, isGoogleMeetConfigured } from '@/lib/google-calendar';
+import { notifyRoles, notifyUsers } from '@/lib/notifications';
 
 export async function GET(req: NextRequest) {
   try {
@@ -77,32 +75,16 @@ export async function POST(req: NextRequest) {
       }
 
       const startupName = (startup as any)?.startup_name || 'Startup meeting';
-      const manager = await User.findById(managerId).select('email').lean();
-      let meetLink = `Offline meeting - ${officeAddress || 'Office'}`;
-      let googleEventId: string | undefined;
-
-      if (meetingType !== 'offline') {
-        if (!isGoogleMeetConfigured()) {
-          return NextResponse.json({ error: 'Google Meet is not configured yet. Add Google Calendar credentials first.' }, { status: 500 });
-        }
-        
-        try {
-          const conference = await createGoogleMeetEvent({
-            title: `${startupName} Meeting`,
-            topic,
-            scheduledAt,
-            duration: 30,
-            founderEmail: session.user?.email || undefined,
-            managerEmail: (manager as any)?.email,
-          });
-          meetLink = conference.meetLink;
-          googleEventId = conference.eventId;
-        } catch (googleError: any) {
-          console.error('[POST /api/meetings] Google Calendar error:', googleError?.message || googleError);
-          // Fallback: create meeting without Google Meet
-          meetLink = `Meeting scheduled for ${date} at ${time}. Google Meet link will be provided separately.`;
-        }
-      }
+      let meetLink = meetingType === 'offline'
+        ? `Offline meeting - ${officeAddress || 'Office'}`
+        : 'https://meet.google.com/eni-ecky-tqm';
+      const googleEventId: string | undefined = undefined;
+      const meetingMessage = [
+        `📌 Topic: ${topic}`,
+        `🏢 Startup: ${startupName}`,
+        `📅 Date: ${date} at ${time} (Tashkent)`,
+        `🔗 Link: ${meetLink}`,
+      ].join('\n');
 
       const meeting = await Meeting.create({
         managerId,
@@ -119,11 +101,17 @@ export async function POST(req: NextRequest) {
         status:        'booked',
       });
 
-      await Notification.create({
-        managerId,
-        title: 'Yangi uchrashuv!',
-        message: `${startupName} — ${date} ${time} da uchrashuv belgiladi: "${topic}"`,
+      await notifyUsers([user.id], {
+        title: 'New meeting booked',
+        message: meetingMessage,
         type: 'meeting',
+        channels: { inApp: true, email: false, telegram: false },
+      });
+      await notifyRoles(['manager', 'super_admin'], {
+        title: 'New meeting booked',
+        message: meetingMessage,
+        type: 'meeting',
+        channels: { inApp: true, email: true, telegram: true },
       });
 
       const populated = await Meeting.findById(meeting._id)

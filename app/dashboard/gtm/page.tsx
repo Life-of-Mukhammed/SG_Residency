@@ -3,10 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import Header from '@/components/dashboard/Header';
-import { CheckCircle2, Copy, Lock, PartyPopper, Sparkles, Star, Layers3, Bookmark, FileText, Rocket } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { CheckCircle2, Lock, PartyPopper, Sparkles, Star, Layers3, Bookmark, FileText, Rocket } from 'lucide-react';
 import { isGtmUnlockedBySprint } from '@/lib/sprint-unlock';
-import { extractKeyValueRows, extractPipeTable, splitContentBlocks } from '@/lib/gtm-display';
 
 type GTMItem = {
   _id: string;
@@ -30,7 +28,6 @@ export default function GTMPage() {
   const [config, setConfig] = useState<GTMConfig | null>(null);
   const [sprintTasks, setSprintTasks] = useState<any[]>([]);
   const [progressItems, setProgressItems] = useState<any[]>([]);
-  const [selected, setSelected] = useState<GTMItem | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
 
   useEffect(() => {
@@ -75,19 +72,10 @@ export default function GTMPage() {
   }, [canAccess, startup?._id]);
 
   const sections = config?.sections ?? [];
-  const tableData = selected ? extractPipeTable(selected.content) : null;
-  const keyRows = selected ? extractKeyValueRows(selected.content).slice(0, 6) : [];
-  const blocks = selected ? splitContentBlocks(selected.content) : [];
-
   const grouped = {
     guide: items.filter((item) => (item.section || 'guide') === 'guide'),
     plan: items.filter((item) => (item.section || 'guide') === 'plan'),
     system: items.filter((item) => (item.section || 'guide') === 'system'),
-  };
-
-  const copyText = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    toast.success('Copied!');
   };
 
   const totalItems = items.length;
@@ -105,7 +93,7 @@ export default function GTMPage() {
           'radial-gradient(circle at 12% 12%, rgba(99,102,241,0.14), transparent 18%), radial-gradient(circle at 88% 12%, rgba(16,185,129,0.12), transparent 18%), radial-gradient(circle at 50% 92%, rgba(99,102,241,0.1), transparent 20%)',
       }}
     >
-      <Header title="GTM" subtitle="Your GTM workspace unlocks after Sprint month 3" />
+      <Header title="GTM" subtitle="Unlocks after completing all tasks in Sprint months 1–3" />
 
       {!canAccess ? (
         <div className="px-4 py-16 flex justify-center">
@@ -117,7 +105,7 @@ export default function GTMPage() {
             </p>
 
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              GTM opens after all tasks in Sprint months 1, 2 and 3 are completed.
+              GTM unlocks after all tasks in Sprint months 1, 2, and 3 are completed.
             </p>
 
             <div className="pt-2">
@@ -224,7 +212,7 @@ export default function GTMPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-1 gap-3">
                       {[
                         { label: 'Total Cards', value: totalItems, note: 'All GTM assets' },
-                        { label: 'Unlocked', value: 'Yes', note: 'Sprint month 3 completed' },
+                        { label: 'Unlocked', value: 'Yes', note: 'Sprint months 1–3 completed' },
                         { label: 'Startup', value: startup?.startup_name || 'Draft', note: startup?.region || 'No region yet' },
                       ].map((item) => (
                         <div
@@ -315,8 +303,8 @@ export default function GTMPage() {
                     {(grouped[section.key] || []).map((item) => (
                       <button
                         key={item._id}
-                        onClick={() => setSelected(item)}
-                        className="w-full text-left rounded-3xl px-4 py-4 group transition-all duration-300 hover:-translate-y-1"
+                        type="button"
+                        className="w-full text-left rounded-3xl px-4 py-4 group"
                         style={{
                           background: 'rgba(255,255,255,0.035)',
                           border: '1px solid rgba(255,255,255,0.06)',
@@ -341,7 +329,7 @@ export default function GTMPage() {
                                 className="text-[10px] px-2 py-1 rounded-full flex-shrink-0"
                                 style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--accent)' }}
                               >
-                                Open
+                                Ready
                               </span>
                             </div>
 
@@ -350,10 +338,6 @@ export default function GTMPage() {
                                 {item.category}
                               </p>
                             )}
-
-                            <p className="text-xs mt-3 line-clamp-4 leading-6" style={{ color: 'var(--text-secondary)' }}>
-                              {item.content}
-                            </p>
                           </div>
                         </div>
                       </button>
@@ -377,90 +361,6 @@ export default function GTMPage() {
         </div>
       )}
 
-      {selected && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center px-4"
-          style={{ background: 'rgba(0,0,0,0.78)', backdropFilter: 'blur(8px)' }}
-        >
-          <div
-            className="card w-full max-w-6xl p-6 md:p-7"
-            style={{
-              border: '1px solid rgba(255,255,255,0.08)',
-              maxHeight: 'min(88vh, 980px)',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div className="flex justify-between items-start gap-4 flex-shrink-0 pb-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--accent)' }}>
-                  {selected.category || 'GTM Item'}
-                </p>
-                <h3 className="text-2xl md:text-3xl font-black mt-2" style={{ color: 'var(--text-primary)' }}>
-                  {selected.title}
-                </h3>
-                <p className="text-sm mt-2 max-w-2xl" style={{ color: 'var(--text-secondary)' }}>
-                  Detailed GTM note with structured breakdown, data blocks and execution detail.
-                </p>
-              </div>
-
-              <div className="flex gap-2">
-                <button onClick={() => copyText(selected.content)} className="btn-secondary">
-                  <Copy size={14} />
-                </button>
-                <button onClick={() => setSelected(null)} className="btn-secondary">
-                  Close
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-5 flex-1 overflow-y-auto pr-1 space-y-5">
-              {keyRows.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {keyRows.map((row) => (
-                    <div key={`${row.key}-${row.value}`} className="p-4 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                      <p className="text-[11px] uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>{row.key}</p>
-                      <p className="text-sm mt-2" style={{ color: 'var(--text-primary)' }}>{row.value}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {tableData ? (
-                <div className="table-container">
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        {tableData.headers.map((header) => <th key={header}>{header}</th>)}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {tableData.rows.map((row, index) => (
-                        <tr key={`${row.join('-')}-${index}`}>
-                          {row.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`}>{cell}</td>)}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : null}
-
-              <div className="grid gap-3">
-                {blocks.map((block, index) => (
-                  <div key={`${index}-${block.slice(0, 20)}`} className="p-5 rounded-2xl" style={{ background: 'var(--bg-secondary)' }}>
-                    <p className="text-[11px] uppercase tracking-[0.16em] mb-3" style={{ color: 'var(--text-muted)' }}>
-                      Detail {index + 1}
-                    </p>
-                    <p className="text-sm leading-7 whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>
-                      {block}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

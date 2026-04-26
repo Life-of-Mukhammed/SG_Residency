@@ -5,7 +5,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
 import { useAppStore } from '@/store/appStore';
-import { Bell, Check, Globe, Lock, Moon, Save, Shield, Sun, User } from 'lucide-react';
+import { Bell, Globe, Lock, Moon, Save, Sun, User, Send } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { GoogleTranslateSwitcher } from '@/components/GoogleTranslateSwitcher';
 
@@ -19,11 +19,17 @@ const EMPTY_FORM = {
 };
 
 export default function SettingsPage() {
-  const { t, lang, setLang, theme, setTheme } = useAppStore();
+  const { t, theme, setTheme } = useAppStore();
   const { update } = useSession();
   const [form, setForm] = useState(EMPTY_FORM);
   const [profile, setProfile] = useState<any>(null);
   const [startup, setStartup] = useState<any>(null);
+  const [telegramConnect, setTelegramConnect] = useState<{ startLink: string | null; code: string | null; botUsername: string | null }>({
+    startLink: null,
+    code: null,
+    botUsername: null,
+  });
+  const [disconnecting, setDisconnecting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -59,10 +65,27 @@ export default function SettingsPage() {
       })
       .catch(() => toast.error('Failed to load profile'))
       .finally(() => setLoading(false));
+
+    axios.get('/api/telegram/connect')
+      .then((res) => setTelegramConnect(res.data))
+      .catch(() => {});
   }, []);
 
   const setField = (key: keyof typeof EMPTY_FORM) =>
     (e: React.ChangeEvent<HTMLInputElement>) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  const disconnectTelegram = async () => {
+    setDisconnecting(true);
+    try {
+      await axios.delete('/api/telegram/connect');
+      setProfile((prev: any) => ({ ...prev, telegramChatId: null }));
+      toast.success('Telegram disconnected');
+    } catch {
+      toast.error('Failed to disconnect');
+    } finally {
+      setDisconnecting(false);
+    }
+  };
 
   const saveProfile = async () => {
     setSaving(true);
@@ -116,7 +139,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('profile')}</h3>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Keep your personal information up to date.</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Update your name, email address, and password.</p>
               </div>
             </div>
 
@@ -178,7 +201,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('language')}</h3>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Switch both app labels and Google page translation.</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Change the interface language and enable Google Translate.</p>
               </div>
             </div>
             <GoogleTranslateSwitcher compact={false} />
@@ -270,6 +293,47 @@ export default function SettingsPage() {
             ) : (
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No residency application submitted yet.</p>
             )}
+          </div>
+
+          <div className="card">
+            <div className="flex items-center gap-3 mb-5">
+              <Send size={17} style={{ color: 'var(--accent)' }} />
+              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Telegram bot</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="p-4 rounded-2xl flex items-center justify-between" style={{ background: 'var(--bg-secondary)' }}>
+                <div>
+                  <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Status</p>
+                  <p className="text-sm font-medium" style={{ color: profile?.telegramChatId ? '#10b981' : 'var(--text-primary)' }}>
+                    {profile?.telegramChatId ? '✅ Connected' : '❌ Not connected'}
+                  </p>
+                </div>
+                {profile?.telegramChatId && (
+                  <button
+                    onClick={disconnectTelegram}
+                    disabled={disconnecting}
+                    className="text-xs px-3 py-1.5 rounded-lg"
+                    style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}
+                  >
+                    {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+                  </button>
+                )}
+              </div>
+              <p className="text-sm leading-6" style={{ color: 'var(--text-muted)' }}>
+                Get meeting reminders 10 minutes before, status updates, and workspace notifications via the Telegram bot.
+              </p>
+              {telegramConnect.startLink ? (
+                <a href={telegramConnect.startLink} target="_blank" rel="noreferrer" className="btn-primary inline-flex items-center gap-2">
+                  <Send size={14} /> {profile?.telegramChatId ? 'Reconnect Telegram Bot' : 'Connect Telegram Bot'}
+                </a>
+              ) : (
+                <div className="p-4 rounded-2xl" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}>
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    Loading bot link...
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           

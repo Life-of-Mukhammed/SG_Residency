@@ -217,7 +217,7 @@ export default function NewLeadsPage() {
 
   return (
     <div className="animate-fade-in">
-      <Header title="New Leads" subtitle="Ko'rib chiqilmagan arizalar va intervyu bosqichidagi arizalar" />
+      <Header title="New Leads" subtitle="Pending applications and leads in the interview stage" />
 
       <div className="p-6 space-y-6">
 
@@ -586,9 +586,9 @@ export default function NewLeadsPage() {
           <div className="card sticky top-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Kirish savollari</h2>
+                <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Application questions</h2>
                 <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Faqat yangi arizachilar uchun ko&apos;rinadi
+                  Shown only to new applicants
                 </p>
               </div>
               <button
@@ -596,7 +596,7 @@ export default function NewLeadsPage() {
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold"
                 style={{ background: 'rgba(99,102,241,0.10)', color: 'var(--accent)' }}
               >
-                <Plus size={13} /> Yangi
+                <Plus size={13} /> New
               </button>
             </div>
 
@@ -724,16 +724,16 @@ export default function NewLeadsPage() {
             >
               <Check size={22} />
             </div>
-            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Tasdiqlash</h3>
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Confirm</h3>
             <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
               {acceptTarget.applicationType === 'existing_resident'
-                ? `${acceptTarget.startup_name} uchun to'liq rezidentlik kirishi berilsinmi?`
-                : `${acceptTarget.startup_name} ni intervyu bosqichiga o'tkazilsinmi? Faqat uchrashuvlar ochiladi.`}
+                ? `Grant full residency access to ${acceptTarget.startup_name}?`
+                : `Move ${acceptTarget.startup_name} to the interview stage? Only meetings will be unlocked.`}
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setAcceptTarget(null)} className="btn-secondary flex-1">Bekor</button>
+              <button onClick={() => setAcceptTarget(null)} className="btn-secondary flex-1">Cancel</button>
               <button onClick={approveLead} disabled={reviewLoading} className="btn-primary flex-1">
-                {reviewLoading ? 'Saqlanmoqda...' : acceptTarget.applicationType === 'existing_resident' ? 'Kirish berish' : 'Intervyuga o\'tkazish'}
+                {reviewLoading ? 'Saving...' : acceptTarget.applicationType === 'existing_resident' ? 'Grant access' : 'Move to interview'}
               </button>
             </div>
           </div>
@@ -751,14 +751,14 @@ export default function NewLeadsPage() {
             >
               <Send size={22} />
             </div>
-            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Rezidentlikka qo&apos;shish</h3>
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Add to residency</h3>
             <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-              {promoteTarget.startup_name} ni rezidentlar ro&apos;yxatiga qo&apos;shib, to&apos;liq workspace ochilsinmi?
+              Add {promoteTarget.startup_name} to the residents list and unlock the full workspace?
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setPromoteTarget(null)} className="btn-secondary flex-1">Bekor</button>
+              <button onClick={() => setPromoteTarget(null)} className="btn-secondary flex-1">Cancel</button>
               <button onClick={promoteToResidency} disabled={reviewLoading} className="btn-primary flex-1">
-                {reviewLoading ? 'Saqlanmoqda...' : 'Rezidentlikka qo\'shish'}
+                {reviewLoading ? 'Saving...' : 'Add to residency'}
               </button>
             </div>
           </div>
@@ -776,26 +776,26 @@ export default function NewLeadsPage() {
             >
               <X size={22} />
             </div>
-            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Leadni rad etish</h3>
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Reject lead</h3>
             <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>
-              Rad etish sababini yozing. Bu founder uchun ko&apos;rinadi va dashboard yopiq qoladi.
+              Enter the rejection reason. The founder will see this message and their dashboard will remain locked.
             </p>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               className="input min-h-28 resize-none"
-              placeholder="Nima sababdan rad etilmoqda..."
+              placeholder="Why is this lead being rejected?"
             />
             <div className="flex gap-3 mt-5">
               <button onClick={() => { setRejectTarget(null); setRejectReason(''); }} className="btn-secondary flex-1">
-                Bekor
+                Cancel
               </button>
               <button
                 onClick={rejectLead}
                 disabled={reviewLoading || !rejectReason.trim()}
                 className="btn-danger flex-1"
               >
-                {reviewLoading ? 'Saqlanmoqda...' : 'Rad etish'}
+                {reviewLoading ? 'Saving...' : 'Reject'}
               </button>
             </div>
           </div>

@@ -11,14 +11,27 @@ import Link from 'next/link';
 export default function NewReportPage() {
   const router = useRouter();
   const [startup, setStartup] = useState<any>(null);
+  const [weekCount, setWeekCount] = useState(0);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ completed: '', notCompleted: '', plans: '' });
 
   useEffect(() => {
-    axios.get('/api/startups?limit=1')
-      .then((res) => setStartup(res.data.startups?.[0] ?? null))
-      .finally(() => setInitialLoading(false));
+    Promise.all([
+      axios.get('/api/startups?limit=1'),
+      axios.get('/api/reports?limit=3'),
+    ]).then(([startupRes, reportsRes]) => {
+      setStartup(startupRes.data.startups?.[0] ?? null);
+      // Count reports submitted this week
+      const now = new Date();
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+      weekStart.setHours(0, 0, 0, 0);
+      const thisWeek = (reportsRes.data.reports ?? []).filter(
+        (r: any) => new Date(r.weekStart) >= weekStart
+      );
+      setWeekCount(thisWeek.length);
+    }).finally(() => setInitialLoading(false));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,12 +83,26 @@ export default function NewReportPage() {
         </Link>
 
         <div className="card p-8">
-          <div className="mb-6 p-4 rounded-xl" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid var(--border)' }}>
-            <p className="text-sm font-medium" style={{ color: 'var(--accent)' }}>📅 Weekly Report</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-              Report for the week of {new Date().toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric' })}
-            </p>
+          <div className="mb-6 p-4 rounded-xl flex items-center justify-between" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid var(--border)' }}>
+            <div>
+              <p className="text-sm font-medium" style={{ color: 'var(--accent)' }}>📅 Weekly Report</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                {new Date().toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric' })}
+              </p>
+              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                1 report required per week · up to 3 maximum.
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-bold" style={{ color: weekCount >= 3 ? '#ef4444' : 'var(--accent)' }}>{weekCount}/3</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Submitted this week</p>
+            </div>
           </div>
+          {weekCount >= 3 && (
+            <div className="mb-4 p-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <p className="text-sm" style={{ color: '#ef4444' }}>You have submitted 3 reports this week. You can submit again next week.</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -89,7 +116,7 @@ export default function NewReportPage() {
             </div>
 
             <div>
-              <label className="label">⚠️ What didn't you complete?</label>
+              <label className="label">⚠️ What didn't you complete? What stopped you from completing all the tasks?</label>
               <textarea
                 value={form.notCompleted}
                 onChange={(e) => setForm({ ...form, notCompleted: e.target.value })}

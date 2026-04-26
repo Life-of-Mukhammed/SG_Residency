@@ -159,7 +159,7 @@ function RegisterPageContent() {
               </div>
             </div>
             <p className="text-xs uppercase tracking-[0.3em]" style={{ color: theme === 'light' ? '#059669' : '#6ee7b7' }}>Join residency</p>
-            <h1 className="text-5xl font-bold leading-tight mt-4" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>Bitta account bilan founder workflow’ni to‘liq ishga tushiring.</h1>
+            <h1 className="text-5xl font-bold leading-tight mt-4" style={{ color: theme === ‘light’ ? ‘#0f172a’ : ‘#fff’ }}>Launch your full founder workflow with one account.</h1>
             <div className="grid grid-cols-3 gap-4 mt-8">
               {/* {['Profile setup', 'Application review', 'Execution tools'].map((item) => (
                 <div key={item} className="rounded-2xl p-4" style={{ background: theme === 'light' ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.06)', border: theme === 'light' ? '1px solid rgba(16,185,129,0.12)' : '1px solid rgba(255,255,255,0.08)' }}>

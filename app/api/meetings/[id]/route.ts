@@ -5,7 +5,8 @@ import connectDB from '@/lib/db';
 import Meeting from '@/models/Meeting';
 import Startup from '@/models/Startup';
 import User from '@/models/User';
-import { createGoogleMeetEvent, deleteGoogleMeetEvent, isGoogleMeetConfigured } from '@/lib/google-calendar';
+import { createGoogleMeetEvent, deleteGoogleMeetEvent } from '@/lib/google-calendar';
+import { notifyRoles, notifyUsers } from '@/lib/notifications';
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -38,10 +39,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const startup = await Startup.findOne({ userId: user.id }).lean();
     const manager = await User.findById(meeting.managerId).select('email').lean();
 
-    if (!isGoogleMeetConfigured()) {
-      return NextResponse.json({ error: 'Google Meet is not configured yet. Add Google Calendar credentials first.' }, { status: 500 });
-    }
-
     const conference = await createGoogleMeetEvent({
       title: `${meeting.title} Meeting`,
       topic: body.topic,
@@ -67,6 +64,27 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       .populate('userId',    'name surname email')
       .populate('startupId', 'startup_name')
       .lean();
+    const reminderMessage = `${meeting.title} with ${(updated as any)?.userId?.name || 'founder'} is confirmed for ${new Date(meeting.scheduledAt).toLocaleString('en-GB', {
+      timeZone: 'Asia/Tashkent',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })}. Link: ${conference.meetLink}`;
+
+    await notifyUsers([user.id], {
+      title: 'Meeting confirmed',
+      message: reminderMessage,
+      type: 'meeting',
+      channels: { inApp: true, email: false, telegram: false },
+    });
+    await notifyRoles(['manager', 'super_admin'], {
+      title: 'Meeting confirmed',
+      message: reminderMessage,
+      type: 'meeting',
+      channels: { inApp: true, email: true, telegram: true },
+    });
 
     return NextResponse.json({ meeting: updated });
   } catch (err) {
@@ -94,6 +112,20 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
           console.error('[DELETE /api/meetings/[id]] google delete failed', error);
         }
       }
+      if (meeting.userId) {
+        await notifyUsers([String(meeting.userId)], {
+          title: 'Meeting cancelled',
+          message: `${meeting.title} meeting has been cancelled.`,
+          type: 'meeting',
+          channels: { inApp: true, email: true, telegram: false },
+        });
+      }
+      await notifyRoles(['manager', 'super_admin'], {
+        title: 'Meeting cancelled',
+        message: `${meeting.title} meeting has been cancelled.`,
+        type: 'meeting',
+        channels: { inApp: true, email: true, telegram: true },
+      });
       await Meeting.findByIdAndDelete(params.id);
       return NextResponse.json({ message: 'Deleted' });
     }
@@ -106,6 +138,12 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
           console.error('[DELETE /api/meetings/[id]] google delete failed', error);
         }
       }
+      await notifyRoles(['manager', 'super_admin'], {
+        title: 'Meeting cancelled',
+        message: `${meeting.title} meeting has been cancelled by the founder.`,
+        type: 'meeting',
+        channels: { inApp: true, email: true, telegram: true },
+      });
       await Meeting.findByIdAndDelete(params.id);
       return NextResponse.json({ message: 'Cancelled' });
     }

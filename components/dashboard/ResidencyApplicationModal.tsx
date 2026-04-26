@@ -6,19 +6,9 @@ import toast from 'react-hot-toast';
 import { ChevronLeft, ChevronRight, FileText, Rocket, UploadCloud, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { UZ_REGIONS } from '@/lib/regions';
+import { DEFAULT_STARTUP_SPHERE, STARTUP_SPHERES } from '@/lib/startup-spheres';
 
 const REGIONS = UZ_REGIONS;
-const SPHERES = ['AI/ML', 'FinTech', 'EdTech', 'HealthTech', 'E-commerce', 'SaaS', 'AgriTech', 'CleanTech', 'HR Tech', 'LegalTech', 'Logistics', 'Media', 'Real Estate', 'Other'];
-
-type Question = {
-  _id: string;
-  question: string;
-  placeholder?: string;
-  type: 'text' | 'textarea' | 'url';
-  required: boolean;
-  order: number;
-  isActive: boolean;
-};
 
 type Props = {
   open: boolean;
@@ -52,7 +42,7 @@ const EMPTY_FORM: FormState = {
   startup_name: '',
   founder_name: '',
   region: 'Toshkent shahri',
-  startup_sphere: 'Other',
+  startup_sphere: DEFAULT_STARTUP_SPHERE,
   stage: 'mvp',
   description: '',
   phone: '',
@@ -70,16 +60,13 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
   const { data: session } = useSession();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [questionsLoading, setQuestionsLoading] = useState(false);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const steps = useMemo(() => {
     return form.applicationType === 'existing_resident'
       ? ['Residency Type', 'Startup Request', 'Review']
-      : ['Residency Type', 'Founder & Startup', 'Questions & Files', 'Review'];
+      : ['Residency Type', 'Founder & Startup', 'Files & Metrics', 'Review'];
   }, [form.applicationType]);
 
   useEffect(() => {
@@ -92,7 +79,7 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
           startup_name: startup.startup_name || '',
           founder_name: startup.founder_name || fullName,
           region: startup.region || 'Toshkent shahri',
-          startup_sphere: startup.startup_sphere || 'Other',
+          startup_sphere: startup.startup_sphere || DEFAULT_STARTUP_SPHERE,
           stage: startup.stage || 'mvp',
           description: startup.description || '',
           phone: startup.phone === 'Not provided' ? '' : startup.phone || '',
@@ -113,31 +100,7 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
     setForm(baseForm);
     setStep(0);
     setErrors({});
-    setAnswers(
-      startup?.applicationAnswers?.reduce((acc: Record<string, string>, item: any) => {
-        if (item.questionId) acc[item.questionId] = item.answer;
-        return acc;
-      }, {}) || {}
-    );
   }, [open, session?.user?.name, startup]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const loadQuestions = async () => {
-      setQuestionsLoading(true);
-      try {
-        const res = await axios.get('/api/residency-questions');
-        setQuestions((res.data.questions || []).filter((q: Question) => q.isActive));
-      } catch {
-        setQuestions([]);
-      } finally {
-        setQuestionsLoading(false);
-      }
-    };
-
-    loadQuestions();
-  }, [open]);
 
   if (!open) return null;
 
@@ -168,11 +131,6 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
       if (step === 2) {
         if (!form.pitch_deck.trim()) nextErrors.pitch_deck = 'Pitch deck is required';
         if (!form.resume_url.trim()) nextErrors.resume_url = 'Resume URL is required';
-        questions.forEach((question) => {
-          if (question.required && !answers[question._id]?.trim()) {
-            nextErrors[`question_${question._id}`] = 'This answer is required';
-          }
-        });
       }
     }
 
@@ -207,13 +165,7 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
         mrr: Number(form.mrr),
         users_count: Number(form.users_count),
         investment_raised: Number(form.investment_raised),
-        applicationAnswers: questions
-          .map((question) => ({
-            questionId: question._id,
-            question: question.question,
-            answer: answers[question._id] || '',
-          }))
-          .filter((item) => item.answer.trim()),
+        applicationAnswers: [],
       });
 
       toast.success('Application submitted successfully');
@@ -332,7 +284,7 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
               </div>
               <div className="rounded-2xl p-4" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid var(--border)' }}>
                 <p className="text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
-                  Siz existing resident bo‘lsangiz, shu request admin yoki managerga tushadi. Ular residency access berishni tasdiqlasa, dashboard to‘liq ochiladi.
+                  If you are an existing resident, this request will be sent to an admin or manager. Once they confirm your residency access, your full dashboard will be unlocked.
                 </p>
               </div>
             </div>
@@ -364,7 +316,7 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
                 <div>
                   <label className="label">Startup Sphere *</label>
                   <select value={form.startup_sphere} onChange={(e) => setField('startup_sphere', e.target.value)} className="input">
-                    {SPHERES.map((sphere) => <option key={sphere} value={sphere}>{sphere}</option>)}
+                    {STARTUP_SPHERES.map((sphere) => <option key={sphere} value={sphere}>{sphere}</option>)}
                   </select>
                   {errors.startup_sphere && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.startup_sphere}</p>}
                 </div>
@@ -421,8 +373,11 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
                   <input type="number" min="1" value={form.team_size} onChange={(e) => setField('team_size', e.target.value)} className="input" />
                 </div>
                 <div>
-                  <label className="label">MRR</label>
-                  <input type="number" min="0" value={form.mrr} onChange={(e) => setField('mrr', e.target.value)} className="input" />
+                  <label className="label">MRR ($)</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-muted)' }}>$</span>
+                    <input type="number" min="0" value={form.mrr} onChange={(e) => setField('mrr', e.target.value)} className="input pl-8" />
+                  </div>
                 </div>
                 <div>
                   <label className="label">Users</label>
@@ -437,44 +392,11 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
               <div className="rounded-3xl p-5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-2 mb-4">
                   <UploadCloud size={18} style={{ color: 'var(--accent)' }} />
-                  <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Questions From Admin / Manager</h3>
+                  <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Startup package</h3>
                 </div>
-                {questionsLoading ? (
-                  <div className="space-y-3">
-                    {Array.from({ length: 3 }).map((_, index) => <div key={index} className="skeleton h-16 rounded-2xl" />)}
-                  </div>
-                ) : questions.length === 0 ? (
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No custom questions added yet.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {questions.map((question) => (
-                      <div key={question._id}>
-                        <label className="label">
-                          {question.question} {question.required ? '*' : ''}
-                        </label>
-                        {question.type === 'textarea' ? (
-                          <textarea
-                            value={answers[question._id] || ''}
-                            onChange={(e) => setAnswers((prev) => ({ ...prev, [question._id]: e.target.value }))}
-                            className="input min-h-24 resize-none"
-                            placeholder={question.placeholder}
-                          />
-                        ) : (
-                          <input
-                            value={answers[question._id] || ''}
-                            onChange={(e) => setAnswers((prev) => ({ ...prev, [question._id]: e.target.value }))}
-                            className="input"
-                            placeholder={question.placeholder}
-                            type={question.type === 'url' ? 'url' : 'text'}
-                          />
-                        )}
-                        {errors[`question_${question._id}`] && (
-                          <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors[`question_${question._id}`]}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <p className="text-sm leading-6" style={{ color: 'var(--text-muted)' }}>
+                  Submit your pitch deck, resume, and key startup metrics here. Application screening questions are handled separately by the admin or manager.
+                </p>
               </div>
             </div>
           )}

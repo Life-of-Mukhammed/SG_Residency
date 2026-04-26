@@ -7,13 +7,15 @@ import Header from '@/components/dashboard/Header';
 import Link from 'next/link';
 import {
   Rocket, Globe, Users, DollarSign, Phone, MessageCircle,
-  FileText, ArrowRight, TrendingUp, Target, Edit2, X, Save
+  FileText, TrendingUp, Edit2, X, Save, Bell, ArrowRight
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { DEFAULT_STARTUP_SPHERE, STARTUP_SPHERES } from '@/lib/startup-spheres';
 
 type StartupForm = {
   startup_name: string;
   pitch_deck: string;
+  startup_sphere: string;
   mrr: string;
   users_count: string;
   investment_raised: string;
@@ -28,6 +30,7 @@ export default function MyStartupPage() {
   const [form, setForm] = useState<StartupForm>({
     startup_name: '',
     pitch_deck: '',
+    startup_sphere: DEFAULT_STARTUP_SPHERE,
     mrr: '0',
     users_count: '0',
     investment_raised: '0',
@@ -42,6 +45,7 @@ export default function MyStartupPage() {
       setForm({
         startup_name: current.startup_name || '',
         pitch_deck: current.pitch_deck || '',
+        startup_sphere: current.startup_sphere || DEFAULT_STARTUP_SPHERE,
         mrr: String(current.mrr ?? 0),
         users_count: String(current.users_count ?? 0),
         investment_raised: String(current.investment_raised ?? 0),
@@ -63,6 +67,7 @@ export default function MyStartupPage() {
       await axios.patch(`/api/startups/${startup._id}`, {
         startup_name: form.startup_name,
         pitch_deck: form.pitch_deck,
+        startup_sphere: form.startup_sphere,
         mrr: Number(form.mrr),
         users_count: Number(form.users_count),
         investment_raised: Number(form.investment_raised),
@@ -89,7 +94,7 @@ export default function MyStartupPage() {
 
   if (!startup) return (
     <div className="animate-fade-in">
-      <Header title="My Startup" subtitle="You haven't applied yet" />
+      <Header title="My Startup" subtitle="No application submitted yet" />
       <div className="p-8 max-w-2xl mx-auto">
         <div className="card text-center py-16">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
@@ -118,8 +123,6 @@ export default function MyStartupPage() {
     { label: 'Investment Raised', value: `$${startup.investment_raised?.toLocaleString() ?? 0}`, icon: <TrendingUp size={18} />, color: '#f59e0b', noTranslate: true },
     { label: 'Team Size', value: startup.team_size ?? '—', icon: <Users size={18} />, color: '#ec4899' },
   ];
-
-  const isApproved = startup.status === 'active';
 
   return (
     <div className="animate-fade-in">
@@ -192,6 +195,20 @@ export default function MyStartupPage() {
           ))}
         </div>
 
+        <div className="card" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(16,185,129,0.06))' }}>
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.14)' }}>
+              <Bell size={20} style={{ color: 'var(--accent)' }} />
+            </div>
+            <div className="flex-1">
+              <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Notifications and reminders</p>
+              <p className="text-sm mt-2 leading-6" style={{ color: 'var(--text-secondary)' }}>
+                Meeting reminders, approval updates and workspace changes now go to the website, email, and Telegram bot after you connect it in profile settings.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="card">
           <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Startup Details</h3>
           <div className="grid grid-cols-2 gap-3">
@@ -213,26 +230,6 @@ export default function MyStartupPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { label: 'Sprint Roadmap', desc: isApproved ? 'Track your task progress' : 'Unlocks after approval', href: isApproved ? '/dashboard/sprint' : '/dashboard/settings', icon: <Target size={18} />, color: '#6366f1' },
-            { label: 'Submit Report', desc: isApproved ? 'Weekly progress update' : 'Unlocks after approval', href: isApproved ? '/dashboard/reports/new' : '/dashboard/settings', icon: <FileText size={18} />, color: '#10b981' },
-            { label: 'Book Meeting', desc: isApproved ? 'Schedule with manager' : 'Unlocks after approval', href: isApproved ? '/dashboard/meetings' : '/dashboard/settings', icon: <Globe size={18} />, color: '#f59e0b' },
-          ].map(({ label, desc, href, icon, color }) => (
-            <Link key={label} href={href}>
-              <div className="card cursor-pointer group flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${color}22`, color }}>
-                  {icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{label}</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{desc}</p>
-                </div>
-                <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} className="group-hover:translate-x-1 transition-transform flex-shrink-0" />
-              </div>
-            </Link>
-          ))}
-        </div>
       </div>
 
       {editing && (
@@ -254,9 +251,18 @@ export default function MyStartupPage() {
                 <label className="label">Pitch Deck URL</label>
                 <input value={form.pitch_deck} onChange={(e) => setForm((prev) => ({ ...prev, pitch_deck: e.target.value }))} className="input notranslate" translate="no" />
               </div>
+              <div className="md:col-span-2">
+                <label className="label">Startup Sphere</label>
+                <select value={form.startup_sphere} onChange={(e) => setForm((prev) => ({ ...prev, startup_sphere: e.target.value }))} className="input">
+                  {STARTUP_SPHERES.map((sphere) => <option key={sphere} value={sphere}>{sphere}</option>)}
+                </select>
+              </div>
               <div>
-                <label className="label">MRR</label>
-                <input type="number" min="0" value={form.mrr} onChange={(e) => setForm((prev) => ({ ...prev, mrr: e.target.value }))} className="input notranslate" translate="no" />
+                <label className="label">MRR ($)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-muted)' }}>$</span>
+                  <input type="number" min="0" value={form.mrr} onChange={(e) => setForm((prev) => ({ ...prev, mrr: e.target.value }))} className="input pl-8 notranslate" translate="no" />
+                </div>
               </div>
               <div>
                 <label className="label">Users</label>

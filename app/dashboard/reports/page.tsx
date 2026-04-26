@@ -36,7 +36,7 @@ export default function ReportsPage() {
 
   return (
     <div className="animate-fade-in">
-      <Header title="Weekly Reports" subtitle="Track your weekly progress submissions" />
+      <Header title="Weekly Reports" subtitle="1 required per week · up to 3 maximum" />
       <div className="p-8 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex gap-2">
@@ -50,7 +50,7 @@ export default function ReportsPage() {
           </div>
           <Link href={isApproved ? "/dashboard/reports/new" : "/dashboard/settings"}>
             <button className="btn-primary flex items-center gap-2">
-              <Plus size={16} /> {isApproved ? 'New Report' : 'Approval Required'}
+              <Plus size={16} /> {isApproved ? 'New Report' : 'Pending Approval'}
             </button>
           </Link>
         </div>

@@ -6,6 +6,7 @@ import Report from '@/models/Report';
 import Startup from '@/models/Startup';
 import mongoose from 'mongoose';
 import { getActiveStartup } from '@/lib/access';
+import { notifyRoles } from '@/lib/notifications';
 
 export async function GET(req: NextRequest) {
   try {
@@ -86,13 +87,13 @@ export async function POST(req: NextRequest) {
     weekEnd.setDate(weekStart.getDate() + 6);
     weekEnd.setHours(23, 59, 59, 999);
 
-    const existing = await Report.findOne({
+    const weekCount = await Report.countDocuments({
       startupId,
       weekStart: { $gte: weekStart },
     });
-    if (existing) {
+    if (weekCount >= 3) {
       return NextResponse.json(
-        { error: 'Report already submitted for this week' },
+        { error: 'Haftada maksimum 3 ta hisobot yuborildi' },
         { status: 400 }
       );
     }
@@ -105,6 +106,13 @@ export async function POST(req: NextRequest) {
       completed:    body.completed,
       notCompleted: body.notCompleted,
       plans:        body.plans,
+    });
+
+    await notifyRoles(['manager', 'super_admin'], {
+      title: 'New weekly report submitted',
+      message: `${(startup as any).startup_name} submitted a weekly report for review.`,
+      type: 'report',
+      channels: { inApp: true, email: true, telegram: true },
     });
 
     return NextResponse.json({ report }, { status: 201 });

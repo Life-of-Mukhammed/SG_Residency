@@ -8,6 +8,8 @@ export interface IUser extends Document {
   password?: string;
   role: 'user' | 'manager' | 'super_admin';
   avatar?: string;
+  telegramChatId?: string;
+  telegramBotConnectedAt?: Date;
   resetPasswordCode?: string;
   resetPasswordExpires?: Date;
   createdAt: Date;
@@ -23,6 +25,8 @@ const UserSchema = new Schema<IUser>(
     password: { type: String, minlength: 6, select: false },
     role:     { type: String, enum: ['user', 'manager', 'super_admin'], default: 'user' },
     avatar:   { type: String },
+    telegramChatId: { type: String, trim: true },
+    telegramBotConnectedAt: { type: Date },
     resetPasswordCode: { type: String, select: false },
     resetPasswordExpires: { type: Date, select: false },
   },

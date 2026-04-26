@@ -9,8 +9,6 @@ export const dynamic = 'force-dynamic';
 import User from '@/models/User';
 
 const DAY_KEYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-const LUNCH_START = 12 * 60; // 12:00
-const LUNCH_END   = 13 * 60; // 13:00
 
 function timeToMin(t: string): number {
   const [h, m] = t.split(':').map(Number);
@@ -60,12 +58,7 @@ export async function GET(req: NextRequest) {
       let cur = timeToMin(range.start);
       const end = timeToMin(range.end);
       while (cur + slotDuration <= end) {
-        // Block lunch hour
-        const slotEnd = cur + slotDuration;
-        const overlapsLunch = cur < LUNCH_END && slotEnd > LUNCH_START;
-        if (!overlapsLunch) {
-          allSlots.push(minToTime(cur));
-        }
+        allSlots.push(minToTime(cur));
         cur += slotDuration;
       }
     }

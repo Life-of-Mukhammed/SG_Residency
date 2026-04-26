@@ -14,6 +14,7 @@ export interface IMeeting extends Document {
   officeAddress?: string;
   status: 'available' | 'booked' | 'completed' | 'cancelled';
   notes?: string;
+  reminderSentAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -33,6 +34,7 @@ const MeetingSchema = new Schema<IMeeting>(
     officeAddress: { type: String },
     status:        { type: String, enum: ['available','booked','completed','cancelled'], default: 'available' },
     notes:         { type: String },
+    reminderSentAt:{ type: Date, default: null },
   },
   { timestamps: true }
 );

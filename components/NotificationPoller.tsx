@@ -13,14 +13,14 @@ export function NotificationPoller() {
   const addNotification = useAppStore(s => s.addNotification);
 
   useEffect(() => {
-    if (!['manager', 'super_admin'].includes(role)) return;
+    if (!role) return;
 
     const poll = async () => {
       try {
         const res = await axios.get('/api/notifications');
         const notifs = res.data.notifications ?? [];
         notifs.forEach((n: any) => {
-          addNotification({ title: n.title, message: n.message, type: 'meeting' });
+          addNotification({ title: n.title, message: n.message, type: n.type || 'info' });
           toast.custom(() => (
             <div className="flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', minWidth: 280 }}>

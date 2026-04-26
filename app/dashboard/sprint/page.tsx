@@ -195,7 +195,7 @@ export default function SprintPage() {
     try {
       const res = await axios.post('/api/sprints', { taskId, quarter, month, completed, comment: cmt });
       setProgress((prev) => ({ ...prev, [taskId]: { completed, comment: cmt } }));
-      if (completed) toast.success('OK');
+      if (completed) toast.success('Task marked as completed');
     } catch (error: any) {
       const serverError = error.response?.data?.error;
       toast.error(

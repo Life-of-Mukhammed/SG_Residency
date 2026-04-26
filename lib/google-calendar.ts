@@ -1,5 +1,5 @@
 export function isGoogleMeetConfigured() {
-  return Boolean(process.env.GOOGLE_MEET_LINK);
+  return Boolean(process.env.GOOGLE_MEET_LINK || 'https://meet.google.com/eni-ecky-tqm');
 }
 
 export async function createGoogleMeetEvent(input: {
@@ -10,7 +10,7 @@ export async function createGoogleMeetEvent(input: {
   managerEmail?: string;
   founderEmail?: string;
 }) {
-  const meetLink = process.env.GOOGLE_MEET_LINK;
+  const meetLink = process.env.GOOGLE_MEET_LINK || 'https://meet.google.com/eni-ecky-tqm';
 
   if (!meetLink) {
     throw new Error('Google Meet link is not configured');

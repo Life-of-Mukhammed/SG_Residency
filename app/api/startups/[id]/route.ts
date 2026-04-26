@@ -5,6 +5,7 @@ import connectDB from '@/lib/db';
 import Startup from '@/models/Startup';
 import { notifyUsers } from '@/lib/notifications';
 import { z } from 'zod';
+import { STARTUP_SPHERES } from '@/lib/startup-spheres';
 
 const startupUpdateSchema = z.object({
   status: z.enum(['pending', 'lead_accepted', 'active', 'inactive', 'rejected']).optional(),
@@ -15,6 +16,7 @@ const startupUpdateSchema = z.object({
 const startupOwnerUpdateSchema = z.object({
   startup_name: z.string().min(1).optional(),
   pitch_deck: z.string().optional(),
+  startup_sphere: z.enum(STARTUP_SPHERES).optional(),
   mrr: z.coerce.number().min(0).optional(),
   users_count: z.coerce.number().min(0).optional(),
   investment_raised: z.coerce.number().min(0).optional(),
@@ -120,25 +122,40 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         ? String(startup.userId._id)
         : String(current.userId);
 
-      const title =
-        parsed.data.status === 'active'
-          ? 'Application approved'
-          : parsed.data.status === 'lead_accepted'
-            ? 'Interview stage unlocked'
-          : parsed.data.status === 'rejected'
-            ? 'Application rejected'
-            : 'Application status updated';
+      const STATUS_NOTIFY: Record<string, { title: string; message: string }> = {
+        active: {
+          title: '🎉 Rezidentlikka qabul qilindingiz!',
+          message: `Tabriklaymiz! <b>${startup.startup_name}</b> Startup Garage rezidentligiga qabul qilindi.\n\nEndi sizga barcha imkoniyatlar ochiq: hisobotlar, uchrashuvlar, sprint va GTM.`,
+        },
+        lead_accepted: {
+          title: '📅 Sizni intervyuga taklif qilamiz!',
+          message: `<b>${startup.startup_name}</b> arizasi ko'rib chiqildi va siz keyingi bosqichga o'tdingiz.\n\nManeger tez orada siz bilan uchrashuvni tashkil qiladi. Uchrashuvlar bo'limiga e'tibor bering.`,
+        },
+        rejected: {
+          title: '❌ Ariza rad etildi',
+          message: `Afsuski, <b>${startup.startup_name}</b> arizasi qabul qilinmadi.\n\nSabab: ${parsed.data.rejectionReason?.trim() || 'Ko\'rsatilmagan.'}\n\nSavollar bo'lsa, support bilan bog'laning.`,
+        },
+        inactive: {
+          title: '⚠️ Startup statusi o\'zgartirildi',
+          message: `<b>${startup.startup_name}</b> statusi <b>inactive</b> ga o'zgartirildi. Batafsil ma'lumot uchun manager bilan bog'laning.`,
+        },
+        pending: {
+          title: '⏳ Ariza ko\'rib chiqilmoqda',
+          message: `<b>${startup.startup_name}</b> arizasi ko'rib chiqish bosqichiga qaytarildi. Natija haqida xabardor qilinasiz.`,
+        },
+      };
 
-      const message =
-        parsed.data.status === 'active'
-          ? `${startup.startup_name} has been approved. Reports, meetings, sprint, and GTM are now open for you.`
-          : parsed.data.status === 'lead_accepted'
-            ? `${startup.startup_name} moved to the interview stage. Only meetings are open for now. Residency access will be granted after the final review.`
-          : parsed.data.status === 'rejected'
-            ? `${startup.startup_name} was rejected. Reason: ${parsed.data.rejectionReason?.trim() || 'No reason provided.'}`
-            : `${startup.startup_name} status changed to ${parsed.data.status}.`;
+      const notify = STATUS_NOTIFY[parsed.data.status] ?? {
+        title: 'Status yangilandi',
+        message: `${startup.startup_name} statusi <b>${parsed.data.status}</b> ga o'zgartirildi.`,
+      };
 
-      await notifyUsers([userId], { title, message, type: 'info' });
+      await notifyUsers([userId], {
+        title: notify.title,
+        message: notify.message,
+        type: 'info',
+        channels: { inApp: true, email: true, telegram: true },
+      });
     }
 
     return NextResponse.json({ startup });

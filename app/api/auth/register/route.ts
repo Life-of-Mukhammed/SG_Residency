@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
+import { notifyRoles } from '@/lib/notifications';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -35,6 +36,13 @@ export async function POST(req: NextRequest) {
       email: email.toLowerCase(),
       password,
       role: 'user',
+    });
+
+    await notifyRoles(['manager', 'super_admin'], {
+      title: '👤 New user registered',
+      message: `${name} ${surname} (${email.toLowerCase()}) just created an account on Startup Garage.`,
+      type: 'info',
+      channels: { inApp: true, email: true, telegram: true },
     });
 
     return NextResponse.json({

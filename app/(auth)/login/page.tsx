@@ -128,7 +128,7 @@ function LoginPageContent() {
     }
 
     if (!resetEmail) {
-      toast.error('Email kiriting');
+      toast.error('Please enter your email address');
       return;
     }
 
@@ -148,7 +148,7 @@ function LoginPageContent() {
 
   const handleResetVerify = async () => {
     if (!resetEmail || !resetCode || !resetPassword) {
-      toast.error('Barcha maydonlarni to‘ldiring');
+      toast.error(‘Please fill in all fields’);
       return;
     }
 
@@ -172,7 +172,7 @@ function LoginPageContent() {
       });
 
       if (res?.error) {
-        toast.success('Password changed. Endi login qiling.');
+        toast.success('Password changed. Please sign in again.');
         setResetStep('login');
         return;
       }
@@ -219,8 +219,8 @@ function LoginPageContent() {
                 <p className="text-xs" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.6)' : 'rgba(255,255,255,0.6)' }}>Startup Accelerator OS</p>
               </div>
             </div>
-            <p className="text-5xl font-bold leading-tight" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>Founderlar uchun tezkor, toza va nazoratli workspace.</p>
-            <p className="text-base mt-5 max-w-lg" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.72)' : 'rgba(255,255,255,0.7)' }}>Profil, residency approval, weekly reporting, meetings, sprint va GTM bir joyda boshqariladi.</p>
+            <p className="text-5xl font-bold leading-tight" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>The fast, clean workspace built for startup founders.</p>
+            <p className="text-base mt-5 max-w-lg" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.72)' : 'rgba(255,255,255,0.7)' }}>Apply to residency, get accepted, schedule meetings, submit weekly reports, and access your GTM strategy and 18-month sprint — everything managed through one workspace.</p>
           </div>
           <div className="grid grid-cols-3 gap-4 max-w-xl">
             {/* {['Approval workflow', 'Manager visibility', 'Weekly execution'].map((item) => (

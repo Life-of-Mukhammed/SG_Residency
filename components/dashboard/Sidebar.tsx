@@ -269,12 +269,12 @@ export default function Sidebar() {
 
         <div className="border-t px-2 py-3 space-y-2" style={{ borderColor: theme === 'light' ? 'rgba(99,102,241,0.1)' : 'rgba(148,163,184,0.12)' }}>
           {/* ── Google Translate language switcher ── */}
-          <div className="px-1 pb-1">
+          {/* <div className="px-1 pb-1">
             {open
               ? <GoogleTranslateSwitcher compact={false} />
               : <GoogleTranslateSwitcher compact={true} />
             }
-          </div>
+          </div> */}
 
           <Link href="/dashboard/settings" className="block">
             <div

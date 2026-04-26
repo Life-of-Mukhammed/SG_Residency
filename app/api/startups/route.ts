@@ -6,6 +6,7 @@ import Startup from '@/models/Startup';
 import { notifyRoles } from '@/lib/notifications';
 import { z } from 'zod';
 import User from '@/models/User';
+import { DEFAULT_STARTUP_SPHERE, STARTUP_SPHERES } from '@/lib/startup-spheres';
 
 const startupSchema = z.object({
   applicationType:   z.enum(['existing_resident', 'new_applicant']),
@@ -16,7 +17,7 @@ const startupSchema = z.object({
   region:            z.string().optional(),
   startup_logo:      z.string().optional(),
   description:       z.string().optional(),
-  startup_sphere:    z.string().optional(),
+  startup_sphere:    z.enum(STARTUP_SPHERES).optional(),
   stage:             z.enum(['idea', 'mvp', 'growth', 'scale']).optional(),
   founder_name:      z.string().optional(),
   phone:             z.string().optional(),
@@ -135,7 +136,7 @@ export async function POST(req: NextRequest) {
           : payload.description?.trim() || '',
       startup_sphere:
         payload.applicationType === 'existing_resident'
-          ? payload.startup_sphere?.trim() || 'Other'
+          ? payload.startup_sphere?.trim() || DEFAULT_STARTUP_SPHERE
           : payload.startup_sphere?.trim() || '',
       stage:
         payload.applicationType === 'existing_resident'
