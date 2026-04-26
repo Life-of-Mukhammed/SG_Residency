@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/db';
 import Meeting from '@/models/Meeting';
 import Notification from '@/models/Notification';
-import { getActiveStartup } from '@/lib/access';
+import { getMeetingEligibleStartup } from '@/lib/access';
 import User from '@/models/User';
 import { createGoogleMeetEvent, isGoogleMeetConfigured } from '@/lib/google-calendar';
 
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     const query: Record<string, any> = {};
 
     if (user.role === 'user') {
-      const startup = await getActiveStartup(user.id);
+      const startup = await getMeetingEligibleStartup(user.id);
       if (!startup) return NextResponse.json({ meetings: [] });
       query.$or = [{ userId: user.id }, { status: 'available' }];
     } else if (user.role === 'manager') {
@@ -71,9 +71,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'This slot is already taken. Please choose another time.' }, { status: 409 });
       }
 
-      const startup = await getActiveStartup(user.id);
+      const startup = await getMeetingEligibleStartup(user.id);
       if (!startup) {
-        return NextResponse.json({ error: 'Your startup must be approved before booking meetings.' }, { status: 403 });
+        return NextResponse.json({ error: 'Meetings unlock after interview approval or full residency approval.' }, { status: 403 });
       }
 
       const startupName = (startup as any)?.startup_name || 'Startup meeting';

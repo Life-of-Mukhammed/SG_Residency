@@ -1,0 +1,29 @@
+{
+  "nav": {
+    "home":    "Bosh sahifa",
+    "about":   "Loyiha haqida",
+    "dynamic": "Dinamik demo"
+  },
+  "lang": {
+    "switch":  "Til",
+    "en":      "Inglizcha",
+    "ru":      "Ruscha",
+    "uz":      "O'zbekcha"
+  },
+  "status": {
+    "loading":     "Yuklanmoqda...",
+    "translating": "Tarjima qilinmoqda...",
+    "ready":       "Tayyor",
+    "cacheHit":    "Keshdan olindi",
+    "apiCall":     "API so'rovi"
+  },
+  "actions": {
+    "translate": "Tarjima qilish",
+    "copy":      "Nusxalash",
+    "copied":    "Nusxalandi!"
+  },
+  "errors": {
+    "translationFailed": "Tarjima amalga oshmadi, asl matn ko'rsatilmoqda.",
+    "networkError":      "Tarmoq xatosi. Qayta urinib ko'ring."
+  }
+}

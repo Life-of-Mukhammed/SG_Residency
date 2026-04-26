@@ -145,7 +145,7 @@ export default function MyStartupPage() {
                   style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}
                 >
                   <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: '#ef4444' }}>
-                    Reject Reason
+                    Rejection Reason
                   </p>
                   <p className="text-sm leading-6" style={{ color: 'var(--text-primary)' }}>
                     {startup.rejectionReason}

@@ -8,13 +8,14 @@ import Link from 'next/link';
 import { Search, ChevronUp, ChevronDown, Trash2, Eye, RefreshCw, Users, TrendingUp, FileText, Calendar, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAppStore } from '@/store/appStore';
+import { UZ_REGIONS } from '@/lib/regions';
 
 type SortKey = 'startup_name' | 'stage' | 'mrr' | 'users_count' | 'status' | 'createdAt';
 type SortDir = 'asc' | 'desc';
 
-const REGIONS  = ['Tashkent','Samarkand','Bukhara','Namangan','Andijan','Fergana','Nukus','Other'];
+const REGIONS = UZ_REGIONS;
 const STAGES   = ['idea','mvp','growth','scale'];
-const STATUSES = ['pending','active','inactive','rejected'];
+const STATUSES = ['active','inactive','rejected'];
 
 export default function ManagerPage() {
   const { lang } = useAppStore();
@@ -129,6 +130,7 @@ export default function ManagerPage() {
     if (typeof va === 'number') return sortDir === 'asc' ? va - vb : vb - va;
     return sortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
   });
+  const visibleStartups = sorted.filter((startup) => !['pending', 'lead_accepted'].includes(startup.status));
 
   const SortIcon = ({ k }: { k: SortKey }) => (
     <span className="ml-1 inline-flex flex-col" style={{ color: sortKey === k ? 'var(--accent)' : 'var(--text-muted)' }}>
@@ -141,7 +143,7 @@ export default function ManagerPage() {
 
   return (
     <div className="animate-fade-in">
-      <Header title={t('title')} subtitle={t('subtitle')} />
+      <Header title="Residents Panel" subtitle="Approved and reviewed residency startups" />
       <div className="p-6 space-y-5">
 
         {/* Analytics summary */}
@@ -213,9 +215,9 @@ export default function ManagerPage() {
 
         {/* Stats */}
         <div className="flex gap-5 text-sm flex-wrap">
-          <span style={{ color: 'var(--text-muted)' }}>{t('total')}: <strong style={{ color: 'var(--text-primary)' }}>{pagination.total}</strong></span>
-          <span style={{ color: 'var(--text-muted)' }}>{t('active')}: <strong style={{ color: '#10b981' }}>{startups.filter(s => s.status === 'active').length}</strong></span>
-          <span style={{ color: 'var(--text-muted)' }}>Leads: <strong style={{ color: '#f59e0b' }}>{startups.filter(s => s.status === 'pending').length}</strong></span>
+          <span style={{ color: 'var(--text-muted)' }}>Residents: <strong style={{ color: 'var(--text-primary)' }}>{visibleStartups.length}</strong></span>
+          <span style={{ color: 'var(--text-muted)' }}>{t('active')}: <strong style={{ color: '#10b981' }}>{visibleStartups.filter(s => s.status === 'active').length}</strong></span>
+          <span style={{ color: 'var(--text-muted)' }}>Rejected: <strong style={{ color: '#ef4444' }}>{visibleStartups.filter(s => s.status === 'rejected').length}</strong></span>
         </div>
 
         {/* Table */}
@@ -249,7 +251,7 @@ export default function ManagerPage() {
                     <td key={j}><div className="skeleton h-4 rounded" /></td>
                   ))}</tr>
                 ))
-              ) : sorted.length === 0 ? (
+              ) : visibleStartups.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="text-center py-16" style={{ color: 'var(--text-muted)' }}>
                     {t('noData')}
@@ -261,7 +263,7 @@ export default function ManagerPage() {
                     )}
                   </td>
                 </tr>
-              ) : sorted.map(s => (
+              ) : visibleStartups.map(s => (
                 <tr key={s._id}>
                   <td>
                     <Link href={`/manager/startup/${s._id}`}>

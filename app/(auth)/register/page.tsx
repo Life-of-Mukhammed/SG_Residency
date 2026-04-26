@@ -89,7 +89,7 @@ function RegisterPageContent() {
       }
 
       toast.success('Account created successfully!');
-      router.push('/dashboard/apply');
+      router.push('/dashboard');
       router.refresh();
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Registration failed');
@@ -107,7 +107,7 @@ function RegisterPageContent() {
     setGoogleLoading(true);
     try {
       const res = await signIn('google', {
-        callbackUrl: '/dashboard/apply',
+        callbackUrl: '/dashboard',
         redirect: false,
       });
 

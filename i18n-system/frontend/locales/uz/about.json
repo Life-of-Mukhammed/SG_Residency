@@ -1,0 +1,19 @@
+{
+  "title":       "Loyiha haqida",
+  "description": "Next.js ilovalar uchun production-ready ko'p tilli arxitektura: statik kontent uchun react-i18next va dinamik kontent uchun Google Cloud Translation.",
+  "mission": {
+    "title": "Missiya",
+    "body":  "Ko'p tilli veb-ilovalarni har bir dasturchi uchun qulay qilish — tez, miqyosli va qo'llab-quvvatlanadigan."
+  },
+  "vision": {
+    "title": "Vizyon",
+    "body":  "Til hech qachon ma'lumotga kirish yoki mahsulot yaratishga to'siq bo'lmaydigan dunyo."
+  },
+  "team": {
+    "title": "Jamoa"
+  },
+  "langDemo": {
+    "title": "Til almashtirish komponentlari",
+    "body":  "Ikki variant mavjud: dropdown va tugmalar. Ikkalasi ham URL, cookie, localStorage va i18next ni bir vaqtda sinxronlashtiradi."
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "hero": {
+    "badge":     "react-i18next + Google Translate",
+    "title":     "Multilingual apps, done right.",
+    "subtitle":  "Static translations via JSON files. Dynamic DB content via Google Cloud API. Language auto-detection. All in one clean architecture.",
+    "cta":       "See Dynamic Translation",
+    "secondary": "Learn How It Works"
+  },
+  "features": {
+    "title":    "What's included",
+    "subtitle": "Feature cards below are translated from English database text in real-time."
+  },
+  "news": {
+    "title":    "Latest News",
+    "subtitle": "These news items are stored in English and auto-translated to your locale."
+  }
+}

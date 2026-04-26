@@ -7,6 +7,7 @@ import Header from '@/components/dashboard/Header';
 import { useSession } from 'next-auth/react';
 import { Calendar, Video, Clock, ChevronLeft, ChevronRight, Check, Plus, X, Trash2 } from 'lucide-react';
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isBefore, startOfDay, addMonths, subMonths } from 'date-fns';
+import { useAppStore } from '@/store/appStore';
 
 const DAYS_SHORT = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
 
@@ -15,6 +16,7 @@ export default function MeetingsPage() {
   const user = session?.user as any;
   const isManager = ['manager','super_admin'].includes(user?.role);
   const [startup, setStartup]         = useState<any>(null);
+  const { lang } = useAppStore();
 
   // Shared state
   const [meetings, setMeetings]       = useState<any[]>([]);
@@ -124,19 +126,29 @@ export default function MeetingsPage() {
 
   const myMeetings   = meetings.filter(m => m.status === 'booked' && (m.userId?._id === user?.id || m.userId === user?.id));
   const upcomingMy   = myMeetings.filter(m => new Date(m.scheduledAt) > new Date()).sort((a,b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+  const meetingsUnlocked = !startup || ['active', 'lead_accepted'].includes(startup.status);
 
   // ─── USER VIEW ────────────────────────────────────────────────────────────
   if (!isManager) {
-    if (startup && startup.status !== 'active') {
+    if (startup && !meetingsUnlocked) {
       return (
         <div className="animate-fade-in">
-          <Header title="Book a Meeting" subtitle="Approval required" />
+          <Header
+            title={lang === 'uz' ? 'Uchrashuvlar' : lang === 'ru' ? 'Встречи' : 'Meetings'}
+            subtitle={lang === 'uz' ? 'Hozircha yopiq' : lang === 'ru' ? 'Пока закрыто' : 'Locked for now'}
+          />
           <div className="p-6">
             <div className="card max-w-2xl mx-auto text-center py-14">
               <Calendar size={32} className="mx-auto mb-4" style={{ color: '#f59e0b' }} />
-              <p className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Meetings are locked</p>
+              <p className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                {lang === 'uz' ? 'Uchrashuvlar yopiq' : lang === 'ru' ? 'Встречи закрыты' : 'Meetings are locked'}
+              </p>
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                Your startup must be approved before you can book meetings with the manager.
+                {lang === 'uz'
+                  ? 'Uchrashuvlar interview bosqichi yoki to‘liq tasdiqdan keyin ochiladi.'
+                  : lang === 'ru'
+                    ? 'Встречи откроются после этапа интервью или полного одобрения.'
+                    : 'Meetings open after the interview stage or after full approval.'}
               </p>
             </div>
           </div>
@@ -146,7 +158,18 @@ export default function MeetingsPage() {
 
     return (
       <div className="animate-fade-in">
-        <Header title="Book a Meeting" subtitle="Schedule time with your program manager" />
+        <Header
+          title={
+            startup?.status === 'lead_accepted'
+              ? lang === 'uz' ? 'Interview uchrashuvi' : lang === 'ru' ? 'Интервью' : 'Interview Meeting'
+              : lang === 'uz' ? 'Uchrashuv belgilash' : lang === 'ru' ? 'Запись на встречу' : 'Book a Meeting'
+          }
+          subtitle={
+            startup?.status === 'lead_accepted'
+              ? lang === 'uz' ? 'Interview uchun vaqt tanlang' : lang === 'ru' ? 'Выберите время для интервью' : 'Choose a time for your interview'
+              : lang === 'uz' ? 'Manager bilan vaqt belgilang' : lang === 'ru' ? 'Выберите время с менеджером' : 'Schedule time with your manager'
+          }
+        />
         <div className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
 
@@ -159,12 +182,32 @@ export default function MeetingsPage() {
                 </div>
                 <div className="flex items-center gap-2 mb-4">
                   <Video size={16} style={{ color: 'var(--text-muted)' }} />
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Meeting link opens after booking confirmation</span>
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {lang === 'uz'
+                      ? 'Link booking tasdiqlangandan keyin chiqadi'
+                      : lang === 'ru'
+                        ? 'Ссылка появится после подтверждения'
+                        : 'The link appears after booking confirmation'}
+                  </span>
                 </div>
                 <div className="h-px w-full mb-4" style={{ background: 'var(--border)' }} />
-                <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Program Manager Session</p>
+                <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                  {startup?.status === 'lead_accepted'
+                    ? lang === 'uz' ? 'Interview session' : lang === 'ru' ? 'Интервью-сессия' : 'Interview Session'
+                    : lang === 'uz' ? 'Manager sessiyasi' : lang === 'ru' ? 'Сессия с менеджером' : 'Manager Session'}
+                </p>
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Book a 30-minute session to discuss your startup progress, get feedback, or plan your next sprint.
+                  {startup?.status === 'lead_accepted'
+                    ? lang === 'uz'
+                      ? '30 daqiqalik interview uchun qulay vaqtni tanlang.'
+                      : lang === 'ru'
+                        ? 'Выберите удобное время для 30-минутного интервью.'
+                        : 'Choose a convenient time for a 30-minute interview.'
+                    : lang === 'uz'
+                      ? '30 daqiqalik sessiyada progress, feedback va keyingi qadamlarni muhokama qiling.'
+                      : lang === 'ru'
+                        ? 'Обсудите прогресс, обратную связь и следующие шаги на 30-минутной сессии.'
+                        : 'Use this 30-minute session to discuss progress, feedback, and next steps.'}
                 </p>
               </div>
 

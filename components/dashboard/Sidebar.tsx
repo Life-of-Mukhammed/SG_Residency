@@ -36,6 +36,7 @@ type NavKey =
   | 'myStartup'
   | 'settings'
   | 'managerPanel'
+  | 'newLeads'
   | 'schedule'
   | 'analytics'
   | 'superAdmin'
@@ -55,6 +56,7 @@ const USER_NAV: { key: NavKey; href: string; icon: React.ReactNode }[] = [
 
 const MGR_NAV: { key: NavKey; href: string; icon: React.ReactNode }[] = [
   { key: 'managerPanel', href: '/manager', icon: <Users size={17} /> },
+  { key: 'newLeads', href: '/manager/leads', icon: <Star size={17} /> },
   { key: 'schedule', href: '/manager/schedule', icon: <Clock size={17} /> },
   { key: 'reports', href: '/manager/reports', icon: <FileText size={17} /> },
   { key: 'analytics', href: '/manager/analytics', icon: <BarChart3 size={17} /> },
@@ -78,6 +80,7 @@ const NAV_LABELS: Record<NavKey, Record<string, string>> = {
   myStartup: { uz: 'Startup', ru: 'Стартап', en: 'Startup' },
   settings: { uz: 'Profil', ru: 'Профиль', en: 'Profile' },
   managerPanel: { uz: 'Panel', ru: 'Панель', en: 'Panel' },
+  newLeads: { uz: 'New Leads', ru: 'Новые лиды', en: 'New Leads' },
   schedule: { uz: 'Jadval', ru: 'Расписание', en: 'Schedule' },
   analytics: { uz: 'Analitika', ru: 'Аналитика', en: 'Analytics' },
   superAdmin: { uz: 'Super Admin', ru: 'Супер Админ', en: 'Super Admin' },
@@ -87,6 +90,7 @@ const NAV_LABELS: Record<NavKey, Record<string, string>> = {
 };
 
 const APPLY_ALLOWED = new Set(['/dashboard', '/dashboard/apply']);
+const INTERVIEW_ALLOWED = new Set(['/dashboard', '/dashboard/meetings', '/dashboard/startup', '/dashboard/settings']);
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -95,7 +99,7 @@ export default function Sidebar() {
   const { lang, theme, sidebarOpen, toggleSidebar, _hydrated } = useAppStore();
 
   const [mounted, setMounted] = useState(false);
-  const [startupStatus, setStartupStatus] = useState<'active' | 'pending' | 'rejected' | 'inactive' | null>(null);
+  const [startupStatus, setStartupStatus] = useState<'active' | 'lead_accepted' | 'pending' | 'rejected' | 'inactive' | null>(null);
   const [gtmUnlocked, setGtmUnlocked] = useState(false);
   const [showApplyPrompt, setShowApplyPrompt] = useState(false);
 
@@ -142,6 +146,7 @@ export default function Sidebar() {
   const shouldPromptResidency = (item: { key: NavKey; href: string }) => {
     if (role !== 'user') return false;
     if (startupStatus === 'active') return false;
+    if (startupStatus === 'lead_accepted') return !INTERVIEW_ALLOWED.has(item.href);
     return !APPLY_ALLOWED.has(item.href);
   };
 
@@ -228,7 +233,7 @@ export default function Sidebar() {
                   <span style={{ color: theme === 'light' ? '#0f172a' : '#f8fafc' }}>SG-Residency</span>
                 </p>
                 <p className="text-[11px] truncate uppercase tracking-[0.16em]" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.52)' : 'rgba(226,232,240,0.58)' }}>
-                  Workspace OS
+                  Accelerator Workspace
                 </p>
               </div>
             </div>
@@ -322,14 +327,16 @@ export default function Sidebar() {
               Residency application required
             </h3>
             <p className="text-sm mb-6 leading-6" style={{ color: 'var(--text-muted)' }}>
-              Dashboard is open now. Sprint, GTM, reports, meetings and the rest of the workspace unlock after your residency request is approved.
+              {startupStatus === 'lead_accepted'
+                ? 'You are currently in the interview stage. Only meetings, startup details, and profile settings are available right now.'
+                : 'Your residency request must be approved before the rest of the workspace becomes available.'}
             </p>
             <div className="flex gap-3 justify-center">
               <button onClick={() => setShowApplyPrompt(false)} className="btn-secondary">
-                Later
+                Close
               </button>
               <Link href="/dashboard/apply" onClick={() => setShowApplyPrompt(false)}>
-                <button className="btn-primary">Apply Now</button>
+                <button className="btn-primary">{startupStatus === 'rejected' ? 'Update Application' : 'Open Application'}</button>
               </Link>
             </div>
           </div>

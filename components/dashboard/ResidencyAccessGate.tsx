@@ -8,6 +8,7 @@ import axios from 'axios';
 import { useAppStore } from '@/store/appStore';
 
 const ALLOWED_PATHS = ['/dashboard', '/dashboard/apply'];
+const INTERVIEW_ALLOWED = ['/dashboard', '/dashboard/meetings', '/dashboard/startup', '/dashboard/settings'];
 
 export default function ResidencyAccessGate() {
   const pathname = usePathname();
@@ -40,7 +41,13 @@ export default function ResidencyAccessGate() {
     load();
   }, []);
 
-  if (!mounted || checking || startupStatus === 'active' || ALLOWED_PATHS.includes(pathname)) return null;
+  if (
+    !mounted ||
+    checking ||
+    startupStatus === 'active' ||
+    ALLOWED_PATHS.includes(pathname) ||
+    (startupStatus === 'lead_accepted' && INTERVIEW_ALLOWED.includes(pathname))
+  ) return null;
 
   const left = hydrated ? (sidebarOpen ? 240 : 64) : 240;
 
@@ -62,14 +69,22 @@ export default function ResidencyAccessGate() {
           <Lock size={28} style={{ color: 'var(--accent)' }} />
         </div>
         <h2 className="text-2xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-          {startupStatus === 'rejected' ? 'Application Rejected' : startupStatus === 'pending' ? 'Application On Progress' : 'Apply to Residency First'}
+          {startupStatus === 'rejected'
+            ? 'Application Rejected'
+            : startupStatus === 'lead_accepted'
+              ? 'Interview Stage Unlocked'
+              : startupStatus === 'pending'
+                ? 'Application Under Review'
+                : 'Apply to Residency'}
         </h2>
         <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
           {startupStatus === 'rejected'
-            ? 'Sizning arizangiz rad etilgan. Dashboard approval bo‘lmaguncha ochilmaydi.'
+            ? 'Your request was rejected. The workspace stays locked until your application is approved.'
+            : startupStatus === 'lead_accepted'
+              ? 'Your lead passed the first review. Only meetings are open now so you can schedule an interview.'
             : startupStatus === 'pending'
-              ? 'Arizangiz yuborilgan. Hozir admin yoki manager review qilmoqda. Accept bo‘lgandan keyin dashboard ochiladi.'
-              : 'Apply to residency first. Sprint, GTM and the rest of the workspace unlock after approval.'}
+              ? 'Your application was sent successfully. Admin or manager review is still in progress.'
+              : 'Submit your residency application first. The rest of the workspace unlocks after approval.'}
         </p>
         {startupStatus === 'rejected' && rejectionReason && (
           <div
@@ -77,7 +92,7 @@ export default function ResidencyAccessGate() {
             style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}
           >
             <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: '#ef4444' }}>
-              Reject Reason
+              Rejection Reason
             </p>
             <p className="text-sm leading-6" style={{ color: 'var(--text-primary)' }}>
               {rejectionReason}
@@ -86,7 +101,7 @@ export default function ResidencyAccessGate() {
         )}
         <Link href="/dashboard/apply">
           <button className="btn-primary inline-flex items-center gap-2">
-            <Rocket size={15} /> {startupStatus ? 'Open Application' : 'Open Application'}
+            <Rocket size={15} /> {startupStatus === 'rejected' ? 'Update Application' : 'Open Application'}
           </button>
         </Link>
       </div>

@@ -7,7 +7,7 @@ import { notifyUsers } from '@/lib/notifications';
 import { z } from 'zod';
 
 const startupUpdateSchema = z.object({
-  status: z.enum(['pending', 'active', 'inactive', 'rejected']).optional(),
+  status: z.enum(['pending', 'lead_accepted', 'active', 'inactive', 'rejected']).optional(),
   managerId: z.string().optional(),
   rejectionReason: z.string().trim().max(500).optional(),
 }).strict();
@@ -102,6 +102,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (parsed.data.status === 'pending') {
       patch.rejectionReason = '';
     }
+    if (parsed.data.status === 'lead_accepted' && !current.managerId) {
+      patch.managerId = user.id;
+      patch.rejectionReason = '';
+    }
 
     const startup = await Startup.findByIdAndUpdate(
       params.id,
@@ -119,6 +123,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       const title =
         parsed.data.status === 'active'
           ? 'Application approved'
+          : parsed.data.status === 'lead_accepted'
+            ? 'Interview stage unlocked'
           : parsed.data.status === 'rejected'
             ? 'Application rejected'
             : 'Application status updated';
@@ -126,6 +132,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       const message =
         parsed.data.status === 'active'
           ? `${startup.startup_name} has been approved. Reports, meetings, sprint, and GTM are now open for you.`
+          : parsed.data.status === 'lead_accepted'
+            ? `${startup.startup_name} moved to the interview stage. Only meetings are open for now. Residency access will be granted after the final review.`
           : parsed.data.status === 'rejected'
             ? `${startup.startup_name} was rejected. Reason: ${parsed.data.rejectionReason?.trim() || 'No reason provided.'}`
             : `${startup.startup_name} status changed to ${parsed.data.status}.`;

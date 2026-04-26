@@ -1,0 +1,29 @@
+{
+  "nav": {
+    "home":    "Home",
+    "about":   "About",
+    "dynamic": "Dynamic Demo"
+  },
+  "lang": {
+    "switch":  "Language",
+    "en":      "English",
+    "ru":      "Russian",
+    "uz":      "Uzbek"
+  },
+  "status": {
+    "loading":     "Loading...",
+    "translating": "Translating...",
+    "ready":       "Ready",
+    "cacheHit":    "Cache hit",
+    "apiCall":     "API call"
+  },
+  "actions": {
+    "translate": "Translate",
+    "copy":      "Copy",
+    "copied":    "Copied!"
+  },
+  "errors": {
+    "translationFailed": "Translation failed, showing original.",
+    "networkError":      "Network error. Please try again."
+  }
+}

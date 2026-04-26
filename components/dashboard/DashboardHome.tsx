@@ -3,41 +3,71 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import {
   Rocket, Target, FileText, Calendar,
-  CheckCircle, Clock, AlertCircle, ArrowRight, Users, DollarSign, Lock
+  CheckCircle, Clock, AlertCircle, ArrowRight, Users, DollarSign, Lock, Video
 } from 'lucide-react';
+import ResidencyApplicationModal from '@/components/dashboard/ResidencyApplicationModal';
 
 export default function DashboardHome() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [startup, setStartup]   = useState<any>(null);
   const [reports, setReports]   = useState<any[]>([]);
   const [meetings, setMeetings] = useState<any[]>([]);
   const [loading, setLoading]   = useState(true);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showInterviewModal, setShowInterviewModal] = useState(false);
+
+  const load = async () => {
+    try {
+      const [sr, rr, mr] = await Promise.all([
+        axios.get('/api/startups?limit=1'),
+        axios.get('/api/reports?limit=5'),
+        axios.get('/api/meetings'),
+      ]);
+      const currentStartup = sr.data.startups?.[0] ?? null;
+      setStartup(currentStartup);
+      setReports(rr.data.reports  ?? []);
+      setMeetings(mr.data.meetings ?? []);
+      if (!currentStartup) {
+        setShowApplyModal(true);
+      }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [sr, rr, mr] = await Promise.all([
-          axios.get('/api/startups?limit=1'),
-          axios.get('/api/reports?limit=5'),
-          axios.get('/api/meetings'),
-        ]);
-        setStartup(sr.data.startups?.[0] ?? null);
-        setReports(rr.data.reports  ?? []);
-        setMeetings(mr.data.meetings ?? []);
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
-    };
     load();
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('apply') === '1') {
+      setShowApplyModal(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!startup?._id || startup.status !== 'lead_accepted' || typeof window === 'undefined') return;
+
+    const promptKey = `interview_prompt_seen_${startup._id}_${startup.status}`;
+    const alreadySeen = window.localStorage.getItem(promptKey);
+
+    if (!alreadySeen) {
+      setShowInterviewModal(true);
+      window.localStorage.setItem(promptKey, '1');
+    }
+  }, [startup?._id, startup?.status]);
 
   const upcomingMeetings = meetings.filter(
     (m) => m.status === 'booked' && new Date(m.scheduledAt) > new Date()
   );
   const lastReport = reports[0];
   const isApproved = startup?.status === 'active';
+  const isInterviewStage = startup?.status === 'lead_accepted';
+  const upcomingInterviewMeetings = upcomingMeetings;
 
   if (loading) {
     return (
@@ -53,6 +83,7 @@ export default function DashboardHome() {
     const isRejected = startup.status === 'rejected';
 
     return (
+      <>
       <div className="max-w-3xl mx-auto">
         <div className="card text-center py-16 px-8">
           <div
@@ -66,15 +97,17 @@ export default function DashboardHome() {
             )}
           </div>
           <span className={`badge ${isRejected ? 'badge-rejected' : 'badge-pending'} mb-4`}>
-            {isRejected ? 'Rejected' : 'On Progress'}
+            {isRejected ? 'Rejected' : isInterviewStage ? 'Interview Stage' : 'Under Review'}
           </span>
           <h2 className="text-3xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-            {isRejected ? 'Your application was rejected' : 'Your application is on progress'}
+            {isRejected ? 'Your application was not approved' : isInterviewStage ? 'Your interview stage is active' : 'Your application is under review'}
           </h2>
           <p className="text-sm max-w-xl mx-auto leading-6" style={{ color: 'var(--text-muted)' }}>
             {isRejected
-              ? 'Admin yoki manager sizning arizangizni rad etdi. Dashboard approval bo‘lmaguncha ochilmaydi.'
-              : 'Arizangiz yuborildi. Hozircha lead sifatida ko‘rib chiqilyapsiz. Admin yoki manager accept qilgandan keyin dashboard to‘liq ochiladi.'}
+              ? 'Your request was rejected. Full residency access stays locked until your application is approved.'
+              : isInterviewStage
+                ? 'Your lead passed the first review. For now, only meetings are open so you can schedule an interview with the team.'
+                : 'Your request was submitted successfully. Admin or manager review is still in progress.'}
           </p>
 
           {startup.rejectionReason && (
@@ -83,7 +116,7 @@ export default function DashboardHome() {
               style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}
             >
               <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: '#ef4444' }}>
-                Reject Reason
+                Rejection Reason
               </p>
               <p className="text-sm leading-6" style={{ color: 'var(--text-primary)' }}>
                 {startup.rejectionReason}
@@ -94,7 +127,7 @@ export default function DashboardHome() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 text-left">
             <div className="card">
               <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: 'var(--text-muted)' }}>
-                Lead
+                Application
               </p>
               <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {startup.startup_name}
@@ -109,16 +142,41 @@ export default function DashboardHome() {
               </p>
               <div className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
                 <Lock size={16} />
-                <span className="text-sm">Sprint, GTM, reports va meetings hozircha yopiq</span>
+                <span className="text-sm">
+                  {isInterviewStage ? 'Only meetings, profile, and startup details are open right now.' : 'Sprint, GTM, reports, and meetings stay locked for now.'}
+                </span>
               </div>
             </div>
           </div>
+          {isInterviewStage && (
+            <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
+              <Link href="/dashboard/meetings">
+                <button className="btn-primary">Open Meetings</button>
+              </Link>
+              <button className="btn-secondary" onClick={() => setShowInterviewModal(true)}>
+                View Interview Window
+              </button>
+            </div>
+          )}
+          {isRejected && (
+            <button className="btn-primary mt-8" onClick={() => setShowApplyModal(true)}>
+              Update Application
+            </button>
+          )}
         </div>
       </div>
+      <ResidencyApplicationModal
+        open={showApplyModal}
+        onClose={() => setShowApplyModal(false)}
+        onSubmitted={load}
+        startup={startup}
+      />
+      </>
     );
   }
 
   return (
+    <>
     <div className="space-y-8">
       {/* Stats row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -202,7 +260,7 @@ export default function DashboardHome() {
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Apply to Residency</p>
-                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Submit your startup application</p>
+                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Start your residency application</p>
                   </div>
                   <ArrowRight size={16} style={{ color: 'var(--text-muted)' }}
                     className="group-hover:translate-x-1 transition-transform" />
@@ -233,8 +291,8 @@ export default function DashboardHome() {
                   <Target size={22} style={{ color: '#f59e0b' }} />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Sprint unlocks after approval</p>
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Manager or admin approval is required before sprint opens.</p>
+                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Sprint opens after residency approval</p>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Manager or admin approval is required before sprint becomes available.</p>
                 </div>
               </div>
             </div>
@@ -365,5 +423,92 @@ export default function DashboardHome() {
         </div>
       </div>
     </div>
+    <ResidencyApplicationModal
+      open={showApplyModal}
+      onClose={() => setShowApplyModal(false)}
+      onSubmitted={load}
+      lockOpen={!startup}
+    />
+    {isInterviewStage && showInterviewModal && (
+      <div
+        className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+        style={{ background: 'rgba(2,6,23,0.78)', backdropFilter: 'blur(10px)' }}
+      >
+        <div className="card w-full max-w-2xl px-7 py-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em]" style={{ color: 'var(--accent)' }}>
+                Interview Access
+              </p>
+              <h3 className="text-2xl font-bold mt-2" style={{ color: 'var(--text-primary)' }}>
+                Manager approved your interview stage
+              </h3>
+              <p className="text-sm mt-3 leading-6" style={{ color: 'var(--text-muted)' }}>
+                Your application passed the first review. You can now open the meeting calendar and book an interview with the manager.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowInterviewModal(false)}
+              className="w-10 h-10 rounded-2xl flex items-center justify-center"
+              style={{ background: 'var(--bg-secondary)' }}
+            >
+              <AlertCircle size={18} style={{ opacity: 0.55 }} />
+            </button>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4 mt-6">
+            <div className="rounded-3xl p-5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <Video size={18} style={{ color: 'var(--accent)' }} />
+                <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Meeting Calendar</p>
+              </div>
+              <p className="text-sm leading-6" style={{ color: 'var(--text-muted)' }}>
+                Choose an available date and time slot. After booking, your interview link or office address will appear in the meetings section.
+              </p>
+              <button
+                className="btn-primary mt-5 w-full"
+                onClick={() => {
+                  setShowInterviewModal(false);
+                  router.push('/dashboard/meetings');
+                }}
+              >
+                Open Meeting Calendar
+              </button>
+            </div>
+
+            <div className="rounded-3xl p-5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar size={18} style={{ color: 'var(--accent)' }} />
+                <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Upcoming Interview</p>
+              </div>
+              {upcomingInterviewMeetings.length > 0 ? (
+                <div className="space-y-3">
+                  {upcomingInterviewMeetings.slice(0, 2).map((meeting) => (
+                    <div key={meeting._id} className="rounded-2xl p-3" style={{ background: 'var(--bg-card)' }}>
+                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                        {new Date(meeting.scheduledAt).toLocaleString('en', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                        {meeting.topic || 'Interview meeting'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm leading-6" style={{ color: 'var(--text-muted)' }}>
+                  No interview booked yet. Open the meeting calendar and choose an available slot.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

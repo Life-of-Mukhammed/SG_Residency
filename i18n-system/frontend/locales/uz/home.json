@@ -1,0 +1,17 @@
+{
+  "hero": {
+    "badge":     "react-i18next + Google Translate",
+    "title":     "Ko'p tilli ilovalar — to'g'ri yo'l bilan.",
+    "subtitle":  "Statik tarjimalar JSON fayllari orqali. Dinamik DB kontenti Google Cloud API orqali. Til avtomatik aniqlanadi.",
+    "cta":       "Dinamik tarjimani ko'rish",
+    "secondary": "Qanday ishlashini o'rganish"
+  },
+  "features": {
+    "title":    "Nima kiritilgan",
+    "subtitle": "Quyidagi kartalar ingliz tilidagi ma'lumotlar bazasidan real vaqtda tarjima qilinadi."
+  },
+  "news": {
+    "title":    "So'nggi yangiliklar",
+    "subtitle": "Yangiliklar ingliz tilida saqlanadi va avtomatik ravishda tilingizga tarjima qilinadi."
+  }
+}

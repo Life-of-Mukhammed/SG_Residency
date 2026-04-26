@@ -1,0 +1,19 @@
+{
+  "title":       "About This Project",
+  "description": "A production-ready multilingual architecture for Next.js applications, combining react-i18next for static content and Google Cloud Translation for dynamic content.",
+  "mission": {
+    "title": "Mission",
+    "body":  "Make multilingual web applications accessible to every developer — fast, scalable, and maintainable."
+  },
+  "vision": {
+    "title": "Vision",
+    "body":  "A world where language is never a barrier to accessing information or building products."
+  },
+  "team": {
+    "title": "The Team"
+  },
+  "langDemo": {
+    "title": "Language Switcher Components",
+    "body":  "Two variants are available: a dropdown and inline buttons. Both sync the URL, cookie, localStorage, and i18next simultaneously."
+  }
+}
