@@ -73,7 +73,7 @@ const ADMIN_NAV: { key: NavKey; href: string; icon: React.ReactNode }[] = [
 ];
 
 const NAV_LABELS: Record<NavKey, Record<string, string>> = {
-  dashboard: { uz: 'Dashboard', ru: 'Главная', en: 'Dashboard' },
+  dashboard: { uz: 'Bosh sahifa', ru: 'Главная', en: 'Dashboard' },
   sprint: { uz: 'Sprint', ru: 'Спринт', en: 'Sprint' },
   gtm: { uz: 'GTM', ru: 'GTM', en: 'GTM' },
   reports: { uz: 'Hisobotlar', ru: 'Отчёты', en: 'Reports' },
@@ -81,13 +81,13 @@ const NAV_LABELS: Record<NavKey, Record<string, string>> = {
   myStartup: { uz: 'Startup', ru: 'Стартап', en: 'Startup' },
   settings: { uz: 'Profil', ru: 'Профиль', en: 'Profile' },
   managerPanel: { uz: 'Panel', ru: 'Панель', en: 'Panel' },
-  newLeads: { uz: 'New Leads', ru: 'Новые лиды', en: 'New Leads' },
+  newLeads: { uz: 'Yangi Leadlar', ru: 'Новые лиды', en: 'New Leads' },
   schedule: { uz: 'Jadval', ru: 'Расписание', en: 'Schedule' },
   analytics: { uz: 'Analitika', ru: 'Аналитика', en: 'Analytics' },
   superAdmin: { uz: 'Super Admin', ru: 'Супер Админ', en: 'Super Admin' },
-  gtmManager: { uz: 'GTM CRUD', ru: 'GTM CRUD', en: 'GTM Manager' },
-  sprintManager: { uz: 'Sprint CRUD', ru: 'Sprint CRUD', en: 'Sprint Manager' },
-  progressTracker: { uz: 'Progress', ru: 'Прогресс', en: 'Progress Tracker' },
+  gtmManager: { uz: 'GTM CRUD', ru: 'GTM CRUD', en: 'GTM Boshqaruvi' },
+  sprintManager: { uz: 'Sprint CRUD', ru: 'Sprint CRUD', en: 'Sprint Boshqaruvi' },
+  progressTracker: { uz: 'Progress', ru: 'Прогресс', en: 'Progress' },
 };
 
 const APPLY_ALLOWED = new Set(['/dashboard', '/dashboard/apply']);

@@ -97,17 +97,17 @@ export default function DashboardHome() {
             )}
           </div>
           <span className={`badge ${isRejected ? 'badge-rejected' : 'badge-pending'} mb-4`}>
-            {isRejected ? 'Rejected' : isInterviewStage ? 'Interview Stage' : 'Under Review'}
+            {isRejected ? 'Rad etilgan' : isInterviewStage ? 'Intervyu bosqichi' : 'Ko\'rib chiqilmoqda'}
           </span>
           <h2 className="text-3xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-            {isRejected ? 'Your application was not approved' : isInterviewStage ? 'Your interview stage is active' : 'Your application is under review'}
+            {isRejected ? 'Arizangiz tasdiqlanmadi' : isInterviewStage ? 'Intervyu bosqichi faoldir' : 'Arizangiz ko\'rib chiqilmoqda'}
           </h2>
           <p className="text-sm max-w-xl mx-auto leading-6" style={{ color: 'var(--text-muted)' }}>
             {isRejected
-              ? 'Your request was rejected. Full residency access stays locked until your application is approved.'
+              ? 'Arizangiz rad etildi. Rezidentlikka kirish ariza tasdiqlanguncha qulflangan bo\'lib qoladi.'
               : isInterviewStage
-                ? 'Your lead passed the first review. For now, only meetings are open so you can schedule an interview with the team.'
-                : 'Your request was submitted successfully. Admin or manager review is still in progress.'}
+                ? 'Leadingiz birinchi tekshiruvdan o\'tdi. Hozircha faqat uchrashuvlar ochiq — jamoa bilan intervyu belgilashingiz mumkin.'
+                : 'Arizangiz muvaffaqiyatli yuborildi. Menejer yoki admin ko\'rib chiqishi hali davom etmoqda.'}
           </p>
 
           {startup.rejectionReason && (
@@ -116,7 +116,7 @@ export default function DashboardHome() {
               style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}
             >
               <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: '#ef4444' }}>
-                Rejection Reason
+                Rad etish sababi
               </p>
               <p className="text-sm leading-6" style={{ color: 'var(--text-primary)' }}>
                 {startup.rejectionReason}
@@ -127,7 +127,7 @@ export default function DashboardHome() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 text-left">
             <div className="card">
               <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: 'var(--text-muted)' }}>
-                Application
+                Ariza
               </p>
               <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {startup.startup_name}
@@ -138,12 +138,12 @@ export default function DashboardHome() {
             </div>
             <div className="card">
               <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: 'var(--text-muted)' }}>
-                Workspace Access
+                Ish muhitiga kirish
               </p>
               <div className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
                 <Lock size={16} />
                 <span className="text-sm">
-                  {isInterviewStage ? 'Only meetings, profile, and startup details are open right now.' : 'Sprint, GTM, reports, and meetings stay locked for now.'}
+                  {isInterviewStage ? 'Hozirda faqat uchrashuvlar, profil va startup ma\'lumotlari ochiq.' : 'Sprint, GTM, hisobotlar va uchrashuvlar hali qulflangan.'}
                 </span>
               </div>
             </div>
@@ -151,16 +151,16 @@ export default function DashboardHome() {
           {isInterviewStage && (
             <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
               <Link href="/dashboard/meetings">
-                <button className="btn-primary">Open Meetings</button>
+                <button className="btn-primary">Uchrashuvlarni ochish</button>
               </Link>
               <button className="btn-secondary" onClick={() => setShowInterviewModal(true)}>
-                View Interview Window
+                Intervyu oynasini ko&apos;rish
               </button>
             </div>
           )}
           {isRejected && (
             <button className="btn-primary mt-8" onClick={() => setShowApplyModal(true)}>
-              Update Application
+              Arizani yangilash
             </button>
           )}
         </div>
@@ -178,7 +178,6 @@ export default function DashboardHome() {
   return (
     <>
     <div className="space-y-8">
-      {/* Stats row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card">
           <div className="flex items-center justify-between mb-3">
@@ -187,14 +186,14 @@ export default function DashboardHome() {
               <Rocket size={18} style={{ color: 'var(--accent)' }} />
             </div>
             <span className={`badge badge-${startup?.status || 'pending'}`}>
-              {startup?.status || 'no startup'}
+              {startup?.status || 'startup yo\'q'}
             </span>
           </div>
           <p className="text-2xl font-bold notranslate" translate="no" style={{ color: 'var(--text-primary)' }}>
             {startup?.startup_name || '—'}
           </p>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            {startup?.startup_sphere || 'Submit application'}
+            {startup?.startup_sphere || 'Ariza topshiring'}
           </p>
         </div>
 
@@ -211,7 +210,7 @@ export default function DashboardHome() {
           <p className="text-2xl font-bold notranslate" translate="no" style={{ color: 'var(--text-primary)' }}>
             ${startup?.mrr?.toLocaleString() || '0'}
           </p>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Monthly Recurring Revenue</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Oylik takroriy daromad</p>
         </div>
 
         <div className="card">
@@ -224,7 +223,7 @@ export default function DashboardHome() {
           <p className="text-2xl font-bold notranslate" translate="no" style={{ color: 'var(--text-primary)' }}>
             {startup?.users_count?.toLocaleString() || '0'}
           </p>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Total Users</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Jami foydalanuvchilar</p>
         </div>
 
         <div className="card">
@@ -234,20 +233,19 @@ export default function DashboardHome() {
               <FileText size={18} style={{ color: '#ec4899' }} />
             </div>
             <span className={`badge badge-${lastReport?.status || 'pending'}`}>
-              {lastReport?.status || 'none'}
+              {lastReport?.status || 'yo\'q'}
             </span>
           </div>
           <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
             {reports.length}
           </p>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Weekly Reports</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Haftalik hisobotlar</p>
         </div>
       </div>
 
-      {/* Quick Actions */}
       <div>
         <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-          Quick Actions
+          Tezkor amallar
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {!startup ? (
@@ -259,8 +257,8 @@ export default function DashboardHome() {
                     <Rocket size={22} style={{ color: 'var(--accent)' }} />
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Apply to Residency</p>
-                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Start your residency application</p>
+                    <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Rezidentlikka ariza topshirish</p>
+                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Rezidentlikka arizangizni boshlang</p>
                   </div>
                   <ArrowRight size={16} style={{ color: 'var(--text-muted)' }}
                     className="group-hover:translate-x-1 transition-transform" />
@@ -276,8 +274,8 @@ export default function DashboardHome() {
                     <Target size={22} style={{ color: 'var(--accent)' }} />
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Sprint Tasks</p>
-                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Track your roadmap progress</p>
+                    <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Sprint vazifalari</p>
+                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Yo&apos;l xaritasi bo&apos;yicha progressingizni kuzating</p>
                   </div>
                   <ArrowRight size={16} style={{ color: 'var(--text-muted)' }}
                     className="group-hover:translate-x-1 transition-transform" />
@@ -291,8 +289,8 @@ export default function DashboardHome() {
                   <Target size={22} style={{ color: '#f59e0b' }} />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Sprint opens after residency approval</p>
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Manager or admin approval is required before sprint becomes available.</p>
+                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Sprint rezidentlik tasdiqlangandan keyin ochiladi</p>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Sprint ochilishi uchun menejer yoki admin tasdigi kerak.</p>
                 </div>
               </div>
             </div>
@@ -306,8 +304,8 @@ export default function DashboardHome() {
                   <FileText size={22} style={{ color: '#10b981' }} />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{isApproved ? 'Submit Report' : 'Reports locked'}</p>
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{isApproved ? 'Weekly progress update' : 'Approval is required before weekly reports'}</p>
+                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{isApproved ? 'Hisobot yuborish' : 'Hisobotlar qulflangan'}</p>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{isApproved ? 'Haftalik progress yangilanishi' : 'Haftalik hisobotlar uchun tasdiq kerak'}</p>
                 </div>
                 <ArrowRight size={16} style={{ color: 'var(--text-muted)' }}
                   className="group-hover:translate-x-1 transition-transform" />
@@ -323,8 +321,8 @@ export default function DashboardHome() {
                   <Calendar size={22} style={{ color: '#f59e0b' }} />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{isApproved ? 'Book Meeting' : 'Meetings locked'}</p>
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{isApproved ? 'Schedule with your manager' : 'Approval is required before booking'}</p>
+                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{isApproved ? 'Uchrashuv belgilash' : 'Uchrashuvlar qulflangan'}</p>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{isApproved ? 'Menejer bilan vaqt belgilang' : 'Bron qilish uchun tasdiq kerak'}</p>
                 </div>
                 <ArrowRight size={16} style={{ color: 'var(--text-muted)' }}
                   className="group-hover:translate-x-1 transition-transform" />
@@ -334,20 +332,18 @@ export default function DashboardHome() {
         </div>
       </div>
 
-      {/* Recent data */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Reports */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Recent Reports</h3>
+            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>So&apos;nggi hisobotlar</h3>
             <Link href="/dashboard/reports">
-              <button className="text-xs" style={{ color: 'var(--accent)' }}>View all →</button>
+              <button className="text-xs" style={{ color: 'var(--accent)' }}>Hammasini ko&apos;rish →</button>
             </Link>
           </div>
           {reports.length === 0 ? (
             <div className="text-center py-8">
               <FileText size={32} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No reports yet</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Hali hisobotlar yo&apos;q</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -364,10 +360,10 @@ export default function DashboardHome() {
                     )}
                     <div>
                       <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                        Week of {new Date(r.weekStart).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                        {new Date(r.weekStart).toLocaleDateString('uz', { month: 'long', day: 'numeric' })} hafta
                       </p>
                       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                        {new Date(r.createdAt).toLocaleDateString()}
+                        {new Date(r.createdAt).toLocaleDateString('uz')}
                       </p>
                     </div>
                   </div>
@@ -378,20 +374,19 @@ export default function DashboardHome() {
           )}
         </div>
 
-        {/* Upcoming Meetings */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Upcoming Meetings</h3>
+            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Kelgusi uchrashuvlar</h3>
             <Link href="/dashboard/meetings">
-              <button className="text-xs" style={{ color: 'var(--accent)' }}>View all →</button>
+              <button className="text-xs" style={{ color: 'var(--accent)' }}>Hammasini ko&apos;rish →</button>
             </Link>
           </div>
           {upcomingMeetings.length === 0 ? (
             <div className="text-center py-8">
               <Calendar size={32} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No upcoming meetings</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Kelgusi uchrashuvlar yo&apos;q</p>
               <Link href="/dashboard/meetings">
-                <button className="btn-primary mt-3 text-xs">Book a meeting</button>
+                <button className="btn-primary mt-3 text-xs">Uchrashuv belgilash</button>
               </Link>
             </div>
           ) : (
@@ -407,14 +402,14 @@ export default function DashboardHome() {
                     <div>
                       <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{m.title}</p>
                       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                        {new Date(m.scheduledAt).toLocaleString('en', {
+                        {new Date(m.scheduledAt).toLocaleString('uz', {
                           month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
                         })}
                       </p>
                     </div>
                   </div>
                   <a href={m.meetLink} target="_blank" rel="noreferrer">
-                    <button className="btn-primary text-xs py-1.5">Open Link</button>
+                    <button className="btn-primary text-xs py-1.5">Havolani ochish</button>
                   </a>
                 </div>
               ))}
@@ -438,13 +433,13 @@ export default function DashboardHome() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.24em]" style={{ color: 'var(--accent)' }}>
-                Interview Access
+                Intervyu uchun kirish
               </p>
               <h3 className="text-2xl font-bold mt-2" style={{ color: 'var(--text-primary)' }}>
-                Manager approved your interview stage
+                Menejer intervyu bosqichini tasdiqladi
               </h3>
               <p className="text-sm mt-3 leading-6" style={{ color: 'var(--text-muted)' }}>
-                Your application passed the first review. You can now open the meeting calendar and book an interview with the manager.
+                Arizangiz birinchi tekshiruvdan o&apos;tdi. Endi uchrashuv kalendarini ochib, menejer bilan intervyu belgilashingiz mumkin.
               </p>
             </div>
             <button
@@ -460,10 +455,10 @@ export default function DashboardHome() {
             <div className="rounded-3xl p-5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
               <div className="flex items-center gap-2 mb-3">
                 <Video size={18} style={{ color: 'var(--accent)' }} />
-                <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Meeting Calendar</p>
+                <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Uchrashuvlar kalendari</p>
               </div>
               <p className="text-sm leading-6" style={{ color: 'var(--text-muted)' }}>
-                Choose an available date and time slot. After booking, your interview link or office address will appear in the meetings section.
+                Mavjud sana va vaqt tanlab broning. Brondan so&apos;ng intervyu havolasi yoki ofis manzili uchrashuvlar bo&apos;limida ko&apos;rinadi.
               </p>
               <button
                 className="btn-primary mt-5 w-full"
@@ -472,21 +467,21 @@ export default function DashboardHome() {
                   router.push('/dashboard/meetings');
                 }}
               >
-                Open Meeting Calendar
+                Uchrashuvlar kalendarini ochish
               </button>
             </div>
 
             <div className="rounded-3xl p-5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
               <div className="flex items-center gap-2 mb-3">
                 <Calendar size={18} style={{ color: 'var(--accent)' }} />
-                <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Upcoming Interview</p>
+                <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Kelgusi intervyu</p>
               </div>
               {upcomingInterviewMeetings.length > 0 ? (
                 <div className="space-y-3">
                   {upcomingInterviewMeetings.slice(0, 2).map((meeting) => (
                     <div key={meeting._id} className="rounded-2xl p-3" style={{ background: 'var(--bg-card)' }}>
                       <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                        {new Date(meeting.scheduledAt).toLocaleString('en', {
+                        {new Date(meeting.scheduledAt).toLocaleString('uz', {
                           month: 'short',
                           day: 'numeric',
                           hour: '2-digit',
@@ -494,14 +489,14 @@ export default function DashboardHome() {
                         })}
                       </p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                        {meeting.topic || 'Interview meeting'}
+                        {meeting.topic || 'Intervyu uchrashivi'}
                       </p>
                     </div>
                   ))}
                 </div>
               ) : (
                 <p className="text-sm leading-6" style={{ color: 'var(--text-muted)' }}>
-                  No interview booked yet. Open the meeting calendar and choose an available slot.
+                  Hali intervyu bronlanmagan. Uchrashuvlar kalendarini oching va vaqt tanlang.
                 </p>
               )}
             </div>

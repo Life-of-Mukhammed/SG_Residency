@@ -14,8 +14,8 @@ import { useAppStore } from '@/store/appStore';
 import { AuthPreferences } from '@/components/AuthPreferences';
 
 const schema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email('Noto\'g\'ri email'),
+  password: z.string().min(6, 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak'),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -62,13 +62,13 @@ function LoginPageContent() {
     if (!error) return;
 
     const messages: Record<string, string> = {
-      OAuthSignin: 'Google sign-in is not configured correctly on this deployment. Check Vercel env and Google redirect URI.',
-      OAuthCallback: 'Google callback failed. Verify your production redirect URI in Google Cloud Console.',
-      AccessDenied: 'Access was denied during sign-in.',
-      Configuration: 'Authentication configuration is incomplete on this deployment.',
+      OAuthSignin: 'Google orqali kirish to\'g\'ri sozlanmagan. Vercel muhit o\'zgaruvchilarini va Google yo\'naltirish manzilini tekshiring.',
+      OAuthCallback: 'Google callback xatosi. Google Cloud Console-da ishlab turgan yo\'naltirish manzilini tekshiring.',
+      AccessDenied: 'Kirish rad etildi.',
+      Configuration: 'Autentifikatsiya sozlamasi to\'liq emas.',
     };
 
-    toast.error(messages[error] || 'Authentication failed. Please try again.');
+    toast.error(messages[error] || 'Autentifikatsiya xatosi. Qayta urinib ko\'ring.');
   }, [searchParams]);
 
   const onSubmit = async (data: FormData) => {
@@ -80,14 +80,14 @@ function LoginPageContent() {
         redirect: false,
       });
       if (res?.error) {
-        toast.error(res.error || 'Invalid credentials');
+        toast.error(res.error || 'Noto\'g\'ri ma\'lumotlar');
       } else {
-        toast.success('Welcome back!');
+        toast.success('Xush kelibsiz!');
         router.push('/dashboard');
         router.refresh();
       }
     } catch {
-      toast.error('Something went wrong');
+      toast.error('Xato yuz berdi');
     } finally {
       setLoading(false);
     }
@@ -95,7 +95,7 @@ function LoginPageContent() {
 
   const handleGoogleLogin = async () => {
     if (!googleConfigured) {
-      toast.error('Google sign-in is not configured on this deployment yet.');
+      toast.error('Google orqali kirish hali sozlanmagan.');
       return;
     }
 
@@ -107,7 +107,7 @@ function LoginPageContent() {
       });
 
       if (res?.error) {
-        toast.error('Google sign-in is not configured yet. Check GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.');
+        toast.error('Google orqali kirish xatosi. GOOGLE_CLIENT_ID va GOOGLE_CLIENT_SECRET-ni tekshiring.');
         return;
       }
 
@@ -115,7 +115,7 @@ function LoginPageContent() {
         router.push(res.url);
       }
     } catch {
-      toast.error('Google sign in failed');
+      toast.error('Google orqali kirish amalga oshmadi');
     } finally {
       setGoogleLoading(false);
     }
@@ -123,12 +123,12 @@ function LoginPageContent() {
 
   const handleResetRequest = async () => {
     if (!smtpConfigured) {
-      toast.error('Forgot password is not configured on this deployment yet.');
+      toast.error('Parolni tiklash hali sozlanmagan.');
       return;
     }
 
     if (!resetEmail) {
-      toast.error('Please enter your email address');
+      toast.error('Iltimos, email manzilingizni kiriting');
       return;
     }
 
@@ -137,10 +137,10 @@ function LoginPageContent() {
       const res = await axios.post('/api/auth/forgot-password/request', {
         email: resetEmail,
       });
-      toast.success(res.data.message || 'Code sent');
+      toast.success(res.data.message || 'Kod yuborildi');
       setResetStep('verify');
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Could not send reset code');
+      toast.error(err.response?.data?.error || 'Kodni yuborib bo\'lmadi');
     } finally {
       setRequestLoading(false);
     }
@@ -148,12 +148,12 @@ function LoginPageContent() {
 
   const handleResetVerify = async () => {
     if (!resetEmail || !resetCode || !resetPassword) {
-      toast.error(‘Please fill in all fields’);
+      toast.error('Iltimos, barcha maydonlarni to\'ldiring');
       return;
     }
 
     if (resetPassword !== resetConfirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error('Parollar mos kelmaydi');
       return;
     }
 
@@ -172,16 +172,16 @@ function LoginPageContent() {
       });
 
       if (res?.error) {
-        toast.success('Password changed. Please sign in again.');
+        toast.success('Parol o\'zgartirildi. Iltimos, qayta kiring.');
         setResetStep('login');
         return;
       }
 
-      toast.success('Password updated successfully!');
+      toast.success('Parol muvaffaqiyatli yangilandi!');
       router.push('/dashboard');
       router.refresh();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Could not verify reset code');
+      toast.error(err.response?.data?.error || 'Kodni tasdiqlash xatosi');
     } finally {
       setVerifyLoading(false);
     }
@@ -216,19 +216,13 @@ function LoginPageContent() {
               />
               <div>
                 <p className="text-lg font-bold" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>SG Residency</p>
-                <p className="text-xs" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.6)' : 'rgba(255,255,255,0.6)' }}>Startup Accelerator OS</p>
+                <p className="text-xs" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.6)' : 'rgba(255,255,255,0.6)' }}>Startup Akselerator Tizimi</p>
               </div>
             </div>
-            <p className="text-5xl font-bold leading-tight" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>The fast, clean workspace built for startup founders.</p>
-            <p className="text-base mt-5 max-w-lg" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.72)' : 'rgba(255,255,255,0.7)' }}>Apply to residency, get accepted, schedule meetings, submit weekly reports, and access your GTM strategy and 18-month sprint — everything managed through one workspace.</p>
+            <p className="text-5xl font-bold leading-tight" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>Startup asoschilari uchun tezkor va qulay ish muhiti.</p>
+            <p className="text-base mt-5 max-w-lg" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.72)' : 'rgba(255,255,255,0.7)' }}>Rezidentlikka ariza topshiring, qabul qilining, uchrashuvlarni belgilang, haftalik hisobotlar yuboring va GTM strategiyangiz hamda 18 oylik sprintga kiring — hammasi bitta ish muhitida.</p>
           </div>
-          <div className="grid grid-cols-3 gap-4 max-w-xl">
-            {/* {['Approval workflow', 'Manager visibility', 'Weekly execution'].map((item) => (
-              <div key={item} className="rounded-2xl p-4" style={{ background: theme === 'light' ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.05)', border: theme === 'light' ? '1px solid rgba(99,102,241,0.12)' : '1px solid rgba(255,255,255,0.08)' }}>
-                <p className="text-sm font-medium" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>{item}</p>
-              </div>
-            ))} */}
-          </div>
+          <div className="grid grid-cols-3 gap-4 max-w-xl" />
         </div>
 
         <div className="flex items-center justify-center p-4 sm:p-6">
@@ -236,9 +230,9 @@ function LoginPageContent() {
             <AuthPreferences />
             <div className="card p-8 md:p-9" style={{ background: theme === 'light' ? 'rgba(255,255,255,0.88)' : 'rgba(12, 15, 33, 0.88)', borderColor: theme === 'light' ? 'rgba(99,102,241,0.15)' : 'rgba(129,140,248,0.18)', boxShadow: '0 24px 90px rgba(0,0,0,0.18)' }}>
               <div className="mb-8">
-                <p className="text-xs uppercase tracking-[0.3em]" style={{ color: '#7dd3fc' }}>Welcome back</p>
+                <p className="text-xs uppercase tracking-[0.3em]" style={{ color: '#7dd3fc' }}>Xush kelibsiz</p>
                 <h1 className="text-3xl font-bold mt-3" style={{ color: 'var(--text-primary)' }}>{t('signInAccount')}</h1>
-                <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>{t('welcomeBack')} — let&apos;s build something great.</p>
+                <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>{t('welcomeBack')} — keling, biror narsa quraylik.</p>
               </div>
 
           <button
@@ -258,14 +252,14 @@ function LoginPageContent() {
             ) : (
               <>
                 <span className="text-base leading-none">G</span>
-                <span>{googleConfigured ? 'Continue with Google' : 'Google sign-in unavailable'}</span>
+                <span>{googleConfigured ? 'Google orqali davom etish' : 'Google orqali kirish mavjud emas'}</span>
               </>
             )}
           </button>
 
           {!googleConfigured && (
             <p className="text-xs mb-4" style={{ color: 'var(--danger)' }}>
-              Google OAuth is missing in this deployment. Add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and the production redirect URI in Vercel.
+              Google OAuth sozlanmagan. Vercel-ga `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` va yo&apos;naltirish manzilini qo&apos;shing.
             </p>
           )}
 
@@ -284,7 +278,7 @@ function LoginPageContent() {
                   color: 'var(--text-muted)',
                 }}
               >
-                {resetStep === 'login' ? 'or sign in with email' : 'password recovery'}
+                {resetStep === 'login' ? 'yoki email orqali kiring' : 'parolni tiklash'}
               </span>
             </div>
           </div>
@@ -298,7 +292,7 @@ function LoginPageContent() {
                 type="email"
                 className="input notranslate"
                 translate="no"
-                placeholder="you@example.com"
+                placeholder="siz@example.com"
                 autoComplete="email"
               />
               {errors.email && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.email.message}</p>}
@@ -345,7 +339,7 @@ function LoginPageContent() {
               className="w-full text-sm font-medium"
               style={{ color: 'var(--accent)' }}
             >
-              Forgot password?
+              Parolni unutdingizmi?
             </button>
           </form>
           ) : null}
@@ -353,12 +347,12 @@ function LoginPageContent() {
           {resetStep === 'request' ? (
             <div className="space-y-4">
               <div>
-                <label className="label">Registered email</label>
+                <label className="label">Ro&apos;yxatdan o&apos;tgan email</label>
                 <input
                   type="email"
                   className="input notranslate"
                   translate="no"
-                  placeholder="you@example.com"
+                  placeholder="siz@example.com"
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
                 />
@@ -369,7 +363,7 @@ function LoginPageContent() {
                 disabled={requestLoading}
                 className="btn-primary w-full flex items-center justify-center gap-2 py-3"
               >
-                {requestLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Send code'}
+                {requestLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Kod yuborish'}
               </button>
               <button
                 type="button"
@@ -377,7 +371,7 @@ function LoginPageContent() {
                 className="w-full text-sm font-medium"
                 style={{ color: 'var(--accent)' }}
               >
-                Back to login
+                Kirishga qaytish
               </button>
             </div>
           ) : null}
@@ -395,7 +389,7 @@ function LoginPageContent() {
                 />
               </div>
               <div>
-                <label className="label">6-digit code</label>
+                <label className="label">6 xonali kod</label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -408,7 +402,7 @@ function LoginPageContent() {
                 />
               </div>
               <div>
-                <label className="label">New password</label>
+                <label className="label">Yangi parol</label>
                 <input
                   type={showPass ? 'text' : 'password'}
                   className="input notranslate"
@@ -418,7 +412,7 @@ function LoginPageContent() {
                 />
               </div>
               <div>
-                <label className="label">Confirm new password</label>
+                <label className="label">Yangi parolni tasdiqlang</label>
                 <input
                   type={showPass ? 'text' : 'password'}
                   className="input notranslate"
@@ -433,7 +427,7 @@ function LoginPageContent() {
                 disabled={verifyLoading}
                 className="btn-primary w-full flex items-center justify-center gap-2 py-3"
               >
-                {verifyLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Verify code and login'}
+                {verifyLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Kodni tekshirish va kirish'}
               </button>
               <div className="flex items-center justify-between text-sm">
                 <button
@@ -441,14 +435,14 @@ function LoginPageContent() {
                   onClick={() => setResetStep('request')}
                   style={{ color: 'var(--accent)' }}
                 >
-                  Resend code
+                  Qayta yuborish
                 </button>
                 <button
                   type="button"
                   onClick={() => setResetStep('login')}
                   style={{ color: 'var(--accent)' }}
                 >
-                  Back to login
+                  Kirishga qaytish
                 </button>
               </div>
             </div>
@@ -463,10 +457,6 @@ function LoginPageContent() {
             </p>
           </div>
             </div>
-            {/* <div className="mt-4 p-4 rounded-2xl text-center" style={{ background: theme === 'light' ? 'rgba(255,255,255,0.74)' : 'rgba(255,255,255,0.06)', border: theme === 'light' ? '1px solid rgba(99,102,241,0.12)' : '1px solid rgba(255,255,255,0.08)' }}>
-              <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>New here?</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('createAccount')} to get started</p>
-            </div> */}
           </div>
         </div>
       </div>

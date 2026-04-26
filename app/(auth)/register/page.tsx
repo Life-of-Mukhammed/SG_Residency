@@ -14,13 +14,13 @@ import { useAppStore } from '@/store/appStore';
 import { AuthPreferences } from '@/components/AuthPreferences';
 
 const schema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  surname: z.string().min(2, 'Surname must be at least 2 characters'),
-  email: z.string().email('Invalid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  name: z.string().min(2, 'Ism kamida 2 ta belgidan iborat bo\'lishi kerak'),
+  surname: z.string().min(2, 'Familiya kamida 2 ta belgidan iborat bo\'lishi kerak'),
+  email: z.string().email('Noto\'g\'ri email'),
+  password: z.string().min(6, 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak'),
   confirmPassword: z.string(),
 }).refine((d) => d.password === d.confirmPassword, {
-  message: "Passwords don't match",
+  message: 'Parollar mos kelmaydi',
   path: ['confirmPassword'],
 });
 type FormData = z.infer<typeof schema>;
@@ -58,12 +58,12 @@ function RegisterPageContent() {
     if (!error) return;
 
     const messages: Record<string, string> = {
-      OAuthSignin: 'Google sign-up is not configured correctly on this deployment.',
-      OAuthCallback: 'Google callback failed. Verify your production redirect URI in Google Cloud Console.',
-      Configuration: 'Authentication configuration is incomplete on this deployment.',
+      OAuthSignin: 'Google orqali ro\'yxatdan o\'tish to\'g\'ri sozlanmagan.',
+      OAuthCallback: 'Google callback xatosi. Yo\'naltirish manzilini tekshiring.',
+      Configuration: 'Autentifikatsiya sozlamasi to\'liq emas.',
     };
 
-    toast.error(messages[error] || 'Authentication failed. Please try again.');
+    toast.error(messages[error] || 'Autentifikatsiya xatosi. Qayta urinib ko\'ring.');
   }, [searchParams]);
 
   const onSubmit = async (data: FormData) => {
@@ -83,16 +83,16 @@ function RegisterPageContent() {
       });
 
       if (res?.error) {
-        toast.success('Account created. Please sign in.');
+        toast.success('Hisob yaratildi. Iltimos, kiring.');
         router.push('/login');
         return;
       }
 
-      toast.success('Account created successfully!');
+      toast.success('Hisob muvaffaqiyatli yaratildi!');
       router.push('/dashboard');
       router.refresh();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Registration failed');
+      toast.error(err.response?.data?.error || 'Ro\'yxatdan o\'tish amalga oshmadi');
     } finally {
       setLoading(false);
     }
@@ -100,7 +100,7 @@ function RegisterPageContent() {
 
   const handleGoogleRegister = async () => {
     if (!googleConfigured) {
-      toast.error('Google sign-in is not configured on this deployment yet.');
+      toast.error('Google orqali kirish hali sozlanmagan.');
       return;
     }
 
@@ -112,7 +112,7 @@ function RegisterPageContent() {
       });
 
       if (res?.error) {
-        toast.error('Google sign-in is not configured yet. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env.local and restart the server.');
+        toast.error('Google orqali kirish xatosi. GOOGLE_CLIENT_ID va GOOGLE_CLIENT_SECRET-ni tekshiring.');
         return;
       }
 
@@ -120,7 +120,7 @@ function RegisterPageContent() {
         router.push(res.url);
       }
     } catch {
-      toast.error('Google sign in failed');
+      toast.error('Google orqali kirish amalga oshmadi');
     } finally {
       setGoogleLoading(false);
     }
@@ -155,18 +155,12 @@ function RegisterPageContent() {
               />
               <div>
                 <p className="text-lg font-bold" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>SG Residency</p>
-                <p className="text-xs" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.6)' : 'rgba(255,255,255,0.6)' }}>Startup Accelerator OS</p>
+                <p className="text-xs" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.6)' : 'rgba(255,255,255,0.6)' }}>Startup Akselerator Tizimi</p>
               </div>
             </div>
-            <p className="text-xs uppercase tracking-[0.3em]" style={{ color: theme === 'light' ? '#059669' : '#6ee7b7' }}>Join residency</p>
-            <h1 className="text-5xl font-bold leading-tight mt-4" style={{ color: theme === ‘light’ ? ‘#0f172a’ : ‘#fff’ }}>Launch your full founder workflow with one account.</h1>
-            <div className="grid grid-cols-3 gap-4 mt-8">
-              {/* {['Profile setup', 'Application review', 'Execution tools'].map((item) => (
-                <div key={item} className="rounded-2xl p-4" style={{ background: theme === 'light' ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.06)', border: theme === 'light' ? '1px solid rgba(16,185,129,0.12)' : '1px solid rgba(255,255,255,0.08)' }}>
-                  <p className="text-sm font-medium" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>{item}</p>
-                </div>
-              ))} */}
-            </div>
+            <p className="text-xs uppercase tracking-[0.3em]" style={{ color: theme === 'light' ? '#059669' : '#6ee7b7' }}>Rezidentlikka qo&apos;shiling</p>
+            <h1 className="text-5xl font-bold leading-tight mt-4" style={{ color: theme === 'light' ? '#0f172a' : '#fff' }}>Bitta hisob bilan to&apos;liq asoschi ish jarayonini boshlang.</h1>
+            <div className="grid grid-cols-3 gap-4 mt-8" />
           </div>
         </div>
 
@@ -175,9 +169,9 @@ function RegisterPageContent() {
             <AuthPreferences />
             <div className="card p-8 md:p-9" style={{ background: theme === 'light' ? 'rgba(255,255,255,0.9)' : 'rgba(11, 18, 32, 0.9)', borderColor: theme === 'light' ? 'rgba(16,185,129,0.15)' : 'rgba(52,211,153,0.18)', boxShadow: '0 24px 90px rgba(0,0,0,0.18)' }}>
               <div className="mb-8">
-                <p className="text-xs uppercase tracking-[0.3em]" style={{ color: '#6ee7b7' }}>Create account</p>
+                <p className="text-xs uppercase tracking-[0.3em]" style={{ color: '#6ee7b7' }}>Hisob yaratish</p>
                 <h1 className="text-3xl font-bold mt-3" style={{ color: 'var(--text-primary)' }}>{t('createAccount')}</h1>
-                <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Join the residency program today.</p>
+                <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Bugun rezidentlik dasturiga qo&apos;shiling.</p>
               </div>
 
           <button
@@ -197,14 +191,14 @@ function RegisterPageContent() {
             ) : (
               <>
                 <span className="text-base leading-none">G</span>
-                <span>{googleConfigured ? 'Continue with Google' : 'Google sign-in unavailable'}</span>
+                <span>{googleConfigured ? 'Google orqali davom etish' : 'Google orqali kirish mavjud emas'}</span>
               </>
             )}
           </button>
 
           {!googleConfigured && (
             <p className="text-xs mb-4" style={{ color: 'var(--danger)' }}>
-              Google OAuth is missing in this deployment. Add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and the production redirect URI in Vercel.
+              Google OAuth sozlanmagan. Vercel-ga `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` va yo&apos;naltirish manzilini qo&apos;shing.
             </p>
           )}
 
@@ -226,7 +220,7 @@ function RegisterPageContent() {
                   color: 'var(--text-muted)',
                 }}
               >
-                or register with email
+                yoki email orqali ro&apos;yxatdan o&apos;ting
               </span>
             </div>
           </div>
@@ -247,7 +241,7 @@ function RegisterPageContent() {
 
             <div>
               <label className="label">{t('email')}</label>
-              <input {...register('email')} type="email" className="input notranslate" translate="no" placeholder="you@example.com" />
+              <input {...register('email')} type="email" className="input notranslate" translate="no" placeholder="siz@example.com" />
               {errors.email && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.email.message}</p>}
             </div>
 
@@ -259,7 +253,7 @@ function RegisterPageContent() {
                   type={showPass ? 'text' : 'password'}
                   className="input pr-12 notranslate"
                   translate="no"
-                  placeholder="Min. 6 characters"
+                  placeholder="Kamida 6 ta belgi"
                 />
                 <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -275,7 +269,7 @@ function RegisterPageContent() {
                 type={showPass ? 'text' : 'password'}
                 className="input notranslate"
                 translate="no"
-                placeholder="Repeat password"
+                placeholder="Parolni takrorlang"
               />
               {errors.confirmPassword && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.confirmPassword.message}</p>}
             </div>
