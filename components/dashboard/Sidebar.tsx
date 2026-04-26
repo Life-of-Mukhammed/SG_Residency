@@ -26,6 +26,7 @@ import { useAppStore } from '@/store/appStore';
 import { useState, useEffect, MouseEvent } from 'react';
 import axios from 'axios';
 import { isGtmUnlockedBySprint } from '@/lib/sprint-unlock';
+import { GoogleTranslateSwitcher } from '@/components/GoogleTranslateSwitcher';
 
 type NavKey =
   | 'dashboard'
@@ -267,6 +268,14 @@ export default function Sidebar() {
         </nav>
 
         <div className="border-t px-2 py-3 space-y-2" style={{ borderColor: theme === 'light' ? 'rgba(99,102,241,0.1)' : 'rgba(148,163,184,0.12)' }}>
+          {/* ── Google Translate language switcher ── */}
+          <div className="px-1 pb-1">
+            {open
+              ? <GoogleTranslateSwitcher compact={false} />
+              : <GoogleTranslateSwitcher compact={true} />
+            }
+          </div>
+
           <Link href="/dashboard/settings" className="block">
             <div
               className="flex items-center gap-3 px-2.5 py-2.5 rounded-2xl cursor-pointer"

@@ -44,6 +44,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Providers>
         <Script id="google-translate-init" strategy="afterInteractive">
           {`
+            window.__setGoogleTranslateLanguage = function (lang) {
+              // When lang is 'uz' (page language), reset translation
+              const targetLang = lang === 'uz' ? '' : lang;
+
+              const apply = () => {
+                const combo = document.querySelector('.goog-te-combo');
+                if (!combo) return false;
+                combo.value = targetLang;
+                combo.dispatchEvent(new Event('change'));
+                return true;
+              };
+
+              if (apply()) return;
+              let tries = 0;
+              const timer = setInterval(() => {
+                tries += 1;
+                if (apply() || tries > 30) clearInterval(timer);
+              }, 300);
+            };
+
             window.googleTranslateElementInit = function () {
               new window.google.translate.TranslateElement(
                 {
@@ -55,29 +75,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 'google_translate_element'
               );
 
-              const savedLang = window.localStorage.getItem('residency_lang') || document.documentElement.getAttribute('data-lang') || 'uz';
-              if (window.__setGoogleTranslateLanguage) {
-                window.__setGoogleTranslateLanguage(savedLang);
+              // Restore saved language after widget loads
+              const savedLang = window.localStorage.getItem('residency_lang') || 'uz';
+              if (savedLang !== 'uz') {
+                setTimeout(() => {
+                  window.__setGoogleTranslateLanguage(savedLang);
+                }, 600);
               }
-            };
-
-            window.__setGoogleTranslateLanguage = function (lang) {
-              const apply = () => {
-                const combo = document.querySelector('.goog-te-combo');
-                if (!combo) return false;
-                if (combo.value !== lang) {
-                  combo.value = lang;
-                  combo.dispatchEvent(new Event('change'));
-                }
-                return true;
-              };
-
-              if (apply()) return;
-              let tries = 0;
-              const timer = setInterval(() => {
-                tries += 1;
-                if (apply() || tries > 20) clearInterval(timer);
-              }, 400);
             };
           `}
         </Script>

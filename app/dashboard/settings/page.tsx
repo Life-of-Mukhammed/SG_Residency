@@ -7,12 +7,7 @@ import Header from '@/components/dashboard/Header';
 import { useAppStore } from '@/store/appStore';
 import { Bell, Check, Globe, Lock, Moon, Save, Shield, Sun, User } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-
-const LANGS = [
-  { code: 'uz' as const, label: "O'zbek", flag: '🇺🇿' },
-  { code: 'ru' as const, label: 'Русский', flag: '🇷🇺' },
-  { code: 'en' as const, label: 'English', flag: '🇬🇧' },
-];
+import { GoogleTranslateSwitcher } from '@/components/GoogleTranslateSwitcher';
 
 const EMPTY_FORM = {
   name: '',
@@ -186,29 +181,7 @@ export default function SettingsPage() {
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Switch both app labels and Google page translation.</p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              {LANGS.map((item) => (
-                <button
-                  key={item.code}
-                  onClick={() => setLang(item.code)}
-                  className="flex items-center gap-3 p-4 rounded-xl border-2 transition-all"
-                  style={{
-                    borderColor: lang === item.code ? 'var(--accent)' : 'var(--border)',
-                    background: lang === item.code ? 'rgba(99,102,241,0.08)' : 'var(--bg-secondary)',
-                  }}
-                >
-                  <span className="text-2xl notranslate" translate="no">{item.flag}</span>
-                  <div className="text-left flex-1">
-                    <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{item.label}</p>
-                  </div>
-                  {lang === item.code && (
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--accent)' }}>
-                      <Check size={11} className="text-white" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
+            <GoogleTranslateSwitcher compact={false} />
           </div>
 
           <div className="card">
