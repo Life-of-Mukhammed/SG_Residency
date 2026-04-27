@@ -7,7 +7,8 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import {
   Rocket, Target, FileText, Calendar,
-  CheckCircle, Clock, AlertCircle, ArrowRight, Users, DollarSign, Lock, Video
+  CheckCircle, Clock, AlertCircle, ArrowRight, Users, DollarSign, Video,
+  Send, Smartphone, Edit3, Download, Star,
 } from 'lucide-react';
 import ResidencyApplicationModal from '@/components/dashboard/ResidencyApplicationModal';
 
@@ -20,18 +21,28 @@ export default function DashboardHome() {
   const [loading, setLoading]   = useState(true);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [showInterviewModal, setShowInterviewModal] = useState(false);
+  const [telegramConnect, setTelegramConnect] = useState<{ startLink: string | null; code: string | null; botUsername: string | null }>({
+    startLink: null, code: null, botUsername: null,
+  });
+  const [telegramConnected, setTelegramConnected] = useState(false);
+  const [adSettings, setAdSettings] = useState<{
+    title: string; description: string; bannerImage: string;
+    websiteUrl: string; appStoreUrl: string; googlePlayUrl: string; enabled: boolean;
+  } | null>(null);
 
   const load = async () => {
     try {
-      const [sr, rr, mr] = await Promise.all([
+      const [sr, rr, mr, pr] = await Promise.all([
         axios.get('/api/startups?limit=1'),
         axios.get('/api/reports?limit=5'),
         axios.get('/api/meetings'),
+        axios.get('/api/profile').catch(() => ({ data: { user: null } })),
       ]);
       const currentStartup = sr.data.startups?.[0] ?? null;
       setStartup(currentStartup);
       setReports(rr.data.reports  ?? []);
       setMeetings(mr.data.meetings ?? []);
+      if (pr.data?.user?.telegramChatId) setTelegramConnected(true);
       if (!currentStartup) {
         setShowApplyModal(true);
       }
@@ -41,6 +52,8 @@ export default function DashboardHome() {
 
   useEffect(() => {
     load();
+    axios.get('/api/telegram/connect').then((r) => setTelegramConnect(r.data)).catch(() => {});
+    axios.get('/api/ad-settings').then((r) => setAdSettings(r.data.settings)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -81,11 +94,19 @@ export default function DashboardHome() {
 
   if (startup && startup.status !== 'active') {
     const isRejected = startup.status === 'rejected';
+    const isPending  = startup.status === 'pending';
 
     return (
       <>
-      <div className="max-w-4xl mx-auto">
-        <div className="card text-center py-16 px-8 relative overflow-hidden" style={{ background: 'radial-gradient(circle at top left, rgba(99,102,241,0.14), transparent 28%), radial-gradient(circle at bottom right, rgba(16,185,129,0.12), transparent 28%)' }}>
+      <div className="max-w-2xl mx-auto space-y-5 pb-8">
+
+        {/* Asosiy holat kartasi */}
+        <div
+          className="card text-center py-12 px-8 relative overflow-hidden"
+          style={{
+            background: 'radial-gradient(circle at top left, rgba(99,102,241,0.12), transparent 30%), radial-gradient(circle at bottom right, rgba(16,185,129,0.08), transparent 30%)',
+          }}
+        >
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
             style={{ background: isRejected ? 'rgba(239,68,68,0.14)' : 'rgba(245,158,11,0.14)' }}
@@ -96,23 +117,31 @@ export default function DashboardHome() {
               <Clock size={28} style={{ color: '#f59e0b' }} />
             )}
           </div>
+
           <span className={`badge ${isRejected ? 'badge-rejected' : 'badge-pending'} mb-4`}>
             {isRejected ? 'Rad etilgan' : isInterviewStage ? 'Intervyu bosqichi' : 'Ko\'rib chiqilmoqda'}
           </span>
+
           <h2 className="text-3xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-            {isRejected ? 'Arizangiz tasdiqlanmadi' : isInterviewStage ? 'Intervyu bosqichi faoldir' : 'Arizangiz ko\'rib chiqilmoqda'}
-          </h2>
-          <p className="text-sm max-w-xl mx-auto leading-6" style={{ color: 'var(--text-muted)' }}>
             {isRejected
-              ? 'Arizangiz rad etildi. Rezidentlikka kirish ariza tasdiqlanguncha qulflangan bo\'lib qoladi.'
+              ? 'Arizangiz tasdiqlanmadi'
               : isInterviewStage
-                ? 'Leadingiz birinchi tekshiruvdan o\'tdi. Hozircha faqat uchrashuvlar ochiq — jamoa bilan intervyu belgilashingiz mumkin.'
-                : 'Arizangiz muvaffaqiyatli yuborildi. Menejer yoki admin ko\'rib chiqishi hali davom etmoqda.'}
+                ? 'Intervyu bosqichi faoldir'
+                : 'Arizangiz ko\'rib chiqilmoqda'}
+          </h2>
+
+          <p className="text-sm max-w-lg mx-auto leading-6" style={{ color: 'var(--text-muted)' }}>
+            {isRejected
+              ? 'Arizangiz rad etildi. Tahrirlash imkoniyatidan foydalanib qayta yuboring.'
+              : isInterviewStage
+                ? 'Leadingiz birinchi tekshiruvdan o\'tdi. Hozircha faqat uchrashuvlar ochiq.'
+                : 'Arizangiz muvaffaqiyatli yuborildi. Menejer yoki admin ko\'rib chiqishi davom etmoqda.'}
           </p>
 
+          {/* Rad etish sababi */}
           {startup.rejectionReason && (
             <div
-              className="mt-6 mx-auto max-w-xl rounded-2xl p-4 text-left"
+              className="mt-6 mx-auto max-w-lg rounded-2xl p-4 text-left"
               style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}
             >
               <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: '#ef4444' }}>
@@ -124,30 +153,30 @@ export default function DashboardHome() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 text-left">
-            <div className="card">
-              <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: 'var(--text-muted)' }}>
-                Ariza
-              </p>
-              <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {startup.startup_name}
-              </p>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-                {startup.startup_sphere} · {startup.region}
-              </p>
-            </div>
-            <div className="card">
-              <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: 'var(--text-muted)' }}>
-                Ish muhitiga kirish
-              </p>
-              <div className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                <Lock size={16} />
-                <span className="text-sm">
-                  {isInterviewStage ? 'Hozirda faqat uchrashuvlar, profil va startup ma\'lumotlari ochiq.' : 'Sprint, GTM, hisobotlar va uchrashuvlar hali qulflangan.'}
-                </span>
-              </div>
-            </div>
+          {/* Startup ma'lumotlari */}
+          <div
+            className="mt-6 rounded-2xl p-4 text-left"
+            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
+          >
+            <p className="text-xs uppercase tracking-[0.2em] mb-2" style={{ color: 'var(--text-muted)' }}>Ariza</p>
+            <p className="text-lg font-semibold notranslate" translate="no" style={{ color: 'var(--text-primary)' }}>
+              {startup.startup_name}
+            </p>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              {startup.startup_sphere} · {startup.region}
+            </p>
           </div>
+
+          {/* Tugmalar */}
+          {(isPending || isRejected) && (
+            <button
+              className="btn-primary mt-6 inline-flex items-center gap-2"
+              onClick={() => setShowApplyModal(true)}
+            >
+              <Edit3 size={15} /> Arizani tahrirlash
+            </button>
+          )}
+
           {isInterviewStage && (
             <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
               <Link href="/dashboard/meetings">
@@ -158,13 +187,129 @@ export default function DashboardHome() {
               </button>
             </div>
           )}
-          {isRejected && (
-            <button className="btn-primary mt-8" onClick={() => setShowApplyModal(true)}>
-              Arizani yangilash
-            </button>
-          )}
         </div>
+
+        {/* Telegram bildirishnomalar */}
+        <div className="card">
+          <div className="flex items-center gap-4">
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(0,136,204,0.12)' }}
+            >
+              <Send size={20} style={{ color: '#0088cc' }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Telegram bildirishnomalar</p>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {telegramConnected
+                  ? 'Telegram ulangan — ariza yangilanishi haqida darhol xabardor bo\'lasiz'
+                  : 'Ariza natijasi haqida darhol Telegram orqali xabardor bo\'ling'}
+              </p>
+            </div>
+            {telegramConnected ? (
+              <span
+                className="text-xs px-3 py-1.5 rounded-xl font-semibold flex-shrink-0"
+                style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}
+              >
+                Ulangan
+              </span>
+            ) : telegramConnect.startLink ? (
+              <a
+                href={telegramConnect.startLink}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-primary flex-shrink-0 flex items-center gap-2 text-sm"
+              >
+                <Send size={14} /> Ulash
+              </a>
+            ) : (
+              <Link href="/dashboard/settings" className="flex-shrink-0">
+                <button className="btn-secondary text-sm">Sozlamalar</button>
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* Founders School reklama - dinamik */}
+        {adSettings?.enabled !== false && (
+          <div
+            className="rounded-3xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.12) 50%, rgba(16,185,129,0.08) 100%)',
+              border: '1px solid rgba(99,102,241,0.2)',
+            }}
+          >
+            {adSettings?.bannerImage && (
+              <img
+                src={adSettings.bannerImage}
+                alt="Banner"
+                className="w-full object-cover"
+                style={{ maxHeight: 180, display: 'block' }}
+              />
+            )}
+            <div className="p-6 sm:p-7">
+              <div className="flex items-start gap-4 mb-5">
+                {!adSettings?.bannerImage && (
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                  >
+                    <Smartphone size={24} style={{ color: '#fff' }} />
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] mb-1" style={{ color: 'var(--accent)' }}>Mobil dastur</p>
+                  <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+                    {adSettings?.title || 'Founders School'}
+                  </h3>
+                  <p className="text-sm mt-1 leading-5" style={{ color: 'var(--text-muted)' }}>
+                    {adSettings?.description || 'Bo\'lajak asoschilarga kerak bo\'lgan barcha bilimlar bir joyda jamlandi'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mb-5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} size={14} fill="#f59e0b" style={{ color: '#f59e0b' }} />
+                ))}
+                <span className="text-xs ml-1" style={{ color: 'var(--text-muted)' }}>App Store & Google Play</span>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {adSettings?.websiteUrl && (
+                  <a href={adSettings.websiteUrl} target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all hover:scale-[1.02]"
+                    style={{ background: 'var(--accent)', color: '#fff' }}>
+                    <Download size={15} /> Saytga o'tish
+                  </a>
+                )}
+                {adSettings?.appStoreUrl && (
+                  <a href={adSettings.appStoreUrl} target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all hover:scale-[1.02]"
+                    style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                    </svg>
+                    App Store
+                  </a>
+                )}
+                {adSettings?.googlePlayUrl && (
+                  <a href={adSettings.googlePlayUrl} target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all hover:scale-[1.02]"
+                    style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3.18 23.76c.33.18.71.2 1.07.04l12.2-6.87-2.68-2.69-10.59 9.52zm-1.12-20.3C2 3.64 2 3.87 2 4.1v15.8c0 .23 0 .46.06.64l.09.09L14.64 8.1l-.09-.09-12.59-4.55zM20.47 10.3l-2.4-1.36-2.97 2.98 2.97 2.98 2.4-1.36c.68-.38 1.13-.96 1.13-1.62s-.45-1.24-1.13-1.62zM4.25.24C3.89.08 3.51.1 3.18.28L13.77 11l2.68-2.69L4.25.24z"/>
+                    </svg>
+                    Google Play
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
+
       <ResidencyApplicationModal
         open={showApplyModal}
         onClose={() => setShowApplyModal(false)}

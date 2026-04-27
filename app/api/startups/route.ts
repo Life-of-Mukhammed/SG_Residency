@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
     if (user.role === 'user') {
       const existing = await Startup.findOne({ userId: user.id });
       if (existing) {
-        if (existing.status === 'rejected') {
+        if (existing.status === 'rejected' || existing.status === 'pending') {
           const startup = await Startup.findByIdAndUpdate(
             existing._id,
             { $set: normalizedData },
@@ -169,15 +169,15 @@ export async function POST(req: NextRequest) {
           );
 
           await notifyRoles(['manager', 'super_admin'], {
-            title: 'Residency application re-submitted',
-            message: `${normalizedData.founder_name} re-submitted ${normalizedData.startup_name} for review.`,
+            title: existing.status === 'rejected' ? 'Rezidentlik arizasi qayta yuborildi' : 'Rezidentlik arizasi yangilandi',
+            message: `${normalizedData.founder_name} ${normalizedData.startup_name} arizasini yangiladi.`,
             type: 'info',
           });
 
           return NextResponse.json({ startup }, { status: 200 });
         }
 
-        return NextResponse.json({ error: 'You already have a startup application' }, { status: 400 });
+        return NextResponse.json({ error: 'Sizda allaqachon startup arizasi mavjud' }, { status: 400 });
       }
     }
 

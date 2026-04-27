@@ -37,7 +37,7 @@ export default function SettingsPage() {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      toast.error('Please choose an image file');
+      toast.error('Iltimos, rasm faylini tanlang');
       return;
     }
 
@@ -63,7 +63,7 @@ export default function SettingsPage() {
           newPassword: '',
         });
       })
-      .catch(() => toast.error('Failed to load profile'))
+      .catch(() => toast.error('Profilni yuklash amalga oshmadi'))
       .finally(() => setLoading(false));
 
     axios.get('/api/telegram/connect')
@@ -79,9 +79,9 @@ export default function SettingsPage() {
     try {
       await axios.delete('/api/telegram/connect');
       setProfile((prev: any) => ({ ...prev, telegramChatId: null }));
-      toast.success('Telegram disconnected');
+      toast.success('Telegram uzildi');
     } catch {
-      toast.error('Failed to disconnect');
+      toast.error('Uzib bo\'lmadi');
     } finally {
       setDisconnecting(false);
     }
@@ -98,28 +98,28 @@ export default function SettingsPage() {
         email: res.data.user.email,
         image: res.data.user.avatar || null,
       });
-      toast.success('Profile updated');
+      toast.success('Profil yangilandi');
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to update profile');
+      toast.error(error.response?.data?.error || 'Profilni yangilab bo\'lmadi');
     } finally {
       setSaving(false);
     }
   };
 
   const permissions = [
-    { label: 'Edit own profile', has: true },
-    { label: 'Change password', has: true },
-    { label: 'Apply to residency', has: profile?.role === 'user' },
-    { label: 'View reports, meetings, sprint, GTM', has: profile?.role !== 'user' || startup?.status === 'active' },
-    { label: 'Manage startups', has: ['manager', 'super_admin'].includes(profile?.role) },
-    { label: 'Review reports', has: ['manager', 'super_admin'].includes(profile?.role) },
-    { label: 'User role management', has: profile?.role === 'super_admin' },
+    { label: 'O\'z profilini tahrirlash', has: true },
+    { label: 'Parol o\'zgartirish', has: true },
+    { label: 'Rezidentlikka ariza berish', has: profile?.role === 'user' },
+    { label: 'Hisobotlar, uchrashuvlar, sprint, GTM ko\'rish', has: profile?.role !== 'user' || startup?.status === 'active' },
+    { label: 'Startaplarni boshqarish', has: ['manager', 'super_admin'].includes(profile?.role) },
+    { label: 'Hisobotlarni ko\'rib chiqish', has: ['manager', 'super_admin'].includes(profile?.role) },
+    { label: 'Foydalanuvchi rollarini boshqarish', has: profile?.role === 'super_admin' },
   ];
 
   if (loading) {
     return (
       <div>
-        <Header title={t('settings')} subtitle="Profile and workspace preferences" />
+        <Header title={t('settings')} subtitle="Profil va ish muhiti sozlamalari" />
         <div className="p-8 max-w-5xl mx-auto space-y-4">
           {Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton h-36 rounded-2xl" />)}
         </div>
@@ -129,7 +129,7 @@ export default function SettingsPage() {
 
   return (
     <div className="animate-fade-in">
-      <Header title={t('settings')} subtitle="Profile and workspace preferences" />
+      <Header title={t('settings')} subtitle="Profil va ish muhiti sozlamalari" />
       <div className="p-8 max-w-5xl mx-auto grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-6">
           <div className="card">
@@ -139,7 +139,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('profile')}</h3>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Update your name, email address, and password.</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Ism, email manzil va parolni yangilang.</p>
               </div>
             </div>
 
@@ -153,21 +153,21 @@ export default function SettingsPage() {
                   </div>
                 )}
                 <div className="flex-1">
-                  <label className="label">Avatar image</label>
+                  <label className="label">Avatar rasm</label>
                   <input type="file" accept="image/*" onChange={handleAvatarUpload} className="input py-2" />
-                  <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Upload JPG, PNG or WebP image from your device.</p>
+                  <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Qurilmangizdan JPG, PNG yoki WebP formatidagi rasm yuklang.</p>
                 </div>
               </div>
               <div>
-                <label className="label">First name</label>
+                <label className="label">Ism</label>
                 <input value={form.name} onChange={setField('name')} className="input notranslate" translate="no" />
               </div>
               <div>
-                <label className="label">Last name</label>
+                <label className="label">Familiya</label>
                 <input value={form.surname} onChange={setField('surname')} className="input notranslate" translate="no" />
               </div>
               <div className="md:col-span-2">
-                <label className="label">Email</label>
+                <label className="label">Email manzil</label>
                 <input value={form.email} onChange={setField('email')} className="input notranslate" translate="no" />
               </div>
             </div>
@@ -175,22 +175,22 @@ export default function SettingsPage() {
             <div className="mt-6 pt-6 border-t" style={{ borderColor: 'var(--border)' }}>
               <div className="flex items-center gap-3 mb-4">
                 <Lock size={16} style={{ color: 'var(--accent)' }} />
-                <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Password update</p>
+                <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Parol yangilash</p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="label">Current password</label>
+                  <label className="label">Joriy parol</label>
                   <input value={form.currentPassword} onChange={setField('currentPassword')} type="password" className="input" />
                 </div>
                 <div>
-                  <label className="label">New password</label>
+                  <label className="label">Yangi parol</label>
                   <input value={form.newPassword} onChange={setField('newPassword')} type="password" className="input" />
                 </div>
               </div>
             </div>
 
             <button onClick={saveProfile} disabled={saving} className="btn-primary mt-6 flex items-center gap-2">
-              {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Save size={15} /> Save profile</>}
+              {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Save size={15} /> Profilni saqlash</>}
             </button>
           </div>
 
@@ -201,7 +201,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('language')}</h3>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Change the interface language and enable Google Translate.</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Interfeys tilini o&apos;zgartiring va Google Tarjimani yoqing.</p>
               </div>
             </div>
             <GoogleTranslateSwitcher compact={false} />
@@ -214,7 +214,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('theme')}</h3>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Choose the interface mood that suits you best.</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>O&apos;zingizga mos interfeys rejimini tanlang.</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -233,7 +233,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{item === 'dark' ? t('darkMode') : t('lightMode')}</p>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item === 'dark' ? 'Deep contrast for long sessions' : 'Bright, clean, and airy'}</p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item === 'dark' ? 'Uzoq sessiyalar uchun chuqur kontrast' : 'Yorqin, toza va yengil'}</p>
                   </div>
                 </button>
               ))}
@@ -266,7 +266,7 @@ export default function SettingsPage() {
           <div className="card">
             <div className="flex items-center gap-3 mb-5">
               <Bell size={17} style={{ color: 'var(--accent)' }} />
-              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Residency access</h3>
+              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Rezidentlikka kirish</h3>
             </div>
             {startup ? (
               <div className="space-y-3">
@@ -276,22 +276,24 @@ export default function SettingsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-4 rounded-2xl" style={{ background: 'var(--bg-secondary)' }}>
-                    <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Status</p>
-                    <span className={`badge badge-${startup.status}`}>{startup.status}</span>
+                    <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Holat</p>
+                    <span className={`badge badge-${startup.status}`}>
+                      {startup.status === 'active' ? 'Faol' : startup.status === 'pending' ? 'Kutmoqda' : startup.status === 'rejected' ? 'Rad etildi' : startup.status === 'inactive' ? 'Faolsiz' : startup.status === 'lead_accepted' ? 'Intervyuda' : startup.status}
+                    </span>
                   </div>
                   <div className="p-4 rounded-2xl" style={{ background: 'var(--bg-secondary)' }}>
-                    <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Stage</p>
+                    <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Bosqich</p>
                     <span className={`badge badge-${startup.stage}`}>{startup.stage}</span>
                   </div>
                 </div>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   {startup.status === 'active'
-                    ? 'Your startup is approved. Reports, meetings, sprint, and GTM are unlocked.'
-                    : 'Your application is still waiting for approval. Core founder tools stay locked until manager or admin approval.'}
+                    ? 'Startapingiz tasdiqlangan. Hisobotlar, uchrashuvlar, sprint va GTM ochilgan.'
+                    : 'Arizangiz hali tasdiq kutmoqda. Asosiy asoschining vositalari menejer yoki admin tasdiqlaguncha qulflangan qoladi.'}
                 </p>
               </div>
             ) : (
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No residency application submitted yet.</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Hali rezidentlik arizasi topshirilmagan.</p>
             )}
           </div>
 
@@ -303,9 +305,9 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <div className="p-4 rounded-2xl flex items-center justify-between" style={{ background: 'var(--bg-secondary)' }}>
                 <div>
-                  <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Status</p>
+                  <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Holat</p>
                   <p className="text-sm font-medium" style={{ color: profile?.telegramChatId ? '#10b981' : 'var(--text-primary)' }}>
-                    {profile?.telegramChatId ? '✅ Connected' : '❌ Not connected'}
+                    {profile?.telegramChatId ? '✅ Ulangan' : '❌ Ulanmagan'}
                   </p>
                 </div>
                 {profile?.telegramChatId && (
@@ -315,21 +317,21 @@ export default function SettingsPage() {
                     className="text-xs px-3 py-1.5 rounded-lg"
                     style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}
                   >
-                    {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+                    {disconnecting ? 'Uzilmoqda...' : 'Uzish'}
                   </button>
                 )}
               </div>
               <p className="text-sm leading-6" style={{ color: 'var(--text-muted)' }}>
-                Get meeting reminders 10 minutes before, status updates, and workspace notifications via the Telegram bot.
+                Uchrashuvdan 10 daqiqa oldin eslatmalar, holat yangilanishlari va ish muhiti bildirishnomalarini Telegram bot orqali oling.
               </p>
               {telegramConnect.startLink ? (
                 <a href={telegramConnect.startLink} target="_blank" rel="noreferrer" className="btn-primary inline-flex items-center gap-2">
-                  <Send size={14} /> {profile?.telegramChatId ? 'Reconnect Telegram Bot' : 'Connect Telegram Bot'}
+                  <Send size={14} /> {profile?.telegramChatId ? 'Telegram botni qayta ulash' : 'Telegram botni ulash'}
                 </a>
               ) : (
                 <div className="p-4 rounded-2xl" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}>
                   <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    Loading bot link...
+                    Bot havolasi yuklanmoqda...
                   </p>
                 </div>
               )}

@@ -7,7 +7,6 @@ import Header from '@/components/dashboard/Header';
 import Link from 'next/link';
 import { Search, ChevronUp, ChevronDown, Trash2, Eye, RefreshCw, Users, TrendingUp, FileText, Calendar, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
-import { useAppStore } from '@/store/appStore';
 import { UZ_REGIONS } from '@/lib/regions';
 
 type SortKey = 'startup_name' | 'stage' | 'mrr' | 'users_count' | 'status' | 'createdAt';
@@ -18,7 +17,6 @@ const STAGES   = ['idea','mvp','growth','scale'];
 const STATUSES = ['active','inactive','rejected'];
 
 export default function ManagerPage() {
-  const { lang } = useAppStore();
   const [startups, setStartups]     = useState<any[]>([]);
   const [analytics, setAnalytics]   = useState<any>(null);
   const [loading, setLoading]       = useState(true);
@@ -34,21 +32,22 @@ export default function ManagerPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
 
-  const L = {
-    title:    { uz: 'Menejer paneli',   ru: 'Панель менеджера',    en: 'Manager Panel'    },
-    subtitle: { uz: 'Barcha startaplar', ru: 'Все стартапы',        en: 'All Startups'     },
-    search:   { uz: 'Qidirish...',       ru: 'Поиск...',             en: 'Search...'        },
-    allStages:{ uz: "Barcha bosqichlar", ru: 'Все этапы',            en: 'All Stages'       },
-    allStatus:{ uz: 'Barcha holat',      ru: 'Все статусы',          en: 'All Status'       },
-    allRegions:{uz: 'Barcha hududlar',   ru: 'Все регионы',          en: 'All Regions'      },
-    refresh:  { uz: 'Yangilash',         ru: 'Обновить',             en: 'Refresh'          },
-    clear:    { uz: 'Tozalash',          ru: 'Сбросить',             en: 'Clear'            },
-    total:    { uz: 'Jami',              ru: 'Всего',                en: 'Total'            },
-    active:   { uz: 'Aktiv',             ru: 'Активных',             en: 'Active'           },
-    pending:  { uz: 'Kutmoqda',          ru: 'Ожидают',              en: 'Pending'          },
-    noData:   { uz: "Ma'lumot yo'q",     ru: 'Нет данных',           en: 'No data found'    },
+
+  const T = {
+    title:      'Menejer paneli',
+    subtitle:   'Barcha startaplar',
+    search:     'Qidirish...',
+    allStages:  'Barcha bosqichlar',
+    allStatus:  'Barcha holat',
+    allRegions: 'Barcha hududlar',
+    refresh:    'Yangilash',
+    clear:      'Tozalash',
+    total:      'Jami',
+    active:     'Faol',
+    pending:    'Kutmoqda',
+    noData:     'Ma\'lumot yo\'q',
   };
-  const t = (k: keyof typeof L) => L[k][lang] ?? L[k].en;
+  const t = (k: keyof typeof T) => T[k];
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -84,9 +83,9 @@ export default function ManagerPage() {
     setReviewLoading(true);
     try {
       await updateStatus(startup._id, 'active');
-      toast.success(`${startup.startup_name} accepted`);
+      toast.success(`${startup.startup_name} qabul qilindi`);
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to accept lead');
+      toast.error(err.response?.data?.error || 'Leadni qabul qilib bo\'lmadi');
     } finally {
       setReviewLoading(false);
     }
@@ -94,30 +93,40 @@ export default function ManagerPage() {
 
   const rejectLead = async () => {
     if (!rejectTarget || !rejectReason.trim()) {
-      toast.error('Reject reason is required');
+      toast.error('Rad etish sababi talab qilinadi');
       return;
     }
 
     setReviewLoading(true);
     try {
       await updateStatus(rejectTarget._id, 'rejected', rejectReason.trim());
-      toast.success(`${rejectTarget.startup_name} rejected`);
+      toast.success(`${rejectTarget.startup_name} rad etildi`);
       setRejectTarget(null);
       setRejectReason('');
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to reject lead');
+      toast.error(err.response?.data?.error || 'Leadni rad etib bo\'lmadi');
     } finally {
       setReviewLoading(false);
     }
   };
 
+  const changeStatus = async (id: string, newStatus: string) => {
+    try {
+      await axios.patch(`/api/startups/${id}`, { status: newStatus });
+      toast.success('Holat yangilandi');
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Holatni o\'zgartirib bo\'lmadi');
+    }
+  };
+
   const deleteStartup = async (id: string) => {
-    if (!confirm('Delete this startup?')) return;
+    if (!confirm('Bu startapni o\'chirishni xohlaysizmi?')) return;
     try {
       await axios.delete(`/api/startups/${id}`);
-      toast.success('Deleted');
+      toast.success('O\'chirildi');
       fetchData();
-    } catch { toast.error('Failed'); }
+    } catch { toast.error('Xato yuz berdi'); }
   };
 
   const handleSort = (key: SortKey) => {
@@ -130,7 +139,11 @@ export default function ManagerPage() {
     if (typeof va === 'number') return sortDir === 'asc' ? va - vb : vb - va;
     return sortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
   });
-  const visibleStartups = sorted.filter((startup) => !['pending', 'lead_accepted'].includes(startup.status));
+  const visibleStartups = sorted.filter((startup) =>
+    startup.status !== 'lead_accepted' &&
+    startup.status !== 'rejected' &&
+    !(startup.status === 'pending' && startup.applicationType !== 'existing_resident')
+  );
 
   const SortIcon = ({ k }: { k: SortKey }) => (
     <span className="ml-1 inline-flex flex-col" style={{ color: sortKey === k ? 'var(--accent)' : 'var(--text-muted)' }}>
@@ -143,7 +156,7 @@ export default function ManagerPage() {
 
   return (
     <div className="animate-fade-in">
-      <Header title="Residents Panel" subtitle="Approved and reviewed residency startups" />
+      <Header title="Rezidentlar paneli" subtitle="Tasdiqlangan va ko'rib chiqilgan startaplar" />
       <div className="p-6 space-y-5">
 
         {/* Analytics summary */}
@@ -152,9 +165,9 @@ export default function ManagerPage() {
             {[
               { icon: <Users size={18}/>,      label: t('total'),   value: analytics.totalStartups,  color: '#6366f1' },
             { icon: <TrendingUp size={18}/>,  label: t('active'),  value: analytics.activeStartups, color: '#10b981' },
-            { icon: <FileText size={18}/>,    label: lang === 'uz' ? 'Kutuvchi' : lang === 'ru' ? 'Ожидают' : 'Pending Reports',
+            { icon: <FileText size={18}/>,    label: 'Kutuvchi hisobotlar',
                 value: analytics.pendingReports, color: '#f59e0b' },
-            { icon: <Calendar size={18}/>,    label: lang === 'uz' ? 'Uchrashuvlar' : lang === 'ru' ? 'Встречи' : 'Meetings',
+            { icon: <Calendar size={18}/>,    label: 'Uchrashuvlar',
                 value: analytics.totalMeetings,  color: '#ec4899' },
             ].map(s => (
               <div key={s.label} className="card flex items-center gap-3 py-4">
@@ -215,9 +228,9 @@ export default function ManagerPage() {
 
         {/* Stats */}
         <div className="flex gap-5 text-sm flex-wrap">
-          <span style={{ color: 'var(--text-muted)' }}>Residents: <strong style={{ color: 'var(--text-primary)' }}>{visibleStartups.length}</strong></span>
+          <span style={{ color: 'var(--text-muted)' }}>Rezidentlar: <strong style={{ color: 'var(--text-primary)' }}>{visibleStartups.length}</strong></span>
           <span style={{ color: 'var(--text-muted)' }}>{t('active')}: <strong style={{ color: '#10b981' }}>{visibleStartups.filter(s => s.status === 'active').length}</strong></span>
-          <span style={{ color: 'var(--text-muted)' }}>Rejected: <strong style={{ color: '#ef4444' }}>{visibleStartups.filter(s => s.status === 'rejected').length}</strong></span>
+          <span style={{ color: 'var(--text-muted)' }}>Rad etilgan: <strong style={{ color: '#ef4444' }}>{visibleStartups.filter(s => s.status === 'rejected').length}</strong></span>
         </div>
 
         {/* Table */}
@@ -226,21 +239,21 @@ export default function ManagerPage() {
             <thead>
               <tr>
                 <th className="cursor-pointer select-none" onClick={() => handleSort('startup_name')}>
-                  {lang === 'uz' ? 'Startap' : lang === 'ru' ? 'Стартап' : 'Startup'} <SortIcon k="startup_name"/>
+                  Startap <SortIcon k="startup_name"/>
                 </th>
-                <th>{lang === 'uz' ? 'Asoschisi' : lang === 'ru' ? 'Основатель' : 'Founder'}</th>
-                <th>{lang === 'uz' ? 'Hudud' : lang === 'ru' ? 'Регион' : 'Region'}</th>
+                <th>Asoschisi</th>
+                <th>Hudud</th>
                 <th className="cursor-pointer select-none" onClick={() => handleSort('stage')}>
-                  {lang === 'uz' ? 'Bosqich' : lang === 'ru' ? 'Этап' : 'Stage'} <SortIcon k="stage"/>
+                  Bosqich <SortIcon k="stage"/>
                 </th>
                 <th className="cursor-pointer select-none" onClick={() => handleSort('mrr')}>
                   MRR <SortIcon k="mrr"/>
                 </th>
                 <th className="cursor-pointer select-none" onClick={() => handleSort('users_count')}>
-                  {lang === 'uz' ? 'Foydalanuvchilar' : lang === 'ru' ? 'Польз.' : 'Users'} <SortIcon k="users_count"/>
+                  Foydalanuvchilar <SortIcon k="users_count"/>
                 </th>
-                <th>{lang === 'uz' ? 'Holat' : lang === 'ru' ? 'Статус' : 'Status'}</th>
-                <th>{lang === 'uz' ? "Qo'shilgan" : lang === 'ru' ? 'Добавлен' : 'Joined'}</th>
+                <th>Holat</th>
+                <th>Qo&apos;shilgan</th>
                 <th></th>
               </tr>
             </thead>
@@ -263,20 +276,33 @@ export default function ManagerPage() {
                     )}
                   </td>
                 </tr>
-              ) : visibleStartups.map(s => (
-                <tr key={s._id}>
+              ) : visibleStartups.map(s => {
+                const isResidentRequest = s.applicationType === 'existing_resident' && s.status === 'pending';
+                return (
+                <tr
+                  key={s._id}
+                  style={isResidentRequest ? {
+                    background: 'rgba(239,68,68,0.04)',
+                    borderLeft: '3px solid rgba(239,68,68,0.55)',
+                  } : {}}
+                >
                   <td>
                     <Link href={`/manager/startup/${s._id}`}>
                       <div className="flex items-center gap-2.5 group cursor-pointer">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                          style={{ background: isResidentRequest ? 'linear-gradient(135deg,#ef4444,#dc2626)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
                           {s.startup_name?.[0] ?? '?'}
                         </div>
                         <div>
                           <p className="text-sm font-semibold group-hover:underline" style={{ color: 'var(--accent)' }}>
-                          <span className="notranslate" translate="no">{s.startup_name}</span>
-                        </p>
+                            <span className="notranslate" translate="no">{s.startup_name}</span>
+                          </p>
                           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{s.startup_sphere}</p>
+                          {isResidentRequest && (
+                            <span className="text-xs px-1.5 py-0.5 rounded-md font-medium" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                              Resident so'rovi
+                            </span>
+                          )}
                         </div>
                       </div>
                     </Link>
@@ -295,42 +321,71 @@ export default function ManagerPage() {
                   <td className="font-mono text-sm notranslate" translate="no">${s.mrr?.toLocaleString() ?? 0}</td>
                   <td className="text-sm">{s.users_count?.toLocaleString() ?? 0}</td>
                   <td>
-                    <span className={`badge ${s.status === 'pending' ? 'badge-pending' : `badge-${s.status}`}`}>
-                      {s.status === 'pending' ? 'lead' : s.status}
-                    </span>
-                    {s.status === 'rejected' && s.rejectionReason && (
-                      <p className="text-xs mt-2 max-w-52 leading-5" style={{ color: '#ef4444' }}>
-                        {s.rejectionReason}
-                      </p>
+                    {isResidentRequest ? (
+                      <div className="space-y-1">
+                        <span className="text-xs px-2 py-1 rounded-lg font-semibold block w-fit"
+                          style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                          Yangi so'rov
+                        </span>
+                        <select
+                          value={s.status}
+                          onChange={(e) => changeStatus(s._id, e.target.value)}
+                          className="text-xs px-2 py-1 rounded-lg w-full"
+                          style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+                        >
+                          <option value="pending">Ko'rib chiqilmoqda</option>
+                          <option value="active">Faol</option>
+                          <option value="inactive">Nofaol</option>
+                        </select>
+                      </div>
+                    ) : (
+                      <select
+                        value={s.status}
+                        onChange={(e) => changeStatus(s._id, e.target.value)}
+                        className="text-xs px-2 py-1.5 rounded-lg"
+                        style={{
+                          background: s.status === 'active' ? 'rgba(16,185,129,0.12)'
+                            : s.status === 'inactive' ? 'rgba(239,68,68,0.08)'
+                            : 'var(--bg-secondary)',
+                          color: s.status === 'active' ? '#10b981'
+                            : s.status === 'inactive' ? '#ef4444'
+                            : 'var(--text-muted)',
+                          border: '1px solid var(--border)',
+                        }}
+                      >
+                        <option value="active">Faol</option>
+                        <option value="inactive">Nofaol</option>
+                        <option value="pending">Ko'rib chiqilmoqda</option>
+                      </select>
                     )}
                   </td>
                   <td className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {s.createdAt ? format(new Date(s.createdAt), 'MMM d, yyyy') : '—'}
+                    {s.createdAt ? format(new Date(s.createdAt), 'dd.MM.yyyy') : '—'}
                   </td>
                   <td>
                     <div className="flex items-center gap-1">
-                      {s.status === 'pending' && (
+                      {isResidentRequest && (
                         <>
                           <button
                             onClick={() => acceptLead(s)}
-                            className="p-1.5 rounded-lg"
+                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold"
                             style={{ color: '#10b981', background: 'rgba(16,185,129,0.1)' }}
-                            title="Accept lead"
+                            title="Kirish berish"
                           >
-                            <Check size={13}/>
+                            <Check size={12}/> Kirish berish
                           </button>
                           <button
                             onClick={() => { setRejectTarget(s); setRejectReason(''); }}
                             className="p-1.5 rounded-lg"
                             style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}
-                            title="Reject lead"
+                            title="Rad etish"
                           >
                             <X size={13}/>
                           </button>
                         </>
                       )}
                       <Link href={`/manager/startup/${s._id}`}>
-                        <button className="p-1.5 rounded-lg" style={{ color: 'var(--accent)', background: 'rgba(99,102,241,0.1)' }} title="View">
+                        <button className="p-1.5 rounded-lg" style={{ color: 'var(--accent)', background: 'rgba(99,102,241,0.1)' }} title="Ko'rish">
                           <Eye size={13}/>
                         </button>
                       </Link>
@@ -341,7 +396,8 @@ export default function ManagerPage() {
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -368,23 +424,23 @@ export default function ManagerPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)' }}>
           <div className="card w-full max-w-lg p-8">
             <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-              Reject Lead
+              Leadni rad etish
             </h3>
             <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>
-              Enter the rejection reason for {rejectTarget.startup_name}. The founder will see this message in their dashboard.
+              {rejectTarget.startup_name} uchun rad etish sababini kiriting. Asoschi bu xabarni o'z panelidagi ko'radi.
             </p>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               className="input min-h-28 resize-none"
-              placeholder="Why is this lead rejected? What should they improve?"
+              placeholder="Nima sababdan rad etilmoqda? Nima yaxshilanishi kerak?"
             />
             <div className="flex gap-3 mt-6">
               <button onClick={() => { setRejectTarget(null); setRejectReason(''); }} className="btn-secondary flex-1">
-                Cancel
+                Bekor qilish
               </button>
               <button onClick={rejectLead} disabled={reviewLoading || !rejectReason.trim()} className="btn-danger flex-1">
-                {reviewLoading ? 'Saving...' : 'Reject Lead'}
+                {reviewLoading ? 'Saqlanmoqda...' : 'Rad etish'}
               </button>
             </div>
           </div>

@@ -21,6 +21,7 @@ import {
   Star,
   TrendingUp,
   Lock,
+  Megaphone,
 } from 'lucide-react';
 import { useAppStore } from '@/store/appStore';
 import { useState, useEffect, MouseEvent } from 'react';
@@ -234,7 +235,7 @@ export default function Sidebar() {
                   <span style={{ color: theme === 'light' ? '#0f172a' : '#f8fafc' }}>SG-Residency</span>
                 </p>
                 <p className="text-[11px] truncate uppercase tracking-[0.16em]" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.52)' : 'rgba(226,232,240,0.58)' }}>
-                  Accelerator Workspace
+                  Akselerator ish muhiti
                 </p>
               </div>
             </div>
@@ -261,7 +262,7 @@ export default function Sidebar() {
             USER_NAV.map((item) => <NavLink key={item.href} item={item} />)
           ) : (
             <>
-              <Section title="Management" items={MGR_NAV} />
+              <Section title="Boshqaruv" items={MGR_NAV} />
               {role === 'super_admin' && <Section title="Admin" items={ADMIN_NAV} />}
             </>
           )}
@@ -308,14 +309,51 @@ export default function Sidebar() {
             </div>
           </Link>
 
+          {(role === 'manager' || role === 'super_admin') && (
+            <Link href="/manager/ads" className="block">
+              <div
+                className={`flex items-center gap-3 px-2.5 py-2.5 rounded-2xl cursor-pointer transition-all ${pathname.startsWith('/manager/ads') ? 'ring-1' : ''}`}
+                style={{
+                  background: pathname.startsWith('/manager/ads')
+                    ? (theme === 'light' ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.15)')
+                    : (theme === 'light' ? 'rgba(99,102,241,0.04)' : 'rgba(255,255,255,0.03)'),
+                  border: `1px solid ${pathname.startsWith('/manager/ads') ? 'rgba(99,102,241,0.35)' : (theme === 'light' ? 'rgba(99,102,241,0.08)' : 'rgba(148,163,184,0.06)')}`,
+                }}
+                title={!open ? 'Reklama sozlamalari' : undefined}
+              >
+                <div
+                  className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: pathname.startsWith('/manager/ads')
+                      ? 'rgba(99,102,241,0.2)'
+                      : (theme === 'light' ? 'rgba(99,102,241,0.08)' : 'rgba(99,102,241,0.1)'),
+                    color: 'var(--accent)',
+                  }}
+                >
+                  <Megaphone size={15} />
+                </div>
+                {open && (
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold truncate" style={{ color: theme === 'light' ? '#0f172a' : '#f8fafc' }}>
+                      Reklama sozlamalari
+                    </p>
+                    <p className="text-[11px] truncate" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.52)' : 'rgba(226,232,240,0.58)' }}>
+                      Founders School banneri
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Link>
+          )}
+
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
             className="sidebar-link w-full"
             style={{ justifyContent: open ? 'flex-start' : 'center', padding: open ? '10px 12px' : '12px' }}
-            title={!open ? 'Sign Out' : undefined}
+            title={!open ? 'Chiqish' : undefined}
           >
             <LogOut size={15} />
-            {open && <span className="text-sm">{lang === 'uz' ? 'Chiqish' : lang === 'ru' ? 'Выйти' : 'Sign Out'}</span>}
+            {open && <span className="text-sm">Chiqish</span>}
           </button>
         </div>
       </aside>
@@ -333,19 +371,19 @@ export default function Sidebar() {
               <Rocket size={28} style={{ color: 'var(--accent)' }} />
             </div>
             <h3 className="text-2xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-              Residency application required
+              Rezidentlik arizasi talab qilinadi
             </h3>
             <p className="text-sm mb-6 leading-6" style={{ color: 'var(--text-muted)' }}>
               {startupStatus === 'lead_accepted'
-                ? 'You are currently in the interview stage. Only meetings, startup details, and profile settings are available right now.'
-                : 'Your residency request must be approved before the rest of the workspace becomes available.'}
+                ? 'Siz hozirda intervyu bosqichidasiz. Hozircha faqat uchrashuvlar, startup ma\'lumotlari va profil sozlamalari mavjud.'
+                : 'Ish muhitining qolgan qismi ochilishi uchun rezidentlik arizangiz tasdiqlanishi kerak.'}
             </p>
             <div className="flex gap-3 justify-center">
               <button onClick={() => setShowApplyPrompt(false)} className="btn-secondary">
-                Close
+                Yopish
               </button>
               <Link href="/dashboard/apply" onClick={() => setShowApplyPrompt(false)}>
-                <button className="btn-primary">{startupStatus === 'rejected' ? 'Update Application' : 'Open Application'}</button>
+                <button className="btn-primary">{startupStatus === 'rejected' ? 'Arizani yangilash' : 'Arizani ochish'}</button>
               </Link>
             </div>
           </div>

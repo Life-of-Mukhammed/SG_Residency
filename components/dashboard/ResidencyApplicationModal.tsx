@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { ChevronLeft, ChevronRight, FileText, Rocket, UploadCloud, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText, Rocket, UploadCloud, X, Building2, UserPlus } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { UZ_REGIONS } from '@/lib/regions';
 import { DEFAULT_STARTUP_SPHERE, STARTUP_SPHERES } from '@/lib/startup-spheres';
@@ -38,7 +38,7 @@ type FormState = {
 };
 
 const EMPTY_FORM: FormState = {
-  applicationType: 'existing_resident',
+  applicationType: 'new_applicant',
   startup_name: '',
   founder_name: '',
   region: 'Toshkent shahri',
@@ -67,8 +67,8 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
 
   const steps = useMemo(() => {
     return form.applicationType === 'existing_resident'
-      ? ['Residency Type', 'Startup Request', 'Review']
-      : ['Residency Type', 'Founder & Startup', 'Questions', 'Files & Metrics', 'Review'];
+      ? ['Rezidentlik turi', 'Startup ma\'lumotlari', 'Ko\'rib chiqish']
+      : ['Rezidentlik turi', 'Asoschi va startup', 'Savollar', 'Fayllar va metrikalar', 'Ko\'rib chiqish'];
   }, [form.applicationType]);
 
   useEffect(() => {
@@ -88,7 +88,7 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
     const fullName = session?.user?.name || '';
     const baseForm: FormState = startup
       ? {
-          applicationType: startup.applicationType || 'new_applicant',
+          applicationType: startup.applicationType || 'existing_resident',
           startup_name: startup.startup_name || '',
           founder_name: startup.founder_name || fullName,
           region: startup.region || 'Toshkent shahri',
@@ -123,34 +123,35 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
     const nextErrors: Record<string, string> = {};
 
     if (step === 0 && !form.applicationType) {
-      nextErrors.applicationType = 'Choose one option';
+      nextErrors.applicationType = 'Birini tanlang';
     }
 
     if (form.applicationType === 'existing_resident') {
       if (step === 1) {
-        if (!form.startup_name.trim()) nextErrors.startup_name = 'Startup name is required';
-        if (!form.pitch_deck.trim()) nextErrors.pitch_deck = 'Pitch deck is required';
+        if (!form.startup_name.trim()) nextErrors.startup_name = 'Startup nomi kiritilishi shart';
+        if (!form.description.trim() || form.description.trim().length < 20) nextErrors.description = 'Tavsif kamida 20 ta belgidan iborat bo\'lishi kerak';
+        if (!form.pitch_deck.trim()) nextErrors.pitch_deck = 'Pitch deck manzili kiritilishi shart';
       }
     } else {
       if (step === 1) {
-        if (!form.startup_name.trim()) nextErrors.startup_name = 'Startup name is required';
-        if (!form.founder_name.trim()) nextErrors.founder_name = 'Founder role is required';
-        if (!form.region.trim()) nextErrors.region = 'Region is required';
-        if (!form.startup_sphere.trim()) nextErrors.startup_sphere = 'Sphere is required';
-        if (!form.description.trim() || form.description.trim().length < 20) nextErrors.description = 'Description must be at least 20 characters';
-        if (!form.phone.trim()) nextErrors.phone = 'Phone is required';
-        if (!form.telegram.trim()) nextErrors.telegram = 'Telegram is required';
+        if (!form.startup_name.trim()) nextErrors.startup_name = 'Startup nomi kiritilishi shart';
+        if (!form.founder_name.trim()) nextErrors.founder_name = 'Asoschi roli kiritilishi shart';
+        if (!form.region.trim()) nextErrors.region = 'Hudud kiritilishi shart';
+        if (!form.startup_sphere.trim()) nextErrors.startup_sphere = 'Soha kiritilishi shart';
+        if (!form.description.trim() || form.description.trim().length < 20) nextErrors.description = 'Tavsif kamida 20 ta belgidan iborat bo\'lishi kerak';
+        if (!form.phone.trim()) nextErrors.phone = 'Telefon kiritilishi shart';
+        if (!form.telegram.trim()) nextErrors.telegram = 'Telegram kiritilishi shart';
       }
       if (step === 2) {
         questions.forEach((q) => {
           if (q.required && !answers[q._id]?.trim()) {
-            nextErrors[`q_${q._id}`] = 'This field is required';
+            nextErrors[`q_${q._id}`] = 'Bu maydon to\'ldirilishi shart';
           }
         });
       }
       if (step === 3) {
-        if (!form.pitch_deck.trim()) nextErrors.pitch_deck = 'Pitch deck is required';
-        if (!form.resume_url.trim()) nextErrors.resume_url = 'Resume URL is required';
+        if (!form.pitch_deck.trim()) nextErrors.pitch_deck = 'Pitch deck manzili kiritilishi shart';
+        if (!form.resume_url.trim()) nextErrors.resume_url = 'Rezyume manzili kiritilishi shart';
       }
     }
 
@@ -192,11 +193,11 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
         })).filter((a) => a.answer.trim()),
       });
 
-      toast.success('Application submitted successfully');
+      toast.success('Ariza muvaffaqiyatli yuborildi');
       onSubmitted?.();
       onClose?.();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Could not submit application');
+      toast.error(error.response?.data?.error || 'Ariza yuborib bo\'lmadi');
     } finally {
       setLoading(false);
     }
@@ -205,33 +206,35 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
   const currentReviewItems =
     form.applicationType === 'existing_resident'
       ? [
-          ['Residency Type', 'Already a Startup Garage resident'],
-          ['Startup Name', form.startup_name],
+          ['Rezidentlik turi', 'Allaqachon Startup Garage residenti'],
+          ['Startup nomi', form.startup_name],
+          ['Startup tavsifi', form.description],
           ['Pitch Deck', form.pitch_deck],
+          ['MRR ($)', form.mrr],
+          ['Jalb qilingan investitsiya ($)', form.investment_raised],
         ]
       : [
-          ['Residency Type', 'Applying for new residency'],
-          ['Startup Name', form.startup_name],
-          ['Founder Role', form.founder_name],
-          ['Region', form.region],
-          ['Sphere', form.startup_sphere],
-          ['Stage', form.stage],
+          ['Rezidentlik turi', 'Yangi rezidentlikka ariza'],
+          ['Startup nomi', form.startup_name],
+          ['Asoschi roli', form.founder_name],
+          ['Hudud', form.region],
+          ['Soha', form.startup_sphere],
+          ['Bosqich', form.stage],
           ['Pitch Deck', form.pitch_deck],
-          ['Resume', form.resume_url],
+          ['Rezyume', form.resume_url],
         ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(2,6,23,0.72)', backdropFilter: 'blur(10px)' }}>
       <div className="card w-full max-w-4xl max-h-[92vh] overflow-hidden flex flex-col">
+
+        {/* Header */}
         <div className="px-6 py-5 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
           <div>
-            <p className="text-xs uppercase tracking-[0.24em]" style={{ color: 'var(--accent)' }}>Apply To Residency</p>
+            <p className="text-xs uppercase tracking-[0.24em]" style={{ color: 'var(--accent)' }}>Rezidentlikka ariza</p>
             <h2 className="text-2xl font-bold mt-2" style={{ color: 'var(--text-primary)' }}>
-              {startup?.status === 'rejected' ? 'Re-apply to Residency' : 'Residency Request'}
+              {startup?.status === 'rejected' ? 'Arizani yangilash' : 'Rezidentlik so\'rovi'}
             </h2>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              Existing residents can send a quick request. New applicants complete the lead form with resume and pitch deck.
-            </p>
           </div>
           {!lockOpen && (
             <button onClick={onClose} className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'var(--bg-secondary)' }}>
@@ -240,12 +243,13 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
           )}
         </div>
 
+        {/* Step indicators */}
         <div className="px-6 pt-5 flex items-center gap-3">
           {steps.map((label, index) => (
             <div key={label} className="flex items-center gap-3 flex-1">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
                   style={{
                     background: index <= step ? 'var(--accent)' : 'var(--bg-secondary)',
                     color: index <= step ? '#fff' : 'var(--text-muted)',
@@ -262,83 +266,140 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
           ))}
         </div>
 
+        {/* Body */}
         <div className="px-6 py-6 overflow-y-auto flex-1">
+
+          {/* Step 0: Rezidentlik turi tanlash */}
           {step === 0 && (
             <div className="grid md:grid-cols-2 gap-4">
               {[
                 {
                   key: 'existing_resident' as const,
+                  icon: <Building2 size={28} />,
                   title: 'Men Startup Garage residentiman',
-                  description: 'Agar siz allaqachon resident bo‘lsangiz, faqat request yuborasiz. Pitch deck majburiy.',
+                  description: 'Siz allaqachon rezident bo\'lsangiz, qisqa so\'rov yuboring. Startup tavsifi, MRR va pitch deck so\'raladi.',
+                  color: '#6366f1',
+                  bg: 'rgba(99,102,241,0.1)',
                 },
                 {
                   key: 'new_applicant' as const,
+                  icon: <UserPlus size={28} />,
                   title: 'Endi residentlikka topshirmoqchiman',
-                  description: 'Bu oqimda savollar, resume va pitch deck so‘raladi. Ariza New Leads ro‘yxatiga tushadi.',
+                  description: 'Bu yo\'nalishda savollar, resume va pitch deck to\'ldirasiz. Ariza Yangi Leadlar ro\'yxatiga tushadi.',
+                  color: '#10b981',
+                  bg: 'rgba(16,185,129,0.1)',
                 },
-              ].map((option) => (
-                <button
-                  key={option.key}
-                  type="button"
-                  onClick={() => setField('applicationType', option.key)}
-                  className="rounded-3xl p-6 text-left transition-all"
-                  style={{
-                    border: form.applicationType === option.key ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--border)',
-                    background: form.applicationType === option.key ? 'rgba(99,102,241,0.10)' : 'var(--bg-card)',
-                  }}
-                >
-                  <p className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>{option.title}</p>
-                  <p className="text-sm leading-6" style={{ color: 'var(--text-muted)' }}>{option.description}</p>
-                </button>
-              ))}
+              ].map((option) => {
+                const isSelected = form.applicationType === option.key;
+                return (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => setField('applicationType', option.key)}
+                    className="rounded-3xl p-7 text-left transition-all hover:scale-[1.02] active:scale-[0.99]"
+                    style={{
+                      border: isSelected ? `2px solid ${option.color}` : '2px solid var(--border)',
+                      background: isSelected ? option.bg : 'var(--bg-secondary)',
+                      boxShadow: isSelected ? `0 0 0 4px ${option.color}18` : 'none',
+                    }}
+                  >
+                    <div
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
+                      style={{
+                        background: isSelected ? option.color : 'var(--bg-card)',
+                        color: isSelected ? '#fff' : option.color,
+                      }}
+                    >
+                      {option.icon}
+                    </div>
+                    <p className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>{option.title}</p>
+                    <p className="text-sm leading-6" style={{ color: 'var(--text-muted)' }}>{option.description}</p>
+                    <div
+                      className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+                      style={{
+                        background: isSelected ? option.color : 'var(--bg-card)',
+                        color: isSelected ? '#fff' : option.color,
+                      }}
+                    >
+                      {isSelected ? 'Tanlangan' : 'Tanlash'}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
 
+          {/* Step 1: Mavjud rezident uchun */}
           {step === 1 && form.applicationType === 'existing_resident' && (
             <div className="space-y-5 max-w-2xl">
               <div>
-                <label className="label">Startup Name *</label>
-                <input value={form.startup_name} onChange={(e) => setField('startup_name', e.target.value)} className="input" placeholder="Startup name" />
+                <label className="label">Startup nomi *</label>
+                <input value={form.startup_name} onChange={(e) => setField('startup_name', e.target.value)} className="input" placeholder="Startapingiz nomi" />
                 {errors.startup_name && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.startup_name}</p>}
               </div>
+
               <div>
-                <label className="label">Pitch Deck URL *</label>
+                <label className="label">Startup tavsifi *</label>
+                <textarea value={form.description} onChange={(e) => setField('description', e.target.value)} className="input min-h-28 resize-none" placeholder="Startapingiz haqida qisqacha: muammo, yechim, hozirgi holat..." />
+                {errors.description && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.description}</p>}
+              </div>
+
+              <div>
+                <label className="label">Pitch Deck manzili *</label>
                 <input value={form.pitch_deck} onChange={(e) => setField('pitch_deck', e.target.value)} className="input" placeholder="https://docs.google.com/..." />
                 {errors.pitch_deck && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.pitch_deck}</p>}
               </div>
-              <div className="rounded-2xl p-4" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid var(--border)' }}>
-                <p className="text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
-                  If you are an existing resident, this request will be sent to an admin or manager. Once they confirm your residency access, your full dashboard will be unlocked.
-                </p>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label">MRR ($)</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-muted)' }}>$</span>
+                    <input type="number" min="0" value={form.mrr} onChange={(e) => setField('mrr', e.target.value)} className="input pl-8" placeholder="0" />
+                  </div>
+                </div>
+                <div>
+                  <label className="label">Jalb qilingan investitsiya ($)</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-muted)' }}>$</span>
+                    <input type="number" min="0" value={form.investment_raised} onChange={(e) => setField('investment_raised', e.target.value)} className="input pl-8" placeholder="0" />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Foydalanuvchilar soni</label>
+                <input type="number" min="0" value={form.users_count} onChange={(e) => setField('users_count', e.target.value)} className="input" placeholder="0" />
               </div>
             </div>
           )}
 
+          {/* Step 1: Yangi ariza beruvchi uchun */}
           {step === 1 && form.applicationType === 'new_applicant' && (
             <div className="space-y-5">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Startup Name *</label>
-                  <input value={form.startup_name} onChange={(e) => setField('startup_name', e.target.value)} className="input" placeholder="Startup name" />
+                  <label className="label">Startup nomi *</label>
+                  <input value={form.startup_name} onChange={(e) => setField('startup_name', e.target.value)} className="input" placeholder="Startapingiz nomi" />
                   {errors.startup_name && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.startup_name}</p>}
                 </div>
                 <div>
-                  <label className="label">Founder Role *</label>
-                  <input value={form.founder_name} onChange={(e) => setField('founder_name', e.target.value)} className="input" placeholder="CEO / Founder / CTO" />
+                  <label className="label">Asoschi roli *</label>
+                  <input value={form.founder_name} onChange={(e) => setField('founder_name', e.target.value)} className="input" placeholder="CEO / Asoschi / CTO" />
                   {errors.founder_name && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.founder_name}</p>}
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Region *</label>
+                  <label className="label">Hudud *</label>
                   <select value={form.region} onChange={(e) => setField('region', e.target.value)} className="input">
                     {REGIONS.map((region) => <option key={region} value={region}>{region}</option>)}
                   </select>
                   {errors.region && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.region}</p>}
                 </div>
                 <div>
-                  <label className="label">Startup Sphere *</label>
+                  <label className="label">Startup sohasi *</label>
                   <select value={form.startup_sphere} onChange={(e) => setField('startup_sphere', e.target.value)} className="input">
                     {STARTUP_SPHERES.map((sphere) => <option key={sphere} value={sphere}>{sphere}</option>)}
                   </select>
@@ -348,16 +409,16 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
-                  <label className="label">Stage</label>
+                  <label className="label">Bosqich</label>
                   <select value={form.stage} onChange={(e) => setField('stage', e.target.value)} className="input">
-                    <option value="idea">Idea</option>
+                    <option value="idea">G'oya</option>
                     <option value="mvp">MVP</option>
-                    <option value="growth">Growth</option>
-                    <option value="scale">Scale</option>
+                    <option value="growth">O'sish</option>
+                    <option value="scale">Kengayish</option>
                   </select>
                 </div>
                 <div>
-                  <label className="label">Phone *</label>
+                  <label className="label">Telefon *</label>
                   <input value={form.phone} onChange={(e) => setField('phone', e.target.value)} className="input" placeholder="+998..." />
                   {errors.phone && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.phone}</p>}
                 </div>
@@ -369,13 +430,14 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
               </div>
 
               <div>
-                <label className="label">Startup Description *</label>
-                <textarea value={form.description} onChange={(e) => setField('description', e.target.value)} className="input min-h-28 resize-none" placeholder="Describe your startup, problem and traction..." />
+                <label className="label">Startup tavsifi *</label>
+                <textarea value={form.description} onChange={(e) => setField('description', e.target.value)} className="input min-h-28 resize-none" placeholder="Startapingiz, muammo va hozirgi natijalar haqida yozing..." />
                 {errors.description && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.description}</p>}
               </div>
             </div>
           )}
 
+          {/* Step 2: Savollar (yangi ariza) */}
           {step === 2 && form.applicationType === 'new_applicant' && questions.length > 0 && (
             <div className="space-y-5">
               {questions.map((q) => (
@@ -408,24 +470,25 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
             </div>
           )}
 
+          {/* Step 3: Fayllar va metrikalar (yangi ariza) */}
           {step === 3 && form.applicationType === 'new_applicant' && (
             <div className="space-y-5">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Pitch Deck URL *</label>
+                  <label className="label">Pitch Deck manzili *</label>
                   <input value={form.pitch_deck} onChange={(e) => setField('pitch_deck', e.target.value)} className="input" placeholder="https://docs.google.com/..." />
                   {errors.pitch_deck && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.pitch_deck}</p>}
                 </div>
                 <div>
-                  <label className="label">Resume URL *</label>
+                  <label className="label">Rezyume manzili *</label>
                   <input value={form.resume_url} onChange={(e) => setField('resume_url', e.target.value)} className="input" placeholder="https://drive.google.com/..." />
                   {errors.resume_url && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.resume_url}</p>}
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="label">Team Size</label>
+                  <label className="label">Jamoa hajmi</label>
                   <input type="number" min="1" value={form.team_size} onChange={(e) => setField('team_size', e.target.value)} className="input" />
                 </div>
                 <div>
@@ -436,11 +499,11 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
                   </div>
                 </div>
                 <div>
-                  <label className="label">Users</label>
+                  <label className="label">Foydalanuvchilar</label>
                   <input type="number" min="0" value={form.users_count} onChange={(e) => setField('users_count', e.target.value)} className="input" />
                 </div>
                 <div>
-                  <label className="label">Investment</label>
+                  <label className="label">Investitsiya ($)</label>
                   <input type="number" min="0" value={form.investment_raised} onChange={(e) => setField('investment_raised', e.target.value)} className="input" />
                 </div>
               </div>
@@ -448,21 +511,22 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
               <div className="rounded-3xl p-5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-2 mb-4">
                   <UploadCloud size={18} style={{ color: 'var(--accent)' }} />
-                  <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Startup package</h3>
+                  <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Startup to\'plami</h3>
                 </div>
                 <p className="text-sm leading-6" style={{ color: 'var(--text-muted)' }}>
-                  Submit your pitch deck, resume, and key startup metrics here. Application screening questions are handled separately by the admin or manager.
+                  Pitch deck, rezyume va asosiy metrikalarni kiriting. Ariza savollari admin yoki menejer tomonidan alohida ko'rib chiqiladi.
                 </p>
               </div>
             </div>
           )}
 
+          {/* Oxirgi qadam: Ko'rib chiqish */}
           {step === steps.length - 1 && (
             <div className="space-y-5">
               <div className="rounded-3xl p-5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-2 mb-4">
                   <FileText size={18} style={{ color: 'var(--accent)' }} />
-                  <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Review Your Request</h3>
+                  <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>So\'rovingizni ko\'rib chiqing</h3>
                 </div>
                 <div className="space-y-3">
                   {currentReviewItems.map(([label, value]) => (
@@ -473,31 +537,27 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
                   ))}
                 </div>
               </div>
-              <div className="rounded-2xl p-4" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                <p className="text-sm leading-6" style={{ color: '#10b981' }}>
-                  Submit bo‘lgach arizangiz `New Leads` ga tushadi. Accept qilinsa residency access beriladi, reject qilinsa sabab sizga ko‘rinadi.
-                </p>
-              </div>
             </div>
           )}
         </div>
 
+        {/* Footer */}
         <div className="px-6 py-5 border-t flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
           <button
             type="button"
             onClick={() => setStep((prev) => Math.max(prev - 1, 0))}
             className={`btn-secondary flex items-center gap-2 ${step === 0 ? 'opacity-0 pointer-events-none' : ''}`}
           >
-            <ChevronLeft size={16} /> Back
+            <ChevronLeft size={16} /> Orqaga
           </button>
 
           {step < steps.length - 1 ? (
             <button type="button" onClick={nextStep} className="btn-primary flex items-center gap-2">
-              Next <ChevronRight size={16} />
+              Keyingi <ChevronRight size={16} />
             </button>
           ) : (
             <button type="button" onClick={submit} disabled={loading} className="btn-primary flex items-center gap-2">
-              {loading ? 'Submitting...' : <><Rocket size={16} /> Submit Request</>}
+              {loading ? 'Yuborilmoqda...' : <><Rocket size={16} /> Ariza yuborish</>}
             </button>
           )}
         </div>

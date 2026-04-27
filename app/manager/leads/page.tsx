@@ -49,9 +49,11 @@ function regionColor(region: string) {
 
 export default function NewLeadsPage() {
   const [leads, setLeads] = useState<any[]>([]);
+  const [existingResidents, setExistingResidents] = useState<any[]>([]);
   const [questions, setQuestions] = useState<LeadQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [residentsOpen, setResidentsOpen] = useState(true);
 
   const [rejectTarget, setRejectTarget] = useState<any | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -74,14 +76,22 @@ export default function NewLeadsPage() {
         axios.get('/api/startups?limit=200'),
         axios.get('/api/residency-questions'),
       ]);
+      const all = leadsRes.data.startups || [];
       setLeads(
-        (leadsRes.data.startups || []).filter((item: any) =>
+        all.filter((item: any) =>
+          ['pending', 'lead_accepted'].includes(item.status) &&
+          item.applicationType !== 'existing_resident'
+        )
+      );
+      setExistingResidents(
+        all.filter((item: any) =>
+          item.applicationType === 'existing_resident' &&
           ['pending', 'lead_accepted'].includes(item.status)
         )
       );
       setQuestions(questionsRes.data.questions || []);
     } catch {
-      toast.error('Could not load new leads');
+      toast.error('Yangi leadlarni yuklash amalga oshmadi');
     } finally {
       setLoading(false);
     }
@@ -126,23 +136,23 @@ export default function NewLeadsPage() {
 
   const saveQuestion = async () => {
     if (!draftQuestion.question.trim()) {
-      toast.error('Question is required');
+      toast.error('Savol kiritilishi shart');
       return;
     }
     setSavingQuestion(true);
     try {
       if (editingQuestionId) {
         await axios.patch(`/api/residency-questions/${editingQuestionId}`, draftQuestion);
-        toast.success('Question updated');
+        toast.success('Savol yangilandi');
       } else {
         await axios.post('/api/residency-questions', draftQuestion);
-        toast.success('Question added');
+        toast.success('Savol qo\'shildi');
       }
       setDraftQuestion(EMPTY_QUESTION);
       setEditingQuestionId(null);
       load();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Could not save question');
+      toast.error(error.response?.data?.error || 'Savolni saqlash amalga oshmadi');
     } finally {
       setSavingQuestion(false);
     }
@@ -151,10 +161,10 @@ export default function NewLeadsPage() {
   const deleteQuestion = async (id: string) => {
     try {
       await axios.delete(`/api/residency-questions/${id}`);
-      toast.success('Question deleted');
+      toast.success('Savol o\'chirildi');
       load();
     } catch {
-      toast.error('Could not delete question');
+      toast.error('Savolni o\'chirish amalga oshmadi');
     }
   };
 
@@ -164,11 +174,11 @@ export default function NewLeadsPage() {
     try {
       const nextStatus = acceptTarget.applicationType === 'existing_resident' ? 'active' : 'lead_accepted';
       await axios.patch(`/api/startups/${acceptTarget._id}`, { status: nextStatus });
-      toast.success(nextStatus === 'active' ? 'Residency access granted' : 'Lead moved to interview stage');
+      toast.success(nextStatus === 'active' ? 'Rezidentlik kirishi berildi' : 'Lead intervyu bosqichiga o\'tkazildi');
       setAcceptTarget(null);
       load();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Could not approve lead');
+      toast.error(error.response?.data?.error || 'Leadni qabul qilib bo\'lmadi');
     } finally {
       setReviewLoading(false);
     }
@@ -179,11 +189,11 @@ export default function NewLeadsPage() {
     setReviewLoading(true);
     try {
       await axios.patch(`/api/startups/${promoteTarget._id}`, { status: 'active' });
-      toast.success('Lead added to residents');
+      toast.success('Lead rezidentlarga qo\'shildi');
       setPromoteTarget(null);
       load();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Could not add lead to residents');
+      toast.error(error.response?.data?.error || 'Leadni rezidentlarga qo\'shib bo\'lmadi');
     } finally {
       setReviewLoading(false);
     }
@@ -191,7 +201,7 @@ export default function NewLeadsPage() {
 
   const rejectLead = async () => {
     if (!rejectTarget || !rejectReason.trim()) {
-      toast.error('Reject reason is required');
+      toast.error('Rad etish sababi kiritilishi shart');
       return;
     }
     setReviewLoading(true);
@@ -200,12 +210,12 @@ export default function NewLeadsPage() {
         status: 'rejected',
         rejectionReason: rejectReason.trim(),
       });
-      toast.success('Lead rejected');
+      toast.success('Lead rad etildi');
       setRejectTarget(null);
       setRejectReason('');
       load();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Could not reject lead');
+      toast.error(error.response?.data?.error || 'Leadni rad etib bo\'lmadi');
     } finally {
       setReviewLoading(false);
     }
@@ -217,7 +227,7 @@ export default function NewLeadsPage() {
 
   return (
     <div className="animate-fade-in">
-      <Header title="New Leads" subtitle="Pending applications and leads in the interview stage" />
+      <Header title="Yangi Leadlar" subtitle="Kutayotgan arizalar va intervyu bosqichidagi leadlar" />
 
       <div className="p-6 space-y-6">
 
@@ -586,9 +596,9 @@ export default function NewLeadsPage() {
           <div className="card sticky top-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Application questions</h2>
+                <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Ariza savollari</h2>
                 <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Shown only to new applicants
+                  Faqat yangi ariza beruvchilarga ko'rinadi
                 </p>
               </div>
               <button
@@ -596,7 +606,7 @@ export default function NewLeadsPage() {
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold"
                 style={{ background: 'rgba(99,102,241,0.10)', color: 'var(--accent)' }}
               >
-                <Plus size={13} /> New
+                <Plus size={13} /> Yangi
               </button>
             </div>
 
@@ -695,7 +705,7 @@ export default function NewLeadsPage() {
                         className="px-2 py-1 rounded-lg text-xs"
                         style={{ background: 'var(--bg-card)', color: 'var(--text-muted)' }}
                       >
-                        Edit
+                        Tahrirlash
                       </button>
                       <button
                         onClick={() => deleteQuestion(question._id)}
@@ -713,6 +723,89 @@ export default function NewLeadsPage() {
         </div>
       </div>
 
+      {/* ── Existing residents re-application panel ── */}
+      {existingResidents.length > 0 && (
+        <div className="card">
+          <button
+            onClick={() => setResidentsOpen((p) => !p)}
+            className="flex items-center justify-between w-full"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b' }}>
+                <User size={16} />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                  Mavjud rezidentlar arizasi
+                  <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold"
+                    style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+                    {existingResidents.length}
+                  </span>
+                </p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Allaqachon rezident bo'lgan foydalanuvchilar yangi ariza yuborgan
+                </p>
+              </div>
+            </div>
+            <ChevronDown size={16} style={{
+              color: 'var(--text-muted)',
+              transform: residentsOpen ? 'rotate(180deg)' : 'none',
+              transition: 'transform 0.2s',
+            }} />
+          </button>
+
+          {residentsOpen && (
+            <div className="mt-4 pt-4 border-t space-y-3" style={{ borderColor: 'var(--border)' }}>
+              {existingResidents.map((lead) => (
+                <div key={lead._id} className="p-4 rounded-2xl border"
+                  style={{ borderColor: 'rgba(245,158,11,0.25)', background: 'rgba(245,158,11,0.05)' }}>
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <p className="font-semibold text-sm notranslate" translate="no"
+                          style={{ color: 'var(--text-primary)' }}>{lead.startup_name}</p>
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                          style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+                          Mavjud rezident
+                        </span>
+                        <span className={`badge badge-${lead.status}`}>
+                          {lead.status === 'pending' ? 'Kutmoqda' : 'Intervyuda'}
+                        </span>
+                      </div>
+                      <p className="text-xs notranslate" translate="no"
+                        style={{ color: 'var(--text-muted)' }}>{lead.founder_name}</p>
+
+                      {/* Warning note */}
+                      <div className="mt-2 px-3 py-2 rounded-xl text-xs font-medium"
+                        style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706', border: '1px solid rgba(245,158,11,0.2)' }}>
+                        ⚠️ Bu foydalanuvchi allaqachon rezidentimiz! Status: <strong>active</strong> qiling.
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => setAcceptTarget(lead)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+                        style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}
+                      >
+                        <Check size={13} /> Active qilish
+                      </button>
+                      <button
+                        onClick={() => setRejectTarget(lead)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+                        style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.18)' }}
+                      >
+                        <X size={13} /> Rad etish
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Accept modal ── */}
       {acceptTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -724,16 +817,16 @@ export default function NewLeadsPage() {
             >
               <Check size={22} />
             </div>
-            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Confirm</h3>
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Tasdiqlash</h3>
             <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
               {acceptTarget.applicationType === 'existing_resident'
-                ? `Grant full residency access to ${acceptTarget.startup_name}?`
-                : `Move ${acceptTarget.startup_name} to the interview stage? Only meetings will be unlocked.`}
+                ? `${acceptTarget.startup_name} startapiga to'liq rezidentlik kirishi berilsinmi?`
+                : `${acceptTarget.startup_name} intervyu bosqichiga o'tkazilsinmi? Faqat uchrashuvlar ochiladi.`}
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setAcceptTarget(null)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={() => setAcceptTarget(null)} className="btn-secondary flex-1">Bekor qilish</button>
               <button onClick={approveLead} disabled={reviewLoading} className="btn-primary flex-1">
-                {reviewLoading ? 'Saving...' : acceptTarget.applicationType === 'existing_resident' ? 'Grant access' : 'Move to interview'}
+                {reviewLoading ? 'Saqlanmoqda...' : acceptTarget.applicationType === 'existing_resident' ? 'Kirish berish' : 'Intervyuga o\'tkazish'}
               </button>
             </div>
           </div>
@@ -751,14 +844,14 @@ export default function NewLeadsPage() {
             >
               <Send size={22} />
             </div>
-            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Add to residency</h3>
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Rezidentlikka qo'shish</h3>
             <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-              Add {promoteTarget.startup_name} to the residents list and unlock the full workspace?
+              {promoteTarget.startup_name} rezidentlar ro'yxatiga qo'shilsinmi va to'liq ish muhiti ochilsinmi?
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setPromoteTarget(null)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={() => setPromoteTarget(null)} className="btn-secondary flex-1">Bekor qilish</button>
               <button onClick={promoteToResidency} disabled={reviewLoading} className="btn-primary flex-1">
-                {reviewLoading ? 'Saving...' : 'Add to residency'}
+                {reviewLoading ? 'Saqlanmoqda...' : 'Rezidentlikka qo\'shish'}
               </button>
             </div>
           </div>
@@ -776,26 +869,26 @@ export default function NewLeadsPage() {
             >
               <X size={22} />
             </div>
-            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Reject lead</h3>
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Leadni rad etish</h3>
             <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>
-              Enter the rejection reason. The founder will see this message and their dashboard will remain locked.
+              Rad etish sababini kiriting. Asoschi ushbu xabarni o'z panelidagi ko'radi.
             </p>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               className="input min-h-28 resize-none"
-              placeholder="Why is this lead being rejected?"
+              placeholder="Nima sababdan rad etilmoqda?"
             />
             <div className="flex gap-3 mt-5">
               <button onClick={() => { setRejectTarget(null); setRejectReason(''); }} className="btn-secondary flex-1">
-                Cancel
+                Bekor qilish
               </button>
               <button
                 onClick={rejectLead}
                 disabled={reviewLoading || !rejectReason.trim()}
                 className="btn-danger flex-1"
               >
-                {reviewLoading ? 'Saving...' : 'Reject'}
+                {reviewLoading ? 'Saqlanmoqda...' : 'Rad etish'}
               </button>
             </div>
           </div>

@@ -16,7 +16,7 @@ const LANGS = [
   { code: 'en' as const, label: 'En', flag: '🇬🇧' },
 ];
 
-export default function Header({ title = 'Dashboard', subtitle }: HeaderProps) {
+export default function Header({ title = 'Bosh sahifa', subtitle }: HeaderProps) {
   const { data: session } = useSession();
   const { lang, setLang, theme, toggleTheme, notifications, markAllRead } = useAppStore();
 
@@ -76,7 +76,7 @@ export default function Header({ title = 'Dashboard', subtitle }: HeaderProps) {
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
 
               <div className="px-4 py-3 border-b flex justify-between">
-                <span className="text-sm font-semibold">Notifications</span>
+                <span className="text-sm font-semibold">Bildirishnomalar</span>
                 <button onClick={() => setShowNotifs(false)}>
                   <X size={14} />
                 </button>
@@ -84,7 +84,7 @@ export default function Header({ title = 'Dashboard', subtitle }: HeaderProps) {
 
               <div className="max-h-64 overflow-y-auto">
                 {notifications.length === 0 ? (
-                  <p className="p-4 text-sm">No notifications</p>
+                  <p className="p-4 text-sm">Bildirishnoma yo&apos;q</p>
                 ) : notifications.slice(0, 8).map(n => (
                   <div key={n.id} className="px-4 py-3 border-b">
                     <p className="text-xs font-semibold">{n.title}</p>

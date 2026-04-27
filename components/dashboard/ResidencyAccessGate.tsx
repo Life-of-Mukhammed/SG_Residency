@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Lock, Rocket } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useSession } from 'next-auth/react';
 import { useAppStore } from '@/store/appStore';
 
 const ALLOWED_PATHS = ['/dashboard', '/dashboard/apply'];
@@ -12,6 +13,7 @@ const INTERVIEW_ALLOWED = ['/dashboard', '/dashboard/meetings', '/dashboard/star
 
 export default function ResidencyAccessGate() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const sidebarOpen = useAppStore((state) => state.sidebarOpen);
   const hydrated = useAppStore((state) => state._hydrated);
   const [mounted, setMounted] = useState(false);
@@ -19,11 +21,15 @@ export default function ResidencyAccessGate() {
   const [startupStatus, setStartupStatus] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
+  const role = (session?.user as any)?.role;
+  const isStaff = role && role !== 'user';
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
+    if (isStaff) { setChecking(false); return; }
     const load = async () => {
       try {
         const res = await axios.get('/api/startups?limit=1');
@@ -39,11 +45,12 @@ export default function ResidencyAccessGate() {
     };
 
     load();
-  }, []);
+  }, [isStaff]);
 
   if (
     !mounted ||
     checking ||
+    isStaff ||
     startupStatus === 'active' ||
     ALLOWED_PATHS.includes(pathname) ||
     (startupStatus === 'lead_accepted' && INTERVIEW_ALLOWED.includes(pathname))
@@ -70,21 +77,21 @@ export default function ResidencyAccessGate() {
         </div>
         <h2 className="text-2xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
           {startupStatus === 'rejected'
-            ? 'Application Rejected'
+            ? 'Ariza rad etildi'
             : startupStatus === 'lead_accepted'
-              ? 'Interview Stage Unlocked'
+              ? 'Intervyu bosqichi faoldir'
               : startupStatus === 'pending'
-                ? 'Application Under Review'
-                : 'Apply to Residency'}
+                ? 'Ariza ko\'rib chiqilmoqda'
+                : 'Rezidentlikka ariza topshiring'}
         </h2>
         <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
           {startupStatus === 'rejected'
-            ? 'Your request was rejected. The workspace stays locked until your application is approved.'
+            ? 'Arizangiz rad etildi. Ish muhiti ariza tasdiqlanguncha qulflangan bo\'lib qoladi.'
             : startupStatus === 'lead_accepted'
-              ? 'Your lead passed the first review. Only meetings are open now so you can schedule an interview.'
-            : startupStatus === 'pending'
-              ? 'Your application was sent successfully. Admin or manager review is still in progress.'
-              : 'Submit your residency application first. The rest of the workspace unlocks after approval.'}
+              ? 'Leadingiz birinchi tekshiruvdan o\'tdi. Hozircha faqat uchrashuvlar ochiq — intervyu belgilashingiz mumkin.'
+              : startupStatus === 'pending'
+                ? 'Arizangiz muvaffaqiyatli yuborildi. Menejer yoki admin ko\'rib chiqishi hali davom etmoqda.'
+                : 'Avval rezidentlik arizangizni topshiring. Ish muhiti tasdiqdan so\'ng ochiladi.'}
         </p>
         {startupStatus === 'rejected' && rejectionReason && (
           <div
@@ -92,7 +99,7 @@ export default function ResidencyAccessGate() {
             style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}
           >
             <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: '#ef4444' }}>
-              Rejection Reason
+              Rad etish sababi
             </p>
             <p className="text-sm leading-6" style={{ color: 'var(--text-primary)' }}>
               {rejectionReason}
@@ -101,7 +108,7 @@ export default function ResidencyAccessGate() {
         )}
         <Link href="/dashboard/apply">
           <button className="btn-primary inline-flex items-center gap-2">
-            <Rocket size={15} /> {startupStatus === 'rejected' ? 'Update Application' : 'Open Application'}
+            <Rocket size={15} /> {startupStatus === 'rejected' ? 'Arizani yangilash' : 'Arizani ochish'}
           </button>
         </Link>
       </div>

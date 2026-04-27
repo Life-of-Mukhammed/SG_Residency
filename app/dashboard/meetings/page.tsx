@@ -9,7 +9,7 @@ import { Calendar, Video, Clock, ChevronLeft, ChevronRight, Check, Plus, X, Tras
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isBefore, startOfDay, addMonths, subMonths } from 'date-fns';
 import { useAppStore } from '@/store/appStore';
 
-const DAYS_SHORT = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+const DAYS_SHORT = ['Du','Se','Ch','Pa','Ju','Sh','Ya'];
 
 export default function MeetingsPage() {
   const { data: session } = useSession();
@@ -70,7 +70,7 @@ export default function MeetingsPage() {
   }, [selectedDate, isManager, managerId]);
 
   const bookSlot = async () => {
-    if (!bookModal || !bookForm.topic.trim()) { toast.error('Please fill in all fields'); return; }
+    if (!bookModal || !bookForm.topic.trim()) { toast.error('Iltimos, barcha maydonlarni to\'ldiring'); return; }
     setBooking(true);
     try {
       const dateStr = format(bookModal.date, 'yyyy-MM-dd');
@@ -87,31 +87,31 @@ export default function MeetingsPage() {
       setBookForm({ topic: '', meetingType: 'online', officeAddress: '' });
       setSlots(prev => prev.filter(s => s !== bookModal.time));
       fetchMeetings();
-      toast.success('Meeting booked! 🎉');
+      toast.success('Uchrashuv belgilandi! 🎉');
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Booking failed');
+      toast.error(err.response?.data?.error || 'Bron qilib bo\'lmadi');
     } finally { setBooking(false); }
   };
 
   const deleteMeeting = async (id: string) => {
     try {
       await axios.delete(`/api/meetings/${id}`);
-      toast.success(isManager ? 'Deleted' : 'Cancelled');
+      toast.success(isManager ? 'O\'chirildi' : 'Bekor qilindi');
       fetchMeetings();
       setConfirmedMeeting(null);
-    } catch { toast.error('Failed to delete'); }
+    } catch { toast.error('O\'chirib bo\'lmadi'); }
   };
 
   const createSlot = async () => {
-    if (!newSlot.title || !newSlot.scheduledAt) { toast.error('Fill all fields'); return; }
+    if (!newSlot.title || !newSlot.scheduledAt) { toast.error('Barcha maydonlarni to\'ldiring'); return; }
     setCreating(true);
     try {
       await axios.post('/api/meetings', { ...newSlot, scheduledAt: new Date(newSlot.scheduledAt).toISOString() });
-      toast.success('Slot created!');
+      toast.success('Slot yaratildi!');
       setCreateModal(false);
       setNewSlot({ title: '', scheduledAt: '', duration: 30 });
       fetchMeetings();
-    } catch (err: any) { toast.error(err.response?.data?.error || 'Failed'); }
+    } catch (err: any) { toast.error(err.response?.data?.error || 'Amalga oshmadi'); }
     finally { setCreating(false); }
   };
 
@@ -159,16 +159,8 @@ export default function MeetingsPage() {
     return (
       <div className="animate-fade-in">
         <Header
-          title={
-            startup?.status === 'lead_accepted'
-              ? lang === 'uz' ? 'Interview uchrashuvi' : lang === 'ru' ? 'Интервью' : 'Interview Meeting'
-              : lang === 'uz' ? 'Uchrashuv belgilash' : lang === 'ru' ? 'Запись на встречу' : 'Book a Meeting'
-          }
-          subtitle={
-            startup?.status === 'lead_accepted'
-              ? lang === 'uz' ? 'Interview uchun vaqt tanlang' : lang === 'ru' ? 'Выберите время для интервью' : 'Choose a time for your interview'
-              : lang === 'uz' ? 'Manager bilan vaqt belgilang' : lang === 'ru' ? 'Выберите время с менеджером' : 'Schedule time with your manager'
-          }
+          title={startup?.status === 'lead_accepted' ? 'Intervyu uchrashivi' : 'Uchrashuv belgilash'}
+          subtitle={startup?.status === 'lead_accepted' ? 'Intervyu uchun vaqt tanlang' : 'Menejer bilan vaqt belgilang'}
         />
         <div className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -183,31 +175,17 @@ export default function MeetingsPage() {
                 <div className="flex items-center gap-2 mb-4">
                   <Video size={16} style={{ color: 'var(--text-muted)' }} />
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {lang === 'uz'
-                      ? 'Booking tasdiqlangach doimiy Google Meet link beriladi'
-                      : lang === 'ru'
-                        ? 'После подтверждения появится постоянная ссылка Google Meet'
-                        : 'A permanent Google Meet link appears after confirmation'}
+                    Bron tasdiqlangach doimiy Google Meet havolasi beriladi
                   </span>
                 </div>
                 <div className="h-px w-full mb-4" style={{ background: 'var(--border)' }} />
                 <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                  {startup?.status === 'lead_accepted'
-                    ? lang === 'uz' ? 'Interview session' : lang === 'ru' ? 'Интервью-сессия' : 'Interview Session'
-                    : lang === 'uz' ? 'Manager sessiyasi' : lang === 'ru' ? 'Сессия с менеджером' : 'Manager Session'}
+                  {startup?.status === 'lead_accepted' ? 'Intervyu sessiyasi' : 'Menejer sessiyasi'}
                 </p>
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                   {startup?.status === 'lead_accepted'
-                    ? lang === 'uz'
-                      ? '30 daqiqalik interview uchun qulay vaqtni tanlang.'
-                      : lang === 'ru'
-                        ? 'Выберите удобное время для 30-минутного интервью.'
-                        : 'Choose a convenient time for a 30-minute interview.'
-                    : lang === 'uz'
-                      ? '30 daqiqalik sessiyada progress, feedback va keyingi qadamlarni muhokama qiling.'
-                      : lang === 'ru'
-                        ? 'Обсудите прогресс, обратную связь и следующие шаги на 30-минутной сессии.'
-                        : 'Use this 30-minute session to discuss progress, feedback, and next steps.'}
+                    ? '30 daqiqalik intervyu uchun qulay vaqtni tanlang.'
+                    : '30 daqiqalik sessiyada progress, fikr-mulohaza va keyingi qadamlarni muhokama qiling.'}
                 </p>
               </div>
 
@@ -215,7 +193,7 @@ export default function MeetingsPage() {
               {upcomingMy.length > 0 && (
                 <div className="card">
                   <p className="font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>
-                    Upcoming meetings
+                    Kelgusi uchrashuvlar
                   </p>
                   <div className="space-y-3">
                     {upcomingMy.map(m => (
@@ -228,7 +206,7 @@ export default function MeetingsPage() {
                           <a href={m.meetLink} target="_blank" rel="noreferrer"
                             className="inline-flex items-center gap-1 mt-2 text-xs"
                             style={{ color: 'var(--accent)' }}>
-                            <Video size={11} /> Open meeting link
+                            <Video size={11} /> Uchrashuv havolasini ochish
                           </a>
                         ) : (
                           <p className="inline-flex items-center gap-1 mt-2 text-xs" style={{ color: 'var(--accent)' }}>
@@ -240,7 +218,7 @@ export default function MeetingsPage() {
                           className="inline-flex items-center gap-1 mt-2 ml-3 text-xs"
                           style={{ color: '#ef4444' }}
                         >
-                          <X size={11} /> Cancel booking
+                          <X size={11} /> Bronni bekor qilish
                         </button>
                       </div>
                     ))}
@@ -311,7 +289,7 @@ export default function MeetingsPage() {
               </div>
 
               <div className="mt-3 pt-3 border-t text-xs text-center" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-                Uzbekistan Time (UTC+5)
+                O&apos;zbekiston vaqti (UTC+5)
               </div>
             </div>
 
@@ -321,7 +299,7 @@ export default function MeetingsPage() {
                 <div className="flex flex-col items-center justify-center h-full min-h-64 text-center">
                   <Calendar size={36} className="mb-3 opacity-20" />
                   <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    Select a date to see available times
+                    Mavjud vaqtlarni ko&apos;rish uchun sanani tanlang
                   </p>
                 </div>
               ) : (
@@ -336,7 +314,7 @@ export default function MeetingsPage() {
                   ) : slots.length === 0 ? (
                     <div className="text-center py-8">
                       <Clock size={28} className="mx-auto mb-2 opacity-20" />
-                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No available slots this day</p>
+                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Bu kuni mavjud slotlar yo&apos;q</p>
                     </div>
                   ) : (
                     <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -376,31 +354,31 @@ export default function MeetingsPage() {
             style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
             <div className="card p-8 w-full max-w-md animate-fade-in">
               <h3 className="font-bold text-lg mb-1" style={{ color: 'var(--text-primary)' }}>
-                Confirm your meeting
+                Uchrashuvingizni tasdiqlang
               </h3>
               <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-                {format(bookModal.date, 'EEEE, MMMM d, yyyy')} · {bookModal.time} · 30 min
+                {format(bookModal.date, 'd MMMM, yyyy')} · {bookModal.time} · 30 daqiqa
               </p>
 
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="label">Meeting Topic *</label>
+                  <label className="label">Uchrashuv mavzusi *</label>
                   <textarea
                     value={bookForm.topic}
                     onChange={e => setBookForm(p => ({ ...p, topic: e.target.value }))}
                     className="input min-h-24 resize-none"
-                    placeholder="What do you want to discuss? (e.g. MRR growth strategy, investor pitch review, technical problem)"
+                    placeholder="Nima muhokama qilmoqchisiz? (Masalan: MRR o'sish strategiyasi, investor taqdimotini ko'rib chiqish, texnik muammo)"
                   />
                 </div>
               </div>
 
               <div className="flex gap-3">
-                <button onClick={() => setBookModal(null)} className="btn-secondary flex-1">Cancel</button>
+                <button onClick={() => setBookModal(null)} className="btn-secondary flex-1">Bekor qilish</button>
                 <button onClick={bookSlot} disabled={booking}
                   className="btn-primary flex-1 flex items-center justify-center gap-2">
                   {booking
                     ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    : <><Check size={15} /> Confirm Booking</>}
+                    : <><Check size={15} /> Bronni tasdiqlash</>}
                 </button>
               </div>
             </div>
@@ -417,13 +395,13 @@ export default function MeetingsPage() {
                 <Check size={28} style={{ color: '#10b981' }} />
               </div>
               <h3 className="font-bold text-xl mb-2" style={{ color: 'var(--text-primary)' }}>
-                Meeting Confirmed!
+                Uchrashuv tasdiqlandi!
               </h3>
               <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-                {format(new Date(confirmedMeeting.scheduledAt), 'EEEE, MMMM d · HH:mm')} · 30 min
+                {format(new Date(confirmedMeeting.scheduledAt), 'd MMMM · HH:mm')} · 30 daqiqa
               </p>
               <div className="p-4 rounded-xl mb-6 text-left" style={{ background: 'var(--bg-secondary)' }}>
-                <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Meeting link</p>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Uchrashuv havolasi</p>
                 {confirmedMeeting.meetingType === 'online' ? (
                   <a href={confirmedMeeting.meetLink} target="_blank" rel="noreferrer"
                     className="text-sm break-all" style={{ color: 'var(--accent)' }}>
@@ -436,8 +414,8 @@ export default function MeetingsPage() {
                 )}
               </div>
               <div className="flex gap-3">
-                <button onClick={() => deleteMeeting(confirmedMeeting._id)} className="btn-secondary flex-1">Cancel booking</button>
-                <button onClick={() => setConfirmedMeeting(null)} className="btn-primary flex-1">Done</button>
+                <button onClick={() => deleteMeeting(confirmedMeeting._id)} className="btn-secondary flex-1">Bronni bekor qilish</button>
+                <button onClick={() => setConfirmedMeeting(null)} className="btn-primary flex-1">Tayyor</button>
               </div>
             </div>
           </div>
@@ -454,16 +432,16 @@ export default function MeetingsPage() {
 
   return (
     <div className="animate-fade-in">
-      <Header title="Meetings" subtitle="Your schedule and booked meetings" />
+      <Header title="Uchrashuvlar" subtitle="Jadvalingiz va bronlangan uchrashuvlar" />
       <div className="p-8 space-y-6">
 
         {/* Stats + actions */}
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex gap-4">
             {[
-              { label: 'Upcoming Booked', value: upcoming.length,  color: '#6366f1' },
-              { label: 'Available Slots',  value: available.length, color: '#10b981' },
-              { label: 'Total Meetings',   value: booked.length,    color: '#f59e0b' },
+              { label: 'Yaqinlashayotgan bronlar', value: upcoming.length,  color: '#6366f1' },
+              { label: 'Mavjud slotlar',            value: available.length, color: '#10b981' },
+              { label: 'Jami uchrashuvlar',          value: booked.length,    color: '#f59e0b' },
             ].map(s => (
               <div key={s.label} className="card p-4 flex items-center gap-3">
                 <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
@@ -474,11 +452,11 @@ export default function MeetingsPage() {
           <div className="flex gap-2">
             <a href="/manager/schedule">
               <button className="btn-secondary flex items-center gap-2 text-sm">
-                <Clock size={14} /> Manage Schedule
+                <Clock size={14} /> Jadvalni boshqarish
               </button>
             </a>
             <button onClick={() => setCreateModal(true)} className="btn-primary flex items-center gap-2 text-sm">
-              <Plus size={14} /> Add Manual Slot
+              <Plus size={14} /> Qo&apos;lda slot qo&apos;shish
             </button>
           </div>
         </div>
@@ -486,18 +464,18 @@ export default function MeetingsPage() {
         {/* Meetings table */}
         <div className="card p-0 overflow-hidden">
           <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
-            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>All Meetings</p>
+            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Barcha uchrashuvlar</p>
           </div>
           <div className="table-container rounded-none border-none">
             <table className="table">
               <thead>
                 <tr>
-                  <th>Startup / Title</th>
-                  <th>Date & Time</th>
-                  <th>Topic</th>
-                  <th>Status</th>
-                  <th>Meet Link</th>
-                  <th>Actions</th>
+                  <th>Startup / Sarlavha</th>
+                  <th>Sana & Vaqt</th>
+                  <th>Mavzu</th>
+                  <th>Holat</th>
+                  <th>Havola</th>
+                  <th>Amallar</th>
                 </tr>
               </thead>
               <tbody>
@@ -509,7 +487,7 @@ export default function MeetingsPage() {
                   ))
                 ) : meetings.length === 0 ? (
                   <tr><td colSpan={6} className="text-center py-10" style={{ color: 'var(--text-muted)' }}>
-                    No meetings yet. Founders will book from their dashboard.
+                    Hali uchrashuvlar yo&apos;q. Asoschillar o&apos;z panelidan bron qiladi.
                   </td></tr>
                 ) : (
                   meetings.map(m => (
@@ -521,17 +499,19 @@ export default function MeetingsPage() {
                         </div>
                       </td>
                       <td>
-                        <p className="text-sm">{format(new Date(m.scheduledAt), 'MMM d, yyyy')}</p>
-                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{format(new Date(m.scheduledAt), 'HH:mm')} · {m.duration}min</p>
+                        <p className="text-sm">{format(new Date(m.scheduledAt), 'd MMM, yyyy')}</p>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{format(new Date(m.scheduledAt), 'HH:mm')} · {m.duration}daq</p>
                       </td>
                       <td className="text-sm max-w-xs">
                         <p className="truncate" style={{ maxWidth: 200 }}>{m.topic || '—'}</p>
                       </td>
-                      <td><span className={`badge badge-${m.status}`}>{m.status}</span></td>
+                      <td><span className={`badge badge-${m.status}`}>
+                        {m.status === 'booked' ? 'Bron' : m.status === 'available' ? 'Mavjud' : m.status === 'completed' ? 'Tugadi' : 'Bekor'}
+                      </span></td>
                       <td>
                         <a href={m.meetLink} target="_blank" rel="noreferrer"
                           className="flex items-center gap-1 text-xs" style={{ color: 'var(--accent)' }}>
-                          <Video size={12} /> Join
+                          <Video size={12} /> Kirish
                         </a>
                       </td>
                       <td>
@@ -554,32 +534,32 @@ export default function MeetingsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
           <div className="card p-8 w-full max-w-md animate-fade-in">
-            <h3 className="font-semibold text-lg mb-6" style={{ color: 'var(--text-primary)' }}>Add Manual Slot</h3>
+            <h3 className="font-semibold text-lg mb-6" style={{ color: 'var(--text-primary)' }}>Qo&apos;lda slot qo&apos;shish</h3>
             <div className="space-y-4">
               <div>
-                <label className="label">Title</label>
+                <label className="label">Sarlavha</label>
                 <input value={newSlot.title} onChange={e => setNewSlot(p => ({ ...p, title: e.target.value }))}
-                  className="input" placeholder="e.g. Office Hours" />
+                  className="input" placeholder="Masalan: Ofis soatlari" />
               </div>
               <div>
-                <label className="label">Date & Time</label>
+                <label className="label">Sana & Vaqt</label>
                 <input type="datetime-local" value={newSlot.scheduledAt}
                   onChange={e => setNewSlot(p => ({ ...p, scheduledAt: e.target.value }))} className="input" />
               </div>
               <div>
-                <label className="label">Duration</label>
+                <label className="label">Davomiyligi</label>
                 <select value={newSlot.duration} onChange={e => setNewSlot(p => ({ ...p, duration: Number(e.target.value) }))} className="input">
-                  <option value={15}>15 min</option>
-                  <option value={30}>30 min</option>
-                  <option value={45}>45 min</option>
-                  <option value={60}>60 min</option>
+                  <option value={15}>15 daqiqa</option>
+                  <option value={30}>30 daqiqa</option>
+                  <option value={45}>45 daqiqa</option>
+                  <option value={60}>60 daqiqa</option>
                 </select>
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setCreateModal(false)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={() => setCreateModal(false)} className="btn-secondary flex-1">Bekor qilish</button>
               <button onClick={createSlot} disabled={creating} className="btn-primary flex-1 flex items-center justify-center gap-2">
-                {creating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Create'}
+                {creating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Yaratish'}
               </button>
             </div>
           </div>

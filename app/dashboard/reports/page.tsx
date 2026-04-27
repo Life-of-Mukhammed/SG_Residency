@@ -36,21 +36,26 @@ export default function ReportsPage() {
 
   return (
     <div className="animate-fade-in">
-      <Header title="Weekly Reports" subtitle="1 required per week · up to 3 maximum" />
+      <Header title="Haftalik hisobotlar" subtitle="Haftada 1 ta majburiy · maksimum 3 ta" />
       <div className="p-8 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex gap-2">
-            {['', 'pending', 'accepted', 'rejected'].map((s) => (
-              <button key={s} onClick={() => setFilter(s)}
-                className={`text-sm px-4 py-2 rounded-xl font-medium transition-all capitalize`}
-                style={{ background: filter === s ? 'var(--accent)' : 'var(--bg-card)', color: filter === s ? 'white' : 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                {s || 'All'}
+            {[
+              { val: '', label: 'Barchasi' },
+              { val: 'pending', label: 'Kutmoqda' },
+              { val: 'accepted', label: 'Qabul qilindi' },
+              { val: 'rejected', label: 'Rad etildi' },
+            ].map(({ val, label }) => (
+              <button key={val} onClick={() => setFilter(val)}
+                className={`text-sm px-4 py-2 rounded-xl font-medium transition-all`}
+                style={{ background: filter === val ? 'var(--accent)' : 'var(--bg-card)', color: filter === val ? 'white' : 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                {label}
               </button>
             ))}
           </div>
           <Link href={isApproved ? "/dashboard/reports/new" : "/dashboard/settings"}>
             <button className="btn-primary flex items-center gap-2">
-              <Plus size={16} /> {isApproved ? 'New Report' : 'Pending Approval'}
+              <Plus size={16} /> {isApproved ? 'Yangi hisobot' : 'Tasdiq kutilmoqda'}
             </button>
           </Link>
         </div>
@@ -58,18 +63,18 @@ export default function ReportsPage() {
         {!isApproved ? (
           <div className="card text-center py-16">
             <FileText size={48} className="mx-auto mb-4 opacity-20" />
-            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Reports are locked</p>
-            <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Your startup must be approved before reports open.</p>
+            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Hisobotlar qulflangan</p>
+            <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Hisobotlar ochilishi uchun startapingiz tasdiqlanishi kerak.</p>
           </div>
         ) : loading ? (
           <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="skeleton h-24" />)}</div>
         ) : reports.length === 0 ? (
           <div className="card text-center py-16">
             <FileText size={48} className="mx-auto mb-4 opacity-20" />
-            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>No reports yet</p>
-            <p className="text-sm mt-2 mb-6" style={{ color: 'var(--text-muted)' }}>Submit your first weekly report</p>
+            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Hali hisobotlar yo&apos;q</p>
+            <p className="text-sm mt-2 mb-6" style={{ color: 'var(--text-muted)' }}>Birinchi haftalik hisobotingizni yuboring</p>
             <Link href="/dashboard/reports/new">
-              <button className="btn-primary">Submit Report</button>
+              <button className="btn-primary">Hisobot yuborish</button>
             </Link>
           </div>
         ) : (
@@ -81,27 +86,29 @@ export default function ReportsPage() {
                     <StatusIcon status={r.status} />
                     <div>
                       <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                        Week of {format(new Date(r.weekStart), 'MMMM d, yyyy')}
+                        {format(new Date(r.weekStart), 'd MMMM, yyyy')} haftasi
                       </p>
                       <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                        Submitted {format(new Date(r.createdAt), 'MMM d, yyyy · h:mm a')}
+                        Yuborildi: {format(new Date(r.createdAt), 'd MMM, yyyy · HH:mm')}
                       </p>
                     </div>
                   </div>
-                  <span className={`badge badge-${r.status} capitalize`}>{r.status}</span>
+                  <span className={`badge badge-${r.status}`}>
+                    {r.status === 'accepted' ? 'Qabul qilindi' : r.status === 'rejected' ? 'Rad etildi' : 'Kutmoqda'}
+                  </span>
                 </div>
 
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="p-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                    <p className="text-xs font-medium mb-1" style={{ color: '#10b981' }}>✅ Completed</p>
+                    <p className="text-xs font-medium mb-1" style={{ color: '#10b981' }}>✅ Bajarildi</p>
                     <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{r.completed}</p>
                   </div>
                   <div className="p-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                    <p className="text-xs font-medium mb-1" style={{ color: '#f59e0b' }}>⚠️ Not Completed</p>
+                    <p className="text-xs font-medium mb-1" style={{ color: '#f59e0b' }}>⚠️ Bajarilmadi</p>
                     <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{r.notCompleted}</p>
                   </div>
                   <div className="p-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                    <p className="text-xs font-medium mb-1" style={{ color: '#6366f1' }}>📋 Next Week Plans</p>
+                    <p className="text-xs font-medium mb-1" style={{ color: '#6366f1' }}>📋 Keyingi hafta rejalari</p>
                     <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{r.plans}</p>
                   </div>
                 </div>
@@ -110,7 +117,7 @@ export default function ReportsPage() {
                   <div className="mt-3 p-3 rounded-xl flex items-start gap-2" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
                     <AlertCircle size={14} style={{ color: '#ef4444', flexShrink: 0, marginTop: 1 }} />
                     <div>
-                      <p className="text-xs font-medium" style={{ color: '#ef4444' }}>Rejection Reason</p>
+                      <p className="text-xs font-medium" style={{ color: '#ef4444' }}>Rad etish sababi</p>
                       <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{r.rejectionReason}</p>
                     </div>
                   </div>
