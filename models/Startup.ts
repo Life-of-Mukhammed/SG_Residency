@@ -73,5 +73,11 @@ const StartupSchema = new Schema<IStartup>(
   { timestamps: true }
 );
 
+StartupSchema.index({ userId: 1 }, { unique: true });
+StartupSchema.index({ status: 1 });
+StartupSchema.index({ status: 1, createdAt: -1 });
+StartupSchema.index({ status: 1, acceptedAt: -1 }, { sparse: true });
+StartupSchema.index({ createdAt: -1 });
+
 const Startup: Model<IStartup> = mongoose.models.Startup || mongoose.model<IStartup>('Startup', StartupSchema);
 export default Startup;

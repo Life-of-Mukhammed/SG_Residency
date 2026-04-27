@@ -26,6 +26,7 @@ export async function GET(_req: NextRequest) {
     const monthStart     = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 0);
+    const sixMonthsAgo   = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
     const [
       totalStartups, activeStartups, inactiveStartups, pendingStartups,
@@ -55,29 +56,29 @@ export async function GET(_req: NextRequest) {
       Startup.countDocuments({ status: 'active' }),
     ]);
 
-    // Monthly growth — last 6 months
-    const monthlyGrowth = [];
-    for (let i = 5; i >= 0; i--) {
-      const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const end   = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-      const count = await Startup.countDocuments({ createdAt: { $gte: start, $lte: end } });
-      monthlyGrowth.push({
-        month: start.toLocaleString('default', { month: 'short' }),
-        count,
-      });
-    }
+    // Build last-6-months labels
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      return { key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleString('default', { month: 'short' }) };
+    });
 
-    // Monthly accepted residents — last 6 months
-    const monthlyAccepted = [];
-    for (let i = 5; i >= 0; i--) {
-      const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const end   = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-      const count = await Startup.countDocuments({ status: 'active', acceptedAt: { $gte: start, $lte: end } });
-      monthlyAccepted.push({
-        month: start.toLocaleString('default', { month: 'short' }),
-        count,
-      });
-    }
+    // Single aggregation for monthly growth (replaces 6 sequential queries)
+    const [growthAgg, acceptedAgg] = await Promise.all([
+      Startup.aggregate([
+        { $match: { createdAt: { $gte: sixMonthsAgo } } },
+        { $group: { _id: { y: { $year: '$createdAt' }, m: { $month: '$createdAt' } }, count: { $sum: 1 } } },
+      ]),
+      Startup.aggregate([
+        { $match: { status: 'active', acceptedAt: { $gte: sixMonthsAgo } } },
+        { $group: { _id: { y: { $year: '$acceptedAt' }, m: { $month: '$acceptedAt' } }, count: { $sum: 1 } } },
+      ]),
+    ]);
+
+    const growthMap = Object.fromEntries(growthAgg.map((r: any) => [`${r._id.y}-${r._id.m - 1}`, r.count]));
+    const acceptedMap = Object.fromEntries(acceptedAgg.map((r: any) => [`${r._id.y}-${r._id.m - 1}`, r.count]));
+
+    const monthlyGrowth   = months.map(({ key, label }) => ({ month: label, count: growthMap[key]   ?? 0 }));
+    const monthlyAccepted = months.map(({ key, label }) => ({ month: label, count: acceptedMap[key] ?? 0 }));
 
     return NextResponse.json({
       totalStartups, activeStartups, inactiveStartups, pendingStartups,

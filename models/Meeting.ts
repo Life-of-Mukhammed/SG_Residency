@@ -39,6 +39,11 @@ const MeetingSchema = new Schema<IMeeting>(
   { timestamps: true }
 );
 
+MeetingSchema.index({ userId: 1, status: 1 });
+MeetingSchema.index({ managerId: 1, status: 1 });
+MeetingSchema.index({ status: 1, scheduledAt: 1 });
+MeetingSchema.index({ status: 1, reminderSentAt: 1, scheduledAt: 1 });
+
 const Meeting: Model<IMeeting> =
   (mongoose.models.Meeting as Model<IMeeting>) ||
   mongoose.model<IMeeting>('Meeting', MeetingSchema);

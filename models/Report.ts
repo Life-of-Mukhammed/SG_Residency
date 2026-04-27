@@ -33,5 +33,9 @@ const ReportSchema = new Schema<IReport>(
   { timestamps: true }
 );
 
+ReportSchema.index({ userId: 1, createdAt: -1 });
+ReportSchema.index({ startupId: 1, createdAt: -1 });
+ReportSchema.index({ status: 1 });
+
 const Report: Model<IReport> = mongoose.models.Report || mongoose.model<IReport>('Report', ReportSchema);
 export default Report;

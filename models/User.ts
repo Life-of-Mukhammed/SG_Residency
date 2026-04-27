@@ -33,6 +33,9 @@ const UserSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
+UserSchema.index({ role: 1 });
+UserSchema.index({ telegramChatId: 1 }, { sparse: true });
+
 // Mongoose 9 pre-save: use schema middleware without explicit generics
 UserSchema.pre('validate', async function () {
   if (!this.password || !this.isModified('password')) return;
