@@ -10,7 +10,7 @@ const EXCLUDED_EMAILS = new Set(
     .filter(Boolean)
 );
 
-const SUPPORT_HANDLE = '@Life_of_muhammed';
+const SUPPORT_HANDLE = '@startupgarage_admin';
 
 type NotificationType = 'meeting' | 'report' | 'info';
 

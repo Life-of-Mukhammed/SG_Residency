@@ -7,7 +7,7 @@ import Meeting from '@/models/Meeting';
 import { parseTelegramConnectCode } from '@/lib/telegram-connect';
 import { sendTelegram, sendTelegramToMany } from '@/lib/telegram';
 
-const SUPPORT = '@Life_of_muhammed';
+const SUPPORT = '@startupgarage_admin';
 const DASHBOARD = process.env.NEXTAUTH_URL || 'https://residency.startupgarage.uz';
 
 function buildKeyboard(role: 'user' | 'manager' | 'super_admin') {

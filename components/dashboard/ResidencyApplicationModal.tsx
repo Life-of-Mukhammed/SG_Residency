@@ -508,7 +508,7 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
                 </div>
               </div>
 
-              <div className="rounded-3xl p-5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+              {/* <div className="rounded-3xl p-5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-2 mb-4">
                   <UploadCloud size={18} style={{ color: 'var(--accent)' }} />
                   <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Startup to\'plami</h3>
@@ -516,7 +516,7 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
                 <p className="text-sm leading-6" style={{ color: 'var(--text-muted)' }}>
                   Pitch deck, rezyume va asosiy metrikalarni kiriting. Ariza savollari admin yoki menejer tomonidan alohida ko'rib chiqiladi.
                 </p>
-              </div>
+              </div> */}
             </div>
           )}
 

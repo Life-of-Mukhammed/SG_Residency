@@ -155,7 +155,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         },
         lead_accepted: {
           title: '📅 Sizni intervyuga taklif qilamiz!',
-          message: `<b>${startup.startup_name}</b> arizasi ko'rib chiqildi va siz keyingi bosqichga o'tdingiz.\n\nManeger tez orada siz bilan uchrashuvni tashkil qiladi. Uchrashuvlar bo'limiga e'tibor bering.`,
+          message: `<b>${startup.startup_name}</b> arizasi ko'rib chiqildi va siz keyingi bosqichga o'tdingiz.\n\nManager bilan bog‘lanish uchun ‘Uchrashuv’ bo‘limiga kirib, o‘zingizga mos vaqtni tanlab, meeting belgilang.`,
         },
         rejected: {
           title: '❌ Ariza rad etildi',
