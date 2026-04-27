@@ -55,6 +55,7 @@ export default function StartupDetailPage() {
       users_count: startup.users_count ?? 0,
       investment_raised: startup.investment_raised ?? 0,
       commitment: startup.commitment || 'full-time',
+      acceptedAt: startup.acceptedAt ? new Date(startup.acceptedAt).toISOString().slice(0, 10) : '',
     });
     setEditModal(true);
   };
@@ -294,6 +295,15 @@ export default function StartupDetailPage() {
                     <input type="number" min="0" value={editForm[key] ?? 0} onChange={(e) => setEditForm((p: any) => ({ ...p, [key]: Number(e.target.value) }))} className="input" />
                   </div>
                 ))}
+              </div>
+              <div>
+                <label className="label">Accepted Date (qabul qilingan sana)</label>
+                <input
+                  type="date"
+                  value={editForm.acceptedAt || ''}
+                  onChange={(e) => setEditForm((p: any) => ({ ...p, acceptedAt: e.target.value }))}
+                  className="input"
+                />
               </div>
               <div>
                 <label className="label">Description</label>

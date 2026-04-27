@@ -26,6 +26,7 @@ const startupUpdateSchema = z.object({
   users_count: z.coerce.number().min(0).optional(),
   investment_raised: z.coerce.number().min(0).optional(),
   commitment: z.enum(['full-time', 'part-time']).optional(),
+  acceptedAt: z.string().optional(),
 });
 
 const startupOwnerUpdateSchema = z.object({
@@ -109,7 +110,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: 'Rejection reason is required' }, { status: 400 });
     }
 
-    const patch: Record<string, unknown> = { ...parsed.data };
+    const { acceptedAt: acceptedAtRaw, ...restData } = parsed.data;
+    const patch: Record<string, unknown> = { ...restData };
+    if (acceptedAtRaw !== undefined) {
+      patch.acceptedAt = acceptedAtRaw ? new Date(acceptedAtRaw) : null;
+    }
     if (parsed.data.status === 'active' && !current.managerId) {
       patch.managerId = user.id;
     }
