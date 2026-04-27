@@ -71,7 +71,7 @@ function AdBanner({ ad }: { ad: AdType }) {
       <div className="ad-content relative z-10 flex-1">
 
         {/* Top label */}
-        <div className="flex items-center gap-2 mb-3">
+        <div className="ad-label flex items-center gap-2 mb-3">
           <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
             style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
             <Smartphone size={11} style={{ color: '#fff' }} />
@@ -89,7 +89,7 @@ function AdBanner({ ad }: { ad: AdType }) {
           {ad.description || 'Bo\'lajak asoschilarga kerak bo\'lgan barcha bilimlar bir joyda jamlandi'}
         </p>
 
-        <div className="flex items-center gap-1 mb-5">
+        <div className="ad-stars flex items-center gap-1 mb-5">
           {Array.from({ length: 5 }).map((_, i) => (
             <Star key={i} size={13} fill="#fbbf24" style={{ color: '#fbbf24' }} />
           ))}

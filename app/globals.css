@@ -184,8 +184,6 @@ body > .skiptranslate,
 @media (max-width: 639px) {
   .dashboard-page { padding: 12px !important; }
   .card { padding: 14px !important; }
-
-  /* Header: make room for hamburger button */
   header { padding-left: 52px !important; }
 }
 
@@ -193,6 +191,124 @@ body > .skiptranslate,
   .dashboard-page { padding: 10px !important; }
   .card { padding: 12px !important; }
   header { padding-left: 50px !important; }
+}
+
+/* ── 400 px ──────────────────────────────────────────────── */
+@media (max-width: 400px) {
+  /* Layout */
+  .dashboard-page { padding: 10px !important; }
+  header          { padding-left: 50px !important; }
+
+  /* Cards */
+  .card {
+    padding: 12px !important;
+    border-radius: 14px !important;
+  }
+
+  /* Buttons */
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    padding: 8px 14px !important;
+    font-size: 0.78rem !important;
+    border-radius: 10px !important;
+  }
+
+  /* Inputs */
+  .input {
+    padding: 9px 12px !important;
+    font-size: 0.82rem !important;
+    border-radius: 10px !important;
+  }
+  .label { font-size: 0.78rem !important; }
+
+  /* Badges */
+  .badge {
+    padding: 2px 8px !important;
+    font-size: 0.68rem !important;
+    border-radius: 999px !important;
+  }
+
+  /* Table */
+  .table th,
+  .table td { padding: 8px 10px !important; font-size: 0.78rem !important; }
+  .table-container { border-radius: 14px !important; }
+
+  /* Sidebar */
+  .sidebar-link { padding: 9px 10px !important; font-size: 0.8rem !important; border-radius: 10px !important; }
+
+  /* Ad banner */
+  .ad-content { padding: 14px 14px 16px !important; }
+  .ad-title   { font-size: 1.2rem !important; }
+  .ad-desc    { font-size: 0.76rem !important; }
+  .ad-btn     { padding: 7px 13px !important; font-size: 0.75rem !important; border-radius: 14px !important; }
+
+  /* Grid */
+  .mobile-stack { grid-template-columns: 1fr !important; }
+  .mobile-gap   { gap: 8px !important; }
+}
+
+/* ── 350 px ──────────────────────────────────────────────── */
+@media (max-width: 350px) {
+  /* Layout */
+  .dashboard-page { padding: 8px !important; }
+  header          { padding-left: 46px !important; }
+
+  /* Cards */
+  .card {
+    padding: 10px !important;
+    border-radius: 12px !important;
+  }
+
+  /* Buttons */
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    padding: 7px 12px !important;
+    font-size: 0.75rem !important;
+    border-radius: 9px !important;
+  }
+
+  /* Inputs */
+  .input {
+    padding: 8px 10px !important;
+    font-size: 0.79rem !important;
+    border-radius: 9px !important;
+  }
+  .label { font-size: 0.75rem !important; }
+
+  /* Badges */
+  .badge {
+    padding: 2px 6px !important;
+    font-size: 0.64rem !important;
+    border-radius: 999px !important;
+  }
+
+  /* Table */
+  .table th,
+  .table td { padding: 6px 8px !important; font-size: 0.74rem !important; }
+  .table-container { border-radius: 12px !important; }
+
+  /* Sidebar */
+  .sidebar-link { padding: 8px 8px !important; font-size: 0.76rem !important; border-radius: 9px !important; }
+
+  /* Ad banner — compact layout, no description, tighter spacing */
+  .ad-content { padding: 14px 14px 16px !important; }
+  .ad-title   { font-size: 1.05rem !important; margin-bottom: 6px !important; }
+  .ad-desc    { display: none !important; }
+  .ad-label   { margin-bottom: 6px !important; }
+  .ad-stars   { margin-bottom: 10px !important; }
+  .ad-btn     {
+    padding: 7px 12px !important;
+    font-size: 0.72rem !important;
+    border-radius: 12px !important;
+    flex: 1 1 auto !important;
+    justify-content: center !important;
+  }
+
+  /* Grid */
+  .mobile-stack { grid-template-columns: 1fr !important; }
+  .mobile-gap   { gap: 6px !important; }
 }
 
 /* ── Responsive grid fixes ───────────────────────────────── */
