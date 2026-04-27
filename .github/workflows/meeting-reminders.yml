@@ -1,0 +1,16 @@
+name: Meeting Reminders
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send 10-minute meeting reminders
+        run: |
+          curl -f -s -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ vars.PRODUCTION_URL }}/api/cron/meeting-reminders"
