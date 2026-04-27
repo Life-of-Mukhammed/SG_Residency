@@ -112,8 +112,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     const { acceptedAt: acceptedAtRaw, ...restData } = parsed.data;
     const patch: Record<string, unknown> = { ...restData };
-    if (acceptedAtRaw !== undefined) {
-      patch.acceptedAt = acceptedAtRaw ? new Date(acceptedAtRaw) : null;
+    if (acceptedAtRaw) {
+      patch.acceptedAt = new Date(acceptedAtRaw);
+    } else if (!current.acceptedAt) {
+      const effectiveStatus = (parsed.data.status as string | undefined) ?? current.status;
+      if (effectiveStatus === 'active') {
+        patch.acceptedAt = current.updatedAt ?? new Date();
+      }
     }
     if (parsed.data.status === 'active' && !current.managerId) {
       patch.managerId = user.id;
