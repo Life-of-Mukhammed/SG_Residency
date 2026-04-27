@@ -10,6 +10,7 @@ export interface IUser extends Document {
   avatar?: string;
   telegramChatId?: string;
   telegramBotConnectedAt?: Date;
+  telegramState?: string;
   resetPasswordCode?: string;
   resetPasswordExpires?: Date;
   createdAt: Date;
@@ -27,6 +28,7 @@ const UserSchema = new Schema<IUser>(
     avatar:   { type: String },
     telegramChatId: { type: String, trim: true },
     telegramBotConnectedAt: { type: Date },
+    telegramState: { type: String, default: null },
     resetPasswordCode: { type: String, select: false },
     resetPasswordExpires: { type: Date, select: false },
   },

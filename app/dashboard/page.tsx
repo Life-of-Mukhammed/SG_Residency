@@ -19,7 +19,7 @@ export default async function DashboardPage() {
   return (
     <div className="animate-fade-in">
       <Header title={`👋 ${user.name?.split(' ')[0]}`} subtitle="Startapingiz umumiy ko'rinishi" />
-      <div className="p-6">
+      <div className="p-6 dashboard-page">
         <DashboardHome />
       </div>
     </div>

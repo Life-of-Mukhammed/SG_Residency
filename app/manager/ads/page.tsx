@@ -31,14 +31,18 @@ export default function AdsPage() {
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [imageChanged, setImageChanged] = useState(false);
 
   useEffect(() => {
-    axios.get('/api/ad-settings').then((r) => {
+    Promise.all([
+      axios.get('/api/ad-settings'),
+      axios.get('/api/ad-settings/image'),
+    ]).then(([r, imgR]) => {
       const s = r.data.settings;
       if (s) setForm({
         title: s.title || '',
         description: s.description || '',
-        bannerImage: s.bannerImage || '',
+        bannerImage: imgR.data.image || '',
         websiteUrl: s.websiteUrl || '',
         appStoreUrl: s.appStoreUrl || '',
         googlePlayUrl: s.googlePlayUrl || '',
@@ -53,15 +57,41 @@ export default function AdsPage() {
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => set('bannerImage', String(reader.result || ''));
-    reader.readAsDataURL(file);
+
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const MAX_W = 1200;
+      const MAX_H = 400;
+      const ratio = Math.min(MAX_W / img.width, MAX_H / img.height, 1);
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const compressed = canvas.toDataURL('image/jpeg', 0.82);
+      const kb = Math.round((compressed.length * 3) / 4 / 1024);
+      if (kb > 900) {
+        toast.error(`Rasm juda katta (${kb} KB). Kichikroq rasm tanlang.`);
+        return;
+      }
+      set('bannerImage', compressed);
+      setImageChanged(true);
+    };
+    img.src = objectUrl;
   };
 
   const save = async () => {
     setSaving(true);
     try {
-      await axios.put('/api/ad-settings', form);
+      const { bannerImage, ...textFields } = form;
+      await axios.put('/api/ad-settings', textFields);
+      if (imageChanged) {
+        await axios.put('/api/ad-settings/image', { bannerImage });
+        setImageChanged(false);
+        try { sessionStorage.removeItem('sg_ad_image_v1'); } catch {}
+      }
       toast.success('Reklama sozlamalari saqlandi');
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -142,7 +172,7 @@ export default function AdsPage() {
                   <img src={form.bannerImage} alt="Banner" className="w-full object-cover" style={{ maxHeight: 200 }} />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <button
-                      onClick={() => set('bannerImage', '')}
+                      onClick={() => { set('bannerImage', ''); setImageChanged(true); }}
                       className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white"
                       style={{ background: 'rgba(239,68,68,0.9)' }}
                     >

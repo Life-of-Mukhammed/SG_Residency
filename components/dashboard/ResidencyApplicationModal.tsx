@@ -117,6 +117,11 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
 
   if (!open) return null;
 
+  const countWords = (text: string) => text.trim().split(/\s+/).filter(Boolean).length;
+
+  const validatePhone = (phone: string) =>
+    /^(\+998|998|0)[0-9]{9}$/.test(phone.replace(/[\s\-()]/g, ''));
+
   const setField = (key: keyof FormState, value: string) => setForm((prev) => ({ ...prev, [key]: value as never }));
 
   const validateCurrentStep = () => {
@@ -129,7 +134,10 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
     if (form.applicationType === 'existing_resident') {
       if (step === 1) {
         if (!form.startup_name.trim()) nextErrors.startup_name = 'Startup nomi kiritilishi shart';
-        if (!form.description.trim() || form.description.trim().length < 20) nextErrors.description = 'Tavsif kamida 20 ta belgidan iborat bo\'lishi kerak';
+        const descWords = countWords(form.description);
+        if (!form.description.trim()) nextErrors.description = 'Tavsif kiritilishi shart';
+        else if (descWords < 20) nextErrors.description = `Tavsif kamida 20 ta so'zdan iborat bo'lishi kerak (hozir: ${descWords})`;
+        else if (descWords > 50) nextErrors.description = `Tavsif 50 ta so'zdan oshmasligi kerak (hozir: ${descWords})`;
         if (!form.pitch_deck.trim()) nextErrors.pitch_deck = 'Pitch deck manzili kiritilishi shart';
       }
     } else {
@@ -138,14 +146,23 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
         if (!form.founder_name.trim()) nextErrors.founder_name = 'Asoschi roli kiritilishi shart';
         if (!form.region.trim()) nextErrors.region = 'Hudud kiritilishi shart';
         if (!form.startup_sphere.trim()) nextErrors.startup_sphere = 'Soha kiritilishi shart';
-        if (!form.description.trim() || form.description.trim().length < 20) nextErrors.description = 'Tavsif kamida 20 ta belgidan iborat bo\'lishi kerak';
+        const descWords = countWords(form.description);
+        if (!form.description.trim()) nextErrors.description = 'Tavsif kiritilishi shart';
+        else if (descWords < 20) nextErrors.description = `Tavsif kamida 20 ta so'zdan iborat bo'lishi kerak (hozir: ${descWords})`;
+        else if (descWords > 50) nextErrors.description = `Tavsif 50 ta so'zdan oshmasligi kerak (hozir: ${descWords})`;
         if (!form.phone.trim()) nextErrors.phone = 'Telefon kiritilishi shart';
+        else if (!validatePhone(form.phone)) nextErrors.phone = 'Telefon noto\'g\'ri formatda (masalan: +998901234567)';
         if (!form.telegram.trim()) nextErrors.telegram = 'Telegram kiritilishi shart';
       }
       if (step === 2) {
         questions.forEach((q) => {
-          if (q.required && !answers[q._id]?.trim()) {
+          const answer = answers[q._id]?.trim() || '';
+          if (q.required && !answer) {
             nextErrors[`q_${q._id}`] = 'Bu maydon to\'ldirilishi shart';
+          } else if (answer && q.type === 'textarea') {
+            const wc = countWords(answer);
+            if (wc < 20) nextErrors[`q_${q._id}`] = `Kamida 20 ta so'z yozing (hozir: ${wc})`;
+            else if (wc > 50) nextErrors[`q_${q._id}`] = `50 ta so'zdan oshmasin (hozir: ${wc})`;
           }
         });
       }
@@ -341,7 +358,14 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
               <div>
                 <label className="label">Startup tavsifi *</label>
                 <textarea value={form.description} onChange={(e) => setField('description', e.target.value)} className="input min-h-28 resize-none" placeholder="Startapingiz haqida qisqacha: muammo, yechim, hozirgi holat..." />
-                {errors.description && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.description}</p>}
+                <div className="flex items-center justify-between mt-1">
+                  {errors.description
+                    ? <p className="text-xs" style={{ color: 'var(--danger)' }}>{errors.description}</p>
+                    : <span />}
+                  <p className="text-xs" style={{ color: countWords(form.description) < 20 || countWords(form.description) > 50 ? 'var(--danger)' : '#10b981' }}>
+                    {countWords(form.description)} / 50 so'z (min 20)
+                  </p>
+                </div>
               </div>
 
               <div>
@@ -432,7 +456,14 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
               <div>
                 <label className="label">Startup tavsifi *</label>
                 <textarea value={form.description} onChange={(e) => setField('description', e.target.value)} className="input min-h-28 resize-none" placeholder="Startapingiz, muammo va hozirgi natijalar haqida yozing..." />
-                {errors.description && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.description}</p>}
+                <div className="flex items-center justify-between mt-1">
+                  {errors.description
+                    ? <p className="text-xs" style={{ color: 'var(--danger)' }}>{errors.description}</p>
+                    : <span />}
+                  <p className="text-xs" style={{ color: countWords(form.description) < 20 || countWords(form.description) > 50 ? 'var(--danger)' : '#10b981' }}>
+                    {countWords(form.description)} / 50 so'z (min 20)
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -447,23 +478,35 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
                     {q.required && <span style={{ color: 'var(--danger)' }}> *</span>}
                   </label>
                   {q.type === 'textarea' ? (
-                    <textarea
-                      value={answers[q._id] || ''}
-                      onChange={(e) => setAnswers((prev) => ({ ...prev, [q._id]: e.target.value }))}
-                      className="input min-h-28 resize-none"
-                      placeholder={q.placeholder || ''}
-                    />
+                    <>
+                      <textarea
+                        value={answers[q._id] || ''}
+                        onChange={(e) => setAnswers((prev) => ({ ...prev, [q._id]: e.target.value }))}
+                        className="input min-h-28 resize-none"
+                        placeholder={q.placeholder || ''}
+                      />
+                      <div className="flex items-center justify-between mt-1">
+                        {errors[`q_${q._id}`]
+                          ? <p className="text-xs" style={{ color: 'var(--danger)' }}>{errors[`q_${q._id}`]}</p>
+                          : <span />}
+                        <p className="text-xs" style={{ color: (() => { const wc = countWords(answers[q._id] || ''); return wc > 0 && (wc < 20 || wc > 50) ? 'var(--danger)' : '#10b981'; })() }}>
+                          {countWords(answers[q._id] || '')} / 50 so'z (min 20)
+                        </p>
+                      </div>
+                    </>
                   ) : (
-                    <input
-                      type={q.type === 'url' ? 'url' : 'text'}
-                      value={answers[q._id] || ''}
-                      onChange={(e) => setAnswers((prev) => ({ ...prev, [q._id]: e.target.value }))}
-                      className="input"
-                      placeholder={q.placeholder || ''}
-                    />
-                  )}
-                  {errors[`q_${q._id}`] && (
-                    <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors[`q_${q._id}`]}</p>
+                    <>
+                      <input
+                        type={q.type === 'url' ? 'url' : 'text'}
+                        value={answers[q._id] || ''}
+                        onChange={(e) => setAnswers((prev) => ({ ...prev, [q._id]: e.target.value }))}
+                        className="input"
+                        placeholder={q.placeholder || ''}
+                      />
+                      {errors[`q_${q._id}`] && (
+                        <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors[`q_${q._id}`]}</p>
+                      )}
+                    </>
                   )}
                 </div>
               ))}

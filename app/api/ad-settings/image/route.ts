@@ -9,17 +9,15 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await connectDB();
-    let settings = await AdSettings.findOne().select('-bannerImage').lean();
-    if (!settings) {
-      await AdSettings.create({});
-      settings = await AdSettings.findOne().select('-bannerImage').lean();
-    }
-    return NextResponse.json({ settings }, {
-      headers: { 'Cache-Control': 'no-store' },
+    const settings = await AdSettings.findOne().select('bannerImage').lean() as any;
+    const image = settings?.bannerImage || '';
+    return NextResponse.json({ image }, {
+      headers: {
+        'Cache-Control': 'no-store',
+      },
     });
-  } catch (err) {
-    console.error('[GET /api/ad-settings]', err);
-    return NextResponse.json({ error: 'Server xatosi' }, { status: 500 });
+  } catch {
+    return NextResponse.json({ image: '' });
   }
 }
 
@@ -36,22 +34,15 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     await connectDB();
 
-    const settings = await AdSettings.findOneAndUpdate(
+    await AdSettings.findOneAndUpdate(
       {},
-      { $set: {
-        title:         body.title,
-        description:   body.description,
-        websiteUrl:    body.websiteUrl,
-        appStoreUrl:   body.appStoreUrl,
-        googlePlayUrl: body.googlePlayUrl,
-        enabled:       body.enabled,
-      }},
+      { $set: { bannerImage: body.bannerImage ?? '' } },
       { upsert: true, new: true }
-    ).lean();
+    );
 
-    return NextResponse.json({ settings });
+    return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error('[PUT /api/ad-settings]', err);
+    console.error('[PUT /api/ad-settings/image]', err);
     return NextResponse.json({ error: 'Server xatosi' }, { status: 500 });
   }
 }

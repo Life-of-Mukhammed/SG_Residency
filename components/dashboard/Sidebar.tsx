@@ -101,12 +101,17 @@ export default function Sidebar() {
   const { lang, theme, sidebarOpen, toggleSidebar, _hydrated } = useAppStore();
 
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [startupStatus, setStartupStatus] = useState<'active' | 'lead_accepted' | 'pending' | 'rejected' | 'inactive' | null>(null);
   const [gtmUnlocked, setGtmUnlocked] = useState(false);
   const [showApplyPrompt, setShowApplyPrompt] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
   useEffect(() => {
@@ -135,7 +140,8 @@ export default function Sidebar() {
   }, [role]);
 
   const open = mounted && _hydrated ? sidebarOpen : true;
-  const w = open ? 254 : 76;
+  // On mobile: sidebar is either full-width overlay (open) or completely hidden (closed)
+  const w = isMobile ? (open ? 280 : 0) : (open ? 254 : 76);
   const userImage = session?.user?.image;
 
   const label = (key: NavKey) => NAV_LABELS[key]?.[lang] ?? NAV_LABELS[key]?.en ?? key;
@@ -206,7 +212,29 @@ export default function Sidebar() {
 
   return (
     <>
-      {open && <div className="fixed inset-0 z-30 md:hidden" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={toggleSidebar} />}
+      {/* Mobile backdrop */}
+      {isMobile && open && (
+        <div
+          className="fixed inset-0 z-30"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)' }}
+          onClick={toggleSidebar}
+        />
+      )}
+
+      {/* Mobile hamburger button — shown only when sidebar is closed on mobile */}
+      {isMobile && !open && (
+        <button
+          onClick={toggleSidebar}
+          className="fixed top-3.5 left-3 z-50 w-9 h-9 rounded-xl flex items-center justify-center"
+          style={{
+            background: theme === 'light' ? 'rgba(255,255,255,0.9)' : 'rgba(17,24,39,0.9)',
+            border: '1px solid rgba(148,163,184,0.2)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <Menu size={17} style={{ color: theme === 'light' ? '#334155' : '#cbd5e1' }} />
+        </button>
+      )}
 
       <aside
         className="fixed left-0 top-0 h-full flex flex-col z-40"
@@ -219,6 +247,7 @@ export default function Sidebar() {
           borderRight: theme === 'light' ? '1px solid rgba(99,102,241,0.1)' : '1px solid rgba(148,163,184,0.12)',
           transition: 'width 0.25s ease',
           overflow: 'hidden',
+          boxShadow: isMobile && open ? '4px 0 24px rgba(0,0,0,0.3)' : 'none',
         }}
       >
         <div className="flex items-center justify-between px-3 py-4 border-b" style={{ borderColor: 'rgba(148,163,184,0.12)' }}>

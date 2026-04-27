@@ -11,6 +11,9 @@ jobs:
     steps:
       - name: Send 10-minute meeting reminders
         run: |
+          PROD_URL="${{ vars.PRODUCTION_URL }}"
+          PROD_URL="${PROD_URL// /}"
+          PROD_URL="${PROD_URL%/}"
           curl -f -s -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ vars.PRODUCTION_URL }}/api/cron/meeting-reminders"
+            "${PROD_URL}/api/cron/meeting-reminders"

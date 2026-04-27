@@ -7,6 +7,8 @@ import Startup from '@/models/Startup';
 import { notifyRoles } from '@/lib/notifications';
 import Notification from '@/models/Notification';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
