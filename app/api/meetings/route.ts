@@ -105,10 +105,10 @@ export async function POST(req: NextRequest) {
         title: 'New meeting booked',
         message: meetingMessage,
         type: 'meeting',
-        channels: { inApp: true, email: false, telegram: true },
+        channels: { inApp: true, email: true, telegram: true },
       });
       await notifyRoles(['manager', 'super_admin'], {
-        title: 'New meeting booked',
+        title: `New meeting booked — ${startupName}`,
         message: meetingMessage,
         type: 'meeting',
         channels: { inApp: true, email: true, telegram: true },

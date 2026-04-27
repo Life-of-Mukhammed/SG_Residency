@@ -26,18 +26,27 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         params.id, { $set: body }, { new: true }
       ).populate('managerId userId startupId').lean();
 
+      const updatedDate = new Date(body.scheduledAt || meeting.scheduledAt).toLocaleString('en-GB', {
+        timeZone: 'Asia/Tashkent', year: 'numeric', month: 'short',
+        day: 'numeric', hour: '2-digit', minute: '2-digit',
+      });
+      const updatedTopic = body.topic || meeting.topic || meeting.title;
+      const updateMsg = `Meeting "${updatedTopic}" has been updated.\n📅 Date: ${updatedDate} (Tashkent)`;
+
       if (meeting.userId) {
-        const dateStr = new Date(body.scheduledAt || meeting.scheduledAt).toLocaleString('en-GB', {
-          timeZone: 'Asia/Tashkent', year: 'numeric', month: 'short',
-          day: 'numeric', hour: '2-digit', minute: '2-digit',
-        });
         await notifyUsers([String(meeting.userId)], {
           title: 'Meeting updated',
-          message: `Your meeting "${meeting.topic || meeting.title}" has been updated.\n📅 Date: ${dateStr} (Tashkent)`,
+          message: updateMsg,
           type: 'meeting',
           channels: { inApp: true, email: true, telegram: true },
         });
       }
+      await notifyRoles(['manager', 'super_admin'], {
+        title: 'Meeting updated',
+        message: updateMsg,
+        type: 'meeting',
+        channels: { inApp: true, email: true, telegram: true },
+      });
 
       return NextResponse.json({ meeting: updated });
     }
@@ -91,7 +100,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       title: 'Meeting confirmed',
       message: reminderMessage,
       type: 'meeting',
-      channels: { inApp: true, email: false, telegram: true },
+      channels: { inApp: true, email: true, telegram: true },
     });
     await notifyRoles(['manager', 'super_admin'], {
       title: 'Meeting confirmed',
@@ -156,9 +165,13 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
           console.error('[DELETE /api/meetings/[id]] google delete failed', error);
         }
       }
+      const founderCancelDate = new Date(meeting.scheduledAt).toLocaleString('en-GB', {
+        timeZone: 'Asia/Tashkent', year: 'numeric', month: 'short',
+        day: 'numeric', hour: '2-digit', minute: '2-digit',
+      });
       await notifyRoles(['manager', 'super_admin'], {
-        title: 'Meeting cancelled',
-        message: `${meeting.title} meeting has been cancelled by the founder.`,
+        title: 'Meeting cancelled by founder',
+        message: `Meeting "${meeting.topic || meeting.title}" scheduled for ${founderCancelDate} (Tashkent) has been cancelled by the founder.`,
         type: 'meeting',
         channels: { inApp: true, email: true, telegram: true },
       });
