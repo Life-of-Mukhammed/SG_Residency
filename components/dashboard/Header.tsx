@@ -30,7 +30,7 @@ export default function Header({ title = 'Bosh sahifa', subtitle }: HeaderProps)
 
   return (
     <header
-      className="sticky top-0 z-30 flex items-center justify-between px-6 py-3"
+      className="sticky top-0   z-30 flex items-center justify-between px-6 py-5"
       style={{
         background: 'linear-gradient(180deg, rgba(15,23,42,0.9), rgba(15,23,42,0.72))',
         backdropFilter: 'blur(20px)',
@@ -38,10 +38,7 @@ export default function Header({ title = 'Bosh sahifa', subtitle }: HeaderProps)
       }}
     >
       <div>
-        <div className="inline-flex items-center gap-2 mb-1 text-[11px] uppercase tracking-[0.18em]" style={{ color: 'var(--accent)' }}>
-          <Sparkles size={12} />
-          SG-Residency
-        </div>
+       
         <h1 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h1>
         {subtitle && (
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>

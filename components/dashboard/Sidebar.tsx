@@ -230,13 +230,11 @@ export default function Sidebar() {
                 className="w-10 h-10 rounded-[18px] object-cover flex-shrink-0 border"
                 style={{ borderColor: theme === 'light' ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.1)' }}
               />
-              <div className="min-w-0">
+              <div className="min-w-0 py-5">
                 <p className="text-sm font-bold truncate" style={{ color: '#f8fafc' }}>
                   <span style={{ color: theme === 'light' ? '#0f172a' : '#f8fafc' }}>SG-Residency</span>
                 </p>
-                <p className="text-[11px] truncate uppercase tracking-[0.16em]" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.52)' : 'rgba(226,232,240,0.58)' }}>
-                  Akselerator ish muhiti
-                </p>
+               
               </div>
             </div>
           ) : (
