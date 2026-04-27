@@ -21,6 +21,8 @@ export default function SuperAdminPage() {
   const [saving, setSaving]         = useState(false);
   const [deleteUser, setDeleteUser] = useState<any | null>(null);
   const [deleting, setDeleting]     = useState(false);
+  const [webhookStatus, setWebhookStatus] = useState<string | null>(null);
+  const [webhookLoading, setWebhookLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -52,6 +54,30 @@ export default function SuperAdminPage() {
       toast.error(err.response?.data?.error || 'Failed to delete user');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const setupWebhook = async () => {
+    setWebhookLoading(true);
+    setWebhookStatus(null);
+    try {
+      const res = await axios.get('/api/telegram/setup');
+      const ok = res.data?.setWebhook?.ok;
+      const url = res.data?.webhookUrl;
+      if (ok) {
+        toast.success('Telegram webhook set!');
+        setWebhookStatus(`✅ Webhook active: ${url}`);
+      } else {
+        const desc = res.data?.setWebhook?.description || 'Unknown error';
+        toast.error(`Webhook failed: ${desc}`);
+        setWebhookStatus(`❌ ${desc}`);
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.error || 'Request failed';
+      toast.error(msg);
+      setWebhookStatus(`❌ ${msg}`);
+    } finally {
+      setWebhookLoading(false);
     }
   };
 
@@ -173,6 +199,28 @@ export default function SuperAdminPage() {
                   <p className="text-xs mt-1"        style={{ color: 'var(--text-muted)'    }}>{desc}</p>
                 </button>
               ))}
+            </div>
+
+            {/* Telegram Webhook Setup */}
+            <div className="mt-4 p-4 rounded-xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Telegram Bot Webhook</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                    {webhookStatus || 'Register webhook with Telegram after each new deployment'}
+                  </p>
+                </div>
+                <button
+                  onClick={setupWebhook}
+                  disabled={webhookLoading}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white flex-shrink-0"
+                  style={{ background: webhookLoading ? '#4f46e5aa' : '#4f46e5' }}>
+                  {webhookLoading
+                    ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    : <Send size={14} />}
+                  {webhookLoading ? 'Setting up…' : 'Setup Webhook'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
