@@ -17,40 +17,45 @@ type AdType = {
   websiteUrl: string; appStoreUrl: string; googlePlayUrl: string; enabled: boolean;
 } | null;
 
-function AdBanner({ ad, bannerImage }: { ad: AdType; bannerImage?: string }) {
+function AdBanner({ ad }: { ad: AdType }) {
   if (!ad || ad.enabled === false) return null;
-  const image = bannerImage || ad.bannerImage || '';
+  const image = ad.bannerImage || '';
   return (
     <div
-      className="relative overflow-hidden"
+      className="relative overflow-hidden flex"
       style={{
         background: 'linear-gradient(135deg, #0f0c29 0%, #1a1060 35%, #24243e 60%, #0d2137 100%)',
         borderTop: '1px solid rgba(99,102,241,0.3)',
         borderBottom: '1px solid rgba(99,102,241,0.3)',
+        minHeight: image ? undefined : undefined,
       }}
     >
-      {/* Animated gradient orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-[500px] h-[500px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 65%)', top: '-200px', right: '-100px' }} />
-        <div className="absolute w-[400px] h-[400px] rounded-full opacity-15"
-          style={{ background: 'radial-gradient(circle, #10b981 0%, transparent 65%)', bottom: '-150px', left: '-80px' }} />
-        <div className="absolute w-[300px] h-[300px] rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #8b5cf6 0%, transparent 65%)', top: '50%', left: '40%', transform: 'translate(-50%,-50%)' }} />
-      </div>
-
-      {/* Banner image overlay */}
+      {/* ── Mobile / tablet: image as full background ── */}
       {image && (
-        <div className="absolute inset-0">
+        <>
           <img
             src={image}
             alt=""
-            className="w-full h-full object-cover"
-            style={{ opacity: 0.18, transition: 'opacity 0.6s ease' }}
+            className="absolute inset-0 w-full h-full object-cover lg:hidden"
+            style={{ opacity: 0.55 }}
             loading="eager"
             decoding="async"
           />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(15,12,41,0.92) 0%, rgba(26,16,96,0.85) 50%, rgba(13,33,55,0.9) 100%)' }} />
+          {/* dark scrim so text stays readable on mobile */}
+          <div
+            className="absolute inset-0 lg:hidden"
+            style={{ background: 'linear-gradient(160deg, rgba(8,6,24,0.78) 0%, rgba(16,10,56,0.65) 55%, rgba(6,16,32,0.75) 100%)' }}
+          />
+        </>
+      )}
+
+      {/* Gradient orbs when no image */}
+      {!image && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute w-[500px] h-[500px] rounded-full opacity-20"
+            style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 65%)', top: '-200px', right: '-100px' }} />
+          <div className="absolute w-[400px] h-[400px] rounded-full opacity-15"
+            style={{ background: 'radial-gradient(circle, #10b981 0%, transparent 65%)', bottom: '-150px', left: '-80px' }} />
         </div>
       )}
 
@@ -62,8 +67,8 @@ function AdBanner({ ad, bannerImage }: { ad: AdType; bannerImage?: string }) {
         </span>
       </div>
 
-      {/* Content */}
-      <div className="ad-content relative z-10 max-w-4xl">
+      {/* ── Left: text content ── */}
+      <div className="ad-content relative z-10 flex-1">
 
         {/* Top label */}
         <div className="flex items-center gap-2 mb-3">
@@ -76,17 +81,14 @@ function AdBanner({ ad, bannerImage }: { ad: AdType; bannerImage?: string }) {
           </span>
         </div>
 
-        {/* Title */}
         <h2 className="ad-title font-extrabold text-white mb-2 leading-tight">
           {ad.title || 'Founders School'}
         </h2>
 
-        {/* Description */}
-        <p className="ad-desc mb-4 max-w-xl" style={{ color: 'rgba(255,255,255,0.65)', lineHeight: 1.65 }}>
+        <p className="ad-desc mb-4 max-w-xl" style={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.65 }}>
           {ad.description || 'Bo\'lajak asoschilarga kerak bo\'lgan barcha bilimlar bir joyda jamlandi'}
         </p>
 
-        {/* Stars */}
         <div className="flex items-center gap-1 mb-5">
           {Array.from({ length: 5 }).map((_, i) => (
             <Star key={i} size={13} fill="#fbbf24" style={{ color: '#fbbf24' }} />
@@ -96,7 +98,6 @@ function AdBanner({ ad, bannerImage }: { ad: AdType; bannerImage?: string }) {
           </span>
         </div>
 
-        {/* CTA Buttons */}
         <div className="flex flex-wrap gap-2">
           {ad.websiteUrl && (
             <a href={ad.websiteUrl} target="_blank" rel="noreferrer"
@@ -129,33 +130,45 @@ function AdBanner({ ad, bannerImage }: { ad: AdType; bannerImage?: string }) {
         </div>
       </div>
 
-      {/* Right side app mockup visual (desktop only) */}
-      <div className="ad-mockup absolute right-8 top-1/2 -translate-y-1/2 items-center gap-3 opacity-70 pointer-events-none">
-        <div className="w-20 h-36 rounded-2xl flex flex-col items-center justify-center gap-2"
-          style={{ background: 'rgba(99,102,241,0.25)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)' }}>
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
-            <Smartphone size={16} style={{ color: '#fff' }} />
+      {/* ── Right: desktop image panel (hidden on mobile — image is bg there) ── */}
+      {image ? (
+        <div className="ad-img-panel hidden lg:block relative flex-shrink-0 overflow-hidden" style={{ width: '38%', minWidth: 240, maxWidth: 420 }}>
+          <img
+            src={image}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* gradient to blend left edge into content */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(10,8,30,1) 0%, rgba(10,8,30,0.35) 28%, transparent 65%)' }} />
+        </div>
+      ) : (
+        <div className="ad-mockup absolute right-8 top-1/2 -translate-y-1/2 items-center gap-3 opacity-70 pointer-events-none">
+          <div className="w-20 h-36 rounded-2xl flex flex-col items-center justify-center gap-2"
+            style={{ background: 'rgba(99,102,241,0.25)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)' }}>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+              <Smartphone size={16} style={{ color: '#fff' }} />
+            </div>
+            <div className="space-y-1.5 px-2 w-full">
+              {[100, 75, 90, 60].map((w, i) => (
+                <div key={i} className="rounded-full h-1.5" style={{ width: `${w}%`, background: 'rgba(255,255,255,0.25)' }} />
+              ))}
+            </div>
           </div>
-          <div className="space-y-1.5 px-2 w-full">
-            {[100, 75, 90, 60].map((w, i) => (
-              <div key={i} className="rounded-full h-1.5" style={{ width: `${w}%`, background: 'rgba(255,255,255,0.25)' }} />
-            ))}
+          <div className="w-20 h-44 rounded-2xl flex flex-col items-center justify-center gap-2 translate-y-3"
+            style={{ background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg,#8b5cf6,#a78bfa)' }}>
+              <Star size={18} fill="#fff" style={{ color: '#fff' }} />
+            </div>
+            <div className="space-y-1.5 px-2 w-full">
+              {[80, 100, 65, 85, 70].map((w, i) => (
+                <div key={i} className="rounded-full h-1.5" style={{ width: `${w}%`, background: 'rgba(255,255,255,0.2)' }} />
+              ))}
+            </div>
           </div>
         </div>
-        <div className="w-20 h-44 rounded-2xl flex flex-col items-center justify-center gap-2 translate-y-3"
-          style={{ background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg,#8b5cf6,#a78bfa)' }}>
-            <Star size={18} fill="#fff" style={{ color: '#fff' }} />
-          </div>
-          <div className="space-y-1.5 px-2 w-full">
-            {[80, 100, 65, 85, 70].map((w, i) => (
-              <div key={i} className="rounded-full h-1.5" style={{ width: `${w}%`, background: 'rgba(255,255,255,0.2)' }} />
-            ))}
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -174,7 +187,6 @@ export default function DashboardHome() {
   });
   const [telegramConnected, setTelegramConnected] = useState(false);
   const [adSettings, setAdSettings] = useState<AdType>(null);
-  const [adImage, setAdImage] = useState<string>('');
 
   const load = async () => {
     try {
@@ -192,21 +204,6 @@ export default function DashboardHome() {
 
   useEffect(() => {
     load();
-
-    // Load banner image — check sessionStorage first for instant display
-    const AD_IMG_KEY = 'sg_ad_image_v1';
-    const cached = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(AD_IMG_KEY) : null;
-    if (cached) {
-      setAdImage(cached);
-    } else {
-      axios.get('/api/ad-settings/image').then((r) => {
-        const img = r.data.image || '';
-        setAdImage(img);
-        if (img && typeof sessionStorage !== 'undefined') {
-          try { sessionStorage.setItem(AD_IMG_KEY, img); } catch {}
-        }
-      }).catch(() => {});
-    }
   }, []);
 
   useEffect(() => {
@@ -251,7 +248,7 @@ export default function DashboardHome() {
       <>
         {/* Ad banner — full bleed above status card, rounded bottom */}
         <div className="-mx-6 -mt-6 mb-6 overflow-hidden" style={{ borderRadius: '0 0 20px 20px' }}>
-          <AdBanner ad={adSettings} bannerImage={adImage} />
+          <AdBanner ad={adSettings} />
         </div>
 
         <div className="max-w-2xl mx-auto space-y-5 pb-8">
@@ -640,7 +637,7 @@ export default function DashboardHome() {
 
     {/* Ad banner — full bleed at bottom, rounded top */}
     <div className="-mx-6 mt-8 -mb-6 overflow-hidden" style={{ borderRadius: '20px 20px 0 0' }}>
-      <AdBanner ad={adSettings} bannerImage={adImage} />
+      <AdBanner ad={adSettings} />
     </div>
 
     <ResidencyApplicationModal

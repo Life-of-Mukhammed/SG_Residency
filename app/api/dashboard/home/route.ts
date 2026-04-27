@@ -23,7 +23,7 @@ export async function GET() {
     const [startup, userDoc, adSettings] = await Promise.all([
       Startup.findOne({ userId }).lean(),
       User.findById(userId).select('telegramChatId').lean(),
-      AdSettings.findOne().select('-bannerImage').lean(),
+      AdSettings.findOne().lean(),
     ]);
 
     const isActive = (startup as any)?.status === 'active';
