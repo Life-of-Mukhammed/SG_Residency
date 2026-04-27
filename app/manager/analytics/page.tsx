@@ -188,6 +188,47 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
+        {/* Resident Acceptance Statistics */}
+        <div className="card">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.15)' }}>
+              <Users size={18} style={{ color: '#10b981' }} />
+            </div>
+            <div>
+              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Resident Acceptance</h3>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Monthly accepted residents overview</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="p-4 rounded-xl text-center" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)' }}>
+              <p className="text-3xl font-black" style={{ color: '#10b981' }}>{data?.acceptedTotal ?? '—'}</p>
+              <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>Total accepted</p>
+            </div>
+            <div className="p-4 rounded-xl text-center" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)' }}>
+              <p className="text-3xl font-black" style={{ color: 'var(--accent)' }}>{data?.acceptedThisMonth ?? '—'}</p>
+              <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>Accepted this month</p>
+            </div>
+            <div className="p-4 rounded-xl text-center" style={{ background: 'var(--bg-secondary)' }}>
+              <p className="text-3xl font-black" style={{ color: 'var(--text-primary)' }}>
+                {data?.acceptedTotal > 0 ? Math.round((data.acceptedThisMonth / data.acceptedTotal) * 100) : 0}%
+              </p>
+              <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>This month share</p>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={data?.monthlyAccepted || []}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(16,185,129,0.1)" />
+              <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fill: '#64748b', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{ background: '#1a1a35', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 12, color: '#e2e8f0' }}
+                cursor={{ fill: 'rgba(16,185,129,0.06)' }}
+              />
+              <Bar dataKey="count" fill="#10b981" radius={[6, 6, 0, 0]} name="Accepted" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
         {/* Growth Summary */}
         <div className="card">
           <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Growth Summary</h3>

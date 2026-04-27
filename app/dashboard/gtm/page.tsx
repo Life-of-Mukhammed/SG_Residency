@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import Header from '@/components/dashboard/Header';
-import { CheckCircle2, Lock, PartyPopper, Sparkles, Star, Layers3, Bookmark, FileText, Rocket } from 'lucide-react';
+import { CheckCircle2, Lock, PartyPopper, Sparkles, Star, Layers3, Bookmark, FileText, Rocket, X, ChevronRight } from 'lucide-react';
 import { isGtmUnlockedBySprint } from '@/lib/sprint-unlock';
 
 type GTMItem = {
@@ -29,6 +29,7 @@ export default function GTMPage() {
   const [sprintTasks, setSprintTasks] = useState<any[]>([]);
   const [progressItems, setProgressItems] = useState<any[]>([]);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<GTMItem | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -304,7 +305,8 @@ export default function GTMPage() {
                       <button
                         key={item._id}
                         type="button"
-                        className="w-full text-left rounded-3xl px-4 py-4 group"
+                        onClick={() => setSelectedItem(item)}
+                        className="w-full text-left rounded-3xl px-4 py-4 group transition-all hover:scale-[1.01]"
                         style={{
                           background: 'rgba(255,255,255,0.035)',
                           border: '1px solid rgba(255,255,255,0.06)',
@@ -325,12 +327,7 @@ export default function GTMPage() {
                               <p className="text-sm font-semibold group-hover:translate-x-1 transition-transform" style={{ color: 'var(--text-primary)' }}>
                               {item.title}
                               </p>
-                              <span
-                                className="text-[10px] px-2 py-1 rounded-full flex-shrink-0"
-                                style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--accent)' }}
-                              >
-                                Ready
-                              </span>
+                              <ChevronRight size={14} className="flex-shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--accent)' }} />
                             </div>
 
                             {item.category && (
@@ -357,6 +354,56 @@ export default function GTMPage() {
                 </div>
               ))}
             </section>
+          </div>
+        </div>
+      )}
+
+      {/* GTM Item Detail Modal */}
+      {selectedItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(2,6,23,0.82)', backdropFilter: 'blur(12px)' }}
+          onClick={() => setSelectedItem(null)}
+        >
+          <div
+            className="card w-full max-w-2xl max-h-[85vh] flex flex-col animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 py-5 border-b flex items-start justify-between gap-4" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.25), rgba(16,185,129,0.2))' }}>
+                  <Star size={16} style={{ color: 'var(--accent)' }} />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-lg font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>{selectedItem.title}</h3>
+                  {selectedItem.category && (
+                    <span className="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--accent)' }}>
+                      {selectedItem.category}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
+                style={{ background: 'rgba(255,255,255,0.06)' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="px-6 py-6 overflow-y-auto flex-1">
+              <p className="text-sm leading-7 whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>
+                {selectedItem.content}
+              </p>
+            </div>
+
+            <div className="px-6 py-4 border-t flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+              <span className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>
+                {selectedItem.section?.toUpperCase() || 'GUIDE'}
+              </span>
+              <button onClick={() => setSelectedItem(null)} className="btn-secondary text-sm py-2">Close</button>
+            </div>
           </div>
         </div>
       )}

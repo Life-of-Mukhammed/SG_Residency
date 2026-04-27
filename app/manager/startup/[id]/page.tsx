@@ -6,7 +6,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
 import Link from 'next/link';
-import { ArrowLeft, Globe, Users, DollarSign, Phone, MessageCircle, FileText, Calendar, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Globe, Users, DollarSign, Phone, MessageCircle, FileText, Calendar, CheckCircle, XCircle, Clock, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function StartupDetailPage() {
@@ -17,6 +17,9 @@ export default function StartupDetailPage() {
   const [loading, setLoading] = useState(true);
   const [rejectModal, setRejectModal] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [editModal, setEditModal] = useState(false);
+  const [editForm, setEditForm] = useState<Record<string, any>>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -34,6 +37,41 @@ export default function StartupDetailPage() {
     };
     if (id) fetchAll();
   }, [id]);
+
+  const openEdit = () => {
+    setEditForm({
+      startup_name: startup.startup_name || '',
+      description: startup.description || '',
+      startup_sphere: startup.startup_sphere || '',
+      stage: startup.stage || 'idea',
+      region: startup.region || '',
+      founder_name: startup.founder_name || '',
+      phone: startup.phone || '',
+      telegram: startup.telegram || '',
+      pitch_deck: startup.pitch_deck || '',
+      resume_url: startup.resume_url || '',
+      team_size: startup.team_size ?? 1,
+      mrr: startup.mrr ?? 0,
+      users_count: startup.users_count ?? 0,
+      investment_raised: startup.investment_raised ?? 0,
+      commitment: startup.commitment || 'full-time',
+    });
+    setEditModal(true);
+  };
+
+  const saveEdit = async () => {
+    setSaving(true);
+    try {
+      const res = await axios.patch(`/api/startups/${id}`, editForm);
+      setStartup(res.data.startup);
+      setEditModal(false);
+      toast.success('Startup updated');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const reviewReport = async (reportId: string, status: 'accepted' | 'rejected', reason?: string) => {
     try {
@@ -79,10 +117,15 @@ export default function StartupDetailPage() {
               {startup.startup_name[0]}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{startup.startup_name}</h2>
-                <span className={`badge badge-${startup.status}`}>{startup.status}</span>
-                <span className={`badge badge-${startup.stage}`}>{startup.stage}</span>
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{startup.startup_name}</h2>
+                  <span className={`badge badge-${startup.status}`}>{startup.status}</span>
+                  <span className={`badge badge-${startup.stage}`}>{startup.stage}</span>
+                </div>
+                <button onClick={openEdit} className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-xl flex-shrink-0" style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--accent)' }}>
+                  <Edit2 size={13} /> Edit
+                </button>
               </div>
               <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>{startup.description}</p>
               <div className="flex flex-wrap gap-4">
@@ -196,6 +239,76 @@ export default function StartupDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
+          <div className="card p-0 w-full max-w-2xl max-h-[90vh] flex flex-col animate-fade-in overflow-hidden">
+            <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+              <h3 className="font-semibold text-lg" style={{ color: 'var(--text-primary)' }}>Edit Startup Data</h3>
+              <button onClick={() => setEditModal(false)} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--bg-secondary)' }}>
+                <XCircle size={16} />
+              </button>
+            </div>
+            <div className="px-6 py-5 overflow-y-auto flex-1 space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                {[
+                  { label: 'Startup Name', key: 'startup_name' },
+                  { label: 'Founder Name', key: 'founder_name' },
+                  { label: 'Region', key: 'region' },
+                  { label: 'Phone', key: 'phone' },
+                  { label: 'Telegram', key: 'telegram' },
+                  { label: 'Pitch Deck URL', key: 'pitch_deck' },
+                  { label: 'Resume URL', key: 'resume_url' },
+                ].map(({ label, key }) => (
+                  <div key={key}>
+                    <label className="label">{label}</label>
+                    <input
+                      value={editForm[key] || ''}
+                      onChange={(e) => setEditForm((p: any) => ({ ...p, [key]: e.target.value }))}
+                      className="input"
+                    />
+                  </div>
+                ))}
+                <div>
+                  <label className="label">Stage</label>
+                  <select value={editForm.stage} onChange={(e) => setEditForm((p: any) => ({ ...p, stage: e.target.value }))} className="input">
+                    {['idea', 'mvp', 'growth', 'scale'].map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Commitment</label>
+                  <select value={editForm.commitment} onChange={(e) => setEditForm((p: any) => ({ ...p, commitment: e.target.value }))} className="input">
+                    <option value="full-time">Full-time</option>
+                    <option value="part-time">Part-time</option>
+                  </select>
+                </div>
+                {[
+                  { label: 'MRR ($)', key: 'mrr' },
+                  { label: 'Users', key: 'users_count' },
+                  { label: 'Investment ($)', key: 'investment_raised' },
+                  { label: 'Team Size', key: 'team_size' },
+                ].map(({ label, key }) => (
+                  <div key={key}>
+                    <label className="label">{label}</label>
+                    <input type="number" min="0" value={editForm[key] ?? 0} onChange={(e) => setEditForm((p: any) => ({ ...p, [key]: Number(e.target.value) }))} className="input" />
+                  </div>
+                ))}
+              </div>
+              <div>
+                <label className="label">Description</label>
+                <textarea value={editForm.description || ''} onChange={(e) => setEditForm((p: any) => ({ ...p, description: e.target.value }))} className="input min-h-24 resize-none" />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t flex gap-3 justify-end" style={{ borderColor: 'var(--border)' }}>
+              <button onClick={() => setEditModal(false)} className="btn-secondary">Cancel</button>
+              <button onClick={saveEdit} disabled={saving} className="btn-primary flex items-center gap-2">
+                {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Edit2 size={14} /> Save Changes</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reject Modal */}
       {rejectModal && (

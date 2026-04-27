@@ -11,7 +11,22 @@ const startupUpdateSchema = z.object({
   status: z.enum(['pending', 'lead_accepted', 'active', 'inactive', 'rejected']).optional(),
   managerId: z.string().optional(),
   rejectionReason: z.string().trim().max(500).optional(),
-}).strict();
+  startup_name: z.string().min(1).optional(),
+  description: z.string().optional(),
+  startup_sphere: z.enum(STARTUP_SPHERES).optional(),
+  stage: z.enum(['idea', 'mvp', 'growth', 'scale']).optional(),
+  region: z.string().optional(),
+  founder_name: z.string().optional(),
+  phone: z.string().optional(),
+  telegram: z.string().optional(),
+  pitch_deck: z.string().optional(),
+  resume_url: z.string().optional(),
+  team_size: z.coerce.number().min(1).optional(),
+  mrr: z.coerce.number().min(0).optional(),
+  users_count: z.coerce.number().min(0).optional(),
+  investment_raised: z.coerce.number().min(0).optional(),
+  commitment: z.enum(['full-time', 'part-time']).optional(),
+});
 
 const startupOwnerUpdateSchema = z.object({
   startup_name: z.string().min(1).optional(),
@@ -100,6 +115,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
     if (parsed.data.status === 'active') {
       patch.rejectionReason = '';
+      if (current.status !== 'active') patch.acceptedAt = new Date();
     }
     if (parsed.data.status === 'pending') {
       patch.rejectionReason = '';

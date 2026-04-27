@@ -62,12 +62,25 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
 
   const steps = useMemo(() => {
     return form.applicationType === 'existing_resident'
       ? ['Residency Type', 'Startup Request', 'Review']
-      : ['Residency Type', 'Founder & Startup', 'Files & Metrics', 'Review'];
+      : ['Residency Type', 'Founder & Startup', 'Questions', 'Files & Metrics', 'Review'];
   }, [form.applicationType]);
+
+  useEffect(() => {
+    if (!open) return;
+    axios.get('/api/residency-questions').then((r) => {
+      const active = (r.data.questions || []).filter((q: any) => q.isActive !== false);
+      setQuestions(active);
+      const init: Record<string, string> = {};
+      active.forEach((q: any) => { init[q._id] = ''; });
+      setAnswers(init);
+    }).catch(() => {});
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -129,6 +142,13 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
         if (!form.telegram.trim()) nextErrors.telegram = 'Telegram is required';
       }
       if (step === 2) {
+        questions.forEach((q) => {
+          if (q.required && !answers[q._id]?.trim()) {
+            nextErrors[`q_${q._id}`] = 'This field is required';
+          }
+        });
+      }
+      if (step === 3) {
         if (!form.pitch_deck.trim()) nextErrors.pitch_deck = 'Pitch deck is required';
         if (!form.resume_url.trim()) nextErrors.resume_url = 'Resume URL is required';
       }
@@ -165,7 +185,11 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
         mrr: Number(form.mrr),
         users_count: Number(form.users_count),
         investment_raised: Number(form.investment_raised),
-        applicationAnswers: [],
+        applicationAnswers: questions.map((q) => ({
+          questionId: q._id,
+          question: q.question,
+          answer: answers[q._id] || '',
+        })).filter((a) => a.answer.trim()),
       });
 
       toast.success('Application submitted successfully');
@@ -352,7 +376,39 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
             </div>
           )}
 
-          {step === 2 && form.applicationType === 'new_applicant' && (
+          {step === 2 && form.applicationType === 'new_applicant' && questions.length > 0 && (
+            <div className="space-y-5">
+              {questions.map((q) => (
+                <div key={q._id}>
+                  <label className="label">
+                    {q.question}
+                    {q.required && <span style={{ color: 'var(--danger)' }}> *</span>}
+                  </label>
+                  {q.type === 'textarea' ? (
+                    <textarea
+                      value={answers[q._id] || ''}
+                      onChange={(e) => setAnswers((prev) => ({ ...prev, [q._id]: e.target.value }))}
+                      className="input min-h-28 resize-none"
+                      placeholder={q.placeholder || ''}
+                    />
+                  ) : (
+                    <input
+                      type={q.type === 'url' ? 'url' : 'text'}
+                      value={answers[q._id] || ''}
+                      onChange={(e) => setAnswers((prev) => ({ ...prev, [q._id]: e.target.value }))}
+                      className="input"
+                      placeholder={q.placeholder || ''}
+                    />
+                  )}
+                  {errors[`q_${q._id}`] && (
+                    <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors[`q_${q._id}`]}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {step === 3 && form.applicationType === 'new_applicant' && (
             <div className="space-y-5">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>

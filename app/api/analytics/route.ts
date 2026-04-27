@@ -31,6 +31,7 @@ export async function GET(_req: NextRequest) {
       totalStartups, activeStartups, inactiveStartups, pendingStartups,
       newThisMonth, newLastMonth, totalUsers, totalReports, pendingReports,
       totalMeetings, sphereStats, stageStats, completedTasks, totalTasks,
+      acceptedThisMonth, acceptedTotal,
     ] = await Promise.all([
       Startup.countDocuments(),
       Startup.countDocuments({ status: 'active' }),
@@ -50,6 +51,8 @@ export async function GET(_req: NextRequest) {
       Startup.aggregate([{ $group: { _id: '$stage', count: { $sum: 1 } } }]),
       TaskProgress.countDocuments({ completed: true }),
       TaskProgress.countDocuments(),
+      Startup.countDocuments({ status: 'active', acceptedAt: { $gte: monthStart } }),
+      Startup.countDocuments({ status: 'active' }),
     ]);
 
     // Monthly growth — last 6 months
@@ -64,10 +67,23 @@ export async function GET(_req: NextRequest) {
       });
     }
 
+    // Monthly accepted residents — last 6 months
+    const monthlyAccepted = [];
+    for (let i = 5; i >= 0; i--) {
+      const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const end   = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+      const count = await Startup.countDocuments({ status: 'active', acceptedAt: { $gte: start, $lte: end } });
+      monthlyAccepted.push({
+        month: start.toLocaleString('default', { month: 'short' }),
+        count,
+      });
+    }
+
     return NextResponse.json({
       totalStartups, activeStartups, inactiveStartups, pendingStartups,
       newThisMonth, newLastMonth, totalUsers, totalReports, pendingReports,
-      totalMeetings, sphereStats, stageStats, monthlyGrowth,
+      totalMeetings, sphereStats, stageStats, monthlyGrowth, monthlyAccepted,
+      acceptedThisMonth, acceptedTotal,
       taskCompletionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
     });
   } catch (err) {
