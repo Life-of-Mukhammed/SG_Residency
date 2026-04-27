@@ -25,6 +25,20 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       const updated = await Meeting.findByIdAndUpdate(
         params.id, { $set: body }, { new: true }
       ).populate('managerId userId startupId').lean();
+
+      if (meeting.userId) {
+        const dateStr = new Date(body.scheduledAt || meeting.scheduledAt).toLocaleString('en-GB', {
+          timeZone: 'Asia/Tashkent', year: 'numeric', month: 'short',
+          day: 'numeric', hour: '2-digit', minute: '2-digit',
+        });
+        await notifyUsers([String(meeting.userId)], {
+          title: 'Meeting updated',
+          message: `Your meeting "${meeting.topic || meeting.title}" has been updated.\n📅 Date: ${dateStr} (Tashkent)`,
+          type: 'meeting',
+          channels: { inApp: true, email: true, telegram: true },
+        });
+      }
+
       return NextResponse.json({ meeting: updated });
     }
 
@@ -77,7 +91,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       title: 'Meeting confirmed',
       message: reminderMessage,
       type: 'meeting',
-      channels: { inApp: true, email: false, telegram: false },
+      channels: { inApp: true, email: false, telegram: true },
     });
     await notifyRoles(['manager', 'super_admin'], {
       title: 'Meeting confirmed',
@@ -113,11 +127,15 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
         }
       }
       if (meeting.userId) {
+        const cancelDateStr = new Date(meeting.scheduledAt).toLocaleString('en-GB', {
+          timeZone: 'Asia/Tashkent', year: 'numeric', month: 'short',
+          day: 'numeric', hour: '2-digit', minute: '2-digit',
+        });
         await notifyUsers([String(meeting.userId)], {
           title: 'Meeting cancelled',
-          message: `${meeting.title} meeting has been cancelled.`,
+          message: `Your meeting "${meeting.topic || meeting.title}" scheduled for ${cancelDateStr} (Tashkent) has been cancelled.`,
           type: 'meeting',
-          channels: { inApp: true, email: true, telegram: false },
+          channels: { inApp: true, email: true, telegram: true },
         });
       }
       await notifyRoles(['manager', 'super_admin'], {
