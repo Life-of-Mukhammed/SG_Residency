@@ -86,9 +86,9 @@ export default function AdsPage() {
     setSaving(true);
     try {
       const { bannerImage, ...textFields } = form;
-      await axios.put('/api/ad-settings', textFields);
+      await axios.post('/api/ad-settings', textFields);
       if (imageChanged) {
-        await axios.put('/api/ad-settings/image', { bannerImage });
+        await axios.post('/api/ad-settings/image', { bannerImage });
         setImageChanged(false);
         try { sessionStorage.removeItem('sg_ad_image_v1'); } catch {}
       }
