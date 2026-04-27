@@ -140,8 +140,10 @@ export default function Sidebar() {
   }, [role]);
 
   const open = mounted && _hydrated ? sidebarOpen : true;
-  // On mobile: sidebar is either full-width overlay (open) or completely hidden (closed)
   const w = isMobile ? (open ? 280 : 0) : (open ? 254 : 76);
+
+  const handleMouseEnter = () => { if (!isMobile && !sidebarOpen) toggleSidebar(); };
+  const handleMouseLeave = () => { if (!isMobile && sidebarOpen) toggleSidebar(); };
   const userImage = session?.user?.image;
 
   const label = (key: NavKey) => NAV_LABELS[key]?.[lang] ?? NAV_LABELS[key]?.en ?? key;
@@ -238,6 +240,8 @@ export default function Sidebar() {
 
       <aside
         className="fixed left-0 top-0 h-full flex flex-col z-40"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         style={{
           width: w,
           background:
@@ -250,7 +254,10 @@ export default function Sidebar() {
           boxShadow: isMobile && open ? '4px 0 24px rgba(0,0,0,0.3)' : 'none',
         }}
       >
-        <div className="flex items-center justify-between px-3 py-4 border-b" style={{ borderColor: 'rgba(148,163,184,0.12)' }}>
+        <div
+          className="flex items-center px-3 py-4 border-b"
+          style={{ borderColor: 'rgba(148,163,184,0.12)', justifyContent: open ? 'flex-start' : 'center' }}
+        >
           {open ? (
             <div className="flex items-center gap-3 min-w-0 ml-1">
               <img
@@ -260,10 +267,9 @@ export default function Sidebar() {
                 style={{ borderColor: theme === 'light' ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.1)' }}
               />
               <div className="min-w-0 py-5">
-                <p className="text-sm font-bold truncate" style={{ color: '#f8fafc' }}>
+                <p className="text-sm font-bold truncate">
                   <span style={{ color: theme === 'light' ? '#0f172a' : '#f8fafc' }}>SG-Residency</span>
                 </p>
-               
               </div>
             </div>
           ) : (
@@ -274,14 +280,6 @@ export default function Sidebar() {
               style={{ borderColor: theme === 'light' ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.1)' }}
             />
           )}
-
-          <button
-            onClick={toggleSidebar}
-            className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
-            style={{ color: theme === 'light' ? '#334155' : '#cbd5e1', background: theme === 'light' ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.06)' }}
-          >
-            {open ? <X size={15} /> : <Menu size={15} />}
-          </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">

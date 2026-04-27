@@ -131,52 +131,52 @@ body > .skiptranslate,
 
 /* ── Ad Banner responsive ─────────────────────────────────── */
 .ad-content {
-  padding: 24px 16px 28px;
+  padding: 16px 16px 18px;
 }
-.ad-title   { font-size: 1.35rem; line-height: 1.25; }
-.ad-desc    { font-size: 0.8rem;  line-height: 1.6; }
-.ad-btn     { padding: 10px 16px; font-size: 0.8rem; }
+.ad-title   { font-size: 1.2rem; line-height: 1.25; }
+.ad-desc    { font-size: 0.78rem; line-height: 1.6; }
+.ad-btn     { padding: 8px 14px; font-size: 0.78rem; }
 .ad-mockup  { display: none; }
 
 @media (min-width: 360px) {
-  .ad-content { padding: 28px 18px 32px; }
-  .ad-title   { font-size: 1.45rem; }
+  .ad-content { padding: 18px 18px 20px; }
+  .ad-title   { font-size: 1.3rem; }
 }
 
 @media (min-width: 400px) {
-  .ad-content { padding: 32px 22px 36px; }
-  .ad-title   { font-size: 1.6rem; }
-  .ad-desc    { font-size: 0.84rem; }
-  .ad-btn     { padding: 11px 18px; font-size: 0.84rem; }
+  .ad-content { padding: 20px 22px 22px; }
+  .ad-title   { font-size: 1.45rem; }
+  .ad-desc    { font-size: 0.82rem; }
+  .ad-btn     { padding: 9px 16px; font-size: 0.82rem; }
 }
 
 @media (min-width: 450px) {
-  .ad-content { padding: 36px 26px 40px; }
-  .ad-title   { font-size: 1.75rem; }
-  .ad-desc    { font-size: 0.875rem; }
-  .ad-btn     { padding: 12px 20px; font-size: 0.875rem; }
+  .ad-content { padding: 22px 24px 24px; }
+  .ad-title   { font-size: 1.55rem; }
+  .ad-desc    { font-size: 0.85rem; }
+  .ad-btn     { padding: 9px 18px; font-size: 0.85rem; }
 }
 
 @media (min-width: 480px) {
-  .ad-content { padding: 40px 30px 44px; }
-  .ad-title   { font-size: 1.9rem; }
+  .ad-content { padding: 24px 28px 26px; }
+  .ad-title   { font-size: 1.65rem; }
 }
 
 @media (min-width: 640px) {
-  .ad-content { padding: 48px 40px 52px; }
-  .ad-title   { font-size: 2.25rem; }
-  .ad-desc    { font-size: 1rem; }
-  .ad-btn     { padding: 13px 24px; font-size: 0.9rem; }
+  .ad-content { padding: 28px 36px 30px; }
+  .ad-title   { font-size: 1.9rem; }
+  .ad-desc    { font-size: 0.9rem; }
+  .ad-btn     { padding: 10px 20px; font-size: 0.875rem; }
 }
 
 @media (min-width: 768px) {
-  .ad-content { padding: 52px 48px 56px; }
-  .ad-title   { font-size: 2.6rem; }
+  .ad-content { padding: 30px 40px 32px; }
+  .ad-title   { font-size: 2.1rem; }
 }
 
 @media (min-width: 1024px) {
-  .ad-content { padding: 56px 56px 60px; }
-  .ad-title   { font-size: 3rem; }
+  .ad-content { padding: 32px 48px 34px; }
+  .ad-title   { font-size: 2.4rem; }
   .ad-mockup  { display: flex; }
 }
 
