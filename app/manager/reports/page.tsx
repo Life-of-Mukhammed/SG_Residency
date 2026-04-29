@@ -5,7 +5,6 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
 import { CheckCircle, XCircle, Clock, AlertCircle, RefreshCw, Filter } from 'lucide-react';
-import { format } from 'date-fns';
 
 export default function ManagerReportsPage() {
   const [reports, setReports]   = useState<any[]>([]);
@@ -30,12 +29,12 @@ export default function ManagerReportsPage() {
     setSubmitting(true);
     try {
       await axios.patch(`/api/reports/${id}`, { status, rejectionReason });
-      toast.success(status === 'accepted' ? 'Report accepted ✅' : 'Report rejected');
+      toast.success(status === 'accepted' ? 'Hisobot qabul qilindi' : 'Hisobot rad etildi');
       setRejectId(null);
       setReason('');
       load();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed');
+      toast.error(err.response?.data?.error || 'Xatolik yuz berdi');
     } finally { setSubmitting(false); }
   };
 
@@ -48,7 +47,7 @@ export default function ManagerReportsPage() {
 
   return (
     <div className="animate-fade-in">
-      <Header title="Reports Review" subtitle="Review and approve weekly reports from founders" />
+      <Header title="Hisobotlarni ko‘rib chiqish" subtitle="Asoschilarning haftalik hisobotlarini tekshiring va tasdiqlang" />
       <div className="p-8 space-y-6">
 
         {/* Filters + stats */}
@@ -65,7 +64,7 @@ export default function ManagerReportsPage() {
                   border:     '1px solid var(--border)',
                 }}
               >
-                {s || 'All'} {s === 'pending' && counts.pending > 0 && (
+                {s === 'pending' ? 'Kutilmoqda' : s === 'accepted' ? 'Qabul qilingan' : s === 'rejected' ? 'Rad etilgan' : 'Barchasi'} {s === 'pending' && counts.pending > 0 && (
                   <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-xs bg-white/20">
                     {counts.pending}
                   </span>
@@ -74,7 +73,7 @@ export default function ManagerReportsPage() {
             ))}
           </div>
           <button onClick={load} className="btn-secondary flex items-center gap-2 text-sm">
-            <RefreshCw size={14} /> Refresh
+            <RefreshCw size={14} /> Yangilash
           </button>
         </div>
 
@@ -86,9 +85,9 @@ export default function ManagerReportsPage() {
         ) : reports.length === 0 ? (
           <div className="card text-center py-16">
             <Filter size={36} className="mx-auto mb-3 opacity-20" />
-            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>No reports found</p>
+            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Hisobot topilmadi</p>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              {filter === 'pending' ? 'All caught up! No pending reports.' : 'No reports match this filter.'}
+              {filter === 'pending' ? 'Kutilayotgan hisobot yo‘q.' : 'Bu saralashga mos hisobot yo‘q.'}
             </p>
           </div>
         ) : (
@@ -108,7 +107,7 @@ export default function ManagerReportsPage() {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                          {r.startupId?.startup_name ?? 'Unknown Startup'}
+                          {r.startupId?.startup_name ?? 'Nomaʼlum startup'}
                         </p>
                         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>·</span>
                         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -116,8 +115,8 @@ export default function ManagerReportsPage() {
                         </p>
                       </div>
                       <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                        Week of {format(new Date(r.weekStart), 'MMM d, yyyy')} ·
-                        Submitted {format(new Date(r.createdAt), 'MMM d · h:mm a')}
+                        {new Date(r.weekStart).toLocaleDateString('uz')} haftasi ·
+                        {new Date(r.createdAt).toLocaleString('uz')} yuborilgan
                       </p>
                     </div>
                   </div>
@@ -127,15 +126,15 @@ export default function ManagerReportsPage() {
                 {/* Content */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                   <div className="p-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                    <p className="text-xs font-semibold mb-1.5" style={{ color: '#10b981' }}>✅ Completed</p>
+                    <p className="text-xs font-semibold mb-1.5" style={{ color: '#10b981' }}>Bajarildi</p>
                     <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{r.completed}</p>
                   </div>
                   <div className="p-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                    <p className="text-xs font-semibold mb-1.5" style={{ color: '#f59e0b' }}>⚠️ Not Completed</p>
+                    <p className="text-xs font-semibold mb-1.5" style={{ color: '#f59e0b' }}>Bajarilmadi</p>
                     <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{r.notCompleted}</p>
                   </div>
                   <div className="p-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                    <p className="text-xs font-semibold mb-1.5" style={{ color: '#6366f1' }}>📋 Next Week</p>
+                    <p className="text-xs font-semibold mb-1.5" style={{ color: '#6366f1' }}>Keyingi hafta</p>
                     <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{r.plans}</p>
                   </div>
                 </div>
@@ -146,7 +145,7 @@ export default function ManagerReportsPage() {
                     style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
                     <AlertCircle size={14} style={{ color: '#ef4444', flexShrink: 0, marginTop: 1 }} />
                     <div>
-                      <p className="text-xs font-semibold" style={{ color: '#ef4444' }}>Rejection Reason</p>
+                      <p className="text-xs font-semibold" style={{ color: '#ef4444' }}>Rad etish sababi</p>
                       <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{r.rejectionReason}</p>
                     </div>
                   </div>
@@ -161,14 +160,14 @@ export default function ManagerReportsPage() {
                       className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all"
                       style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}
                     >
-                      <CheckCircle size={14} /> Accept
+                      <CheckCircle size={14} /> Qabul qilish
                     </button>
                     <button
                       onClick={() => { setRejectId(r._id); setReason(''); }}
                       className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all"
                       style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
                     >
-                      <XCircle size={14} /> Reject
+                      <XCircle size={14} /> Rad etish
                     </button>
                   </div>
                 )}
@@ -178,24 +177,24 @@ export default function ManagerReportsPage() {
         )}
       </div>
 
-      {/* Reject modal */}
+      {/* Rad etish oynasi */}
       {rejectId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
           <div className="card p-8 w-full max-w-md animate-fade-in">
-            <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>Reject Report</h3>
+            <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>Hisobotni rad etish</h3>
             <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>
-              Please provide a clear reason so the founder can improve next week.
+              Asoschi keyingi haftada yaxshilashi uchun aniq sabab yozing.
             </p>
-            <label className="label">Rejection Reason *</label>
+            <label className="label">Rad etish sababi *</label>
             <textarea
               value={reason}
               onChange={e => setReason(e.target.value)}
               className="input min-h-28 resize-none mb-6"
-              placeholder="e.g. Report lacks specific metrics — please include revenue numbers, DAU, and conversion rates next week."
+              placeholder="Masalan: hisobotda aniq ko‘rsatkichlar yetishmayapti, keyingi safar daromad va o‘sish raqamlarini kiriting."
             />
             <div className="flex gap-3">
-              <button onClick={() => setRejectId(null)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={() => setRejectId(null)} className="btn-secondary flex-1">Bekor qilish</button>
               <button
                 onClick={() => reason.trim() && review(rejectId, 'rejected', reason)}
                 disabled={!reason.trim() || submitting}
@@ -203,7 +202,7 @@ export default function ManagerReportsPage() {
               >
                 {submitting
                   ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  : 'Reject Report'}
+                  : 'Hisobotni rad etish'}
               </button>
             </div>
           </div>

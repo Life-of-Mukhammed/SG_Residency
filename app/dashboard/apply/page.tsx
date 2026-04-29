@@ -24,6 +24,7 @@ type FormState = {
   phone: string;
   telegram: string;
   pitch_deck: string;
+  startup_logo: string;
   resume_url: string;
   team_size: string;
   commitment: 'full-time' | 'part-time';
@@ -43,6 +44,7 @@ const EMPTY_FORM: FormState = {
   phone: '',
   telegram: '',
   pitch_deck: '',
+  startup_logo: '',
   resume_url: '',
   team_size: '1',
   commitment: 'full-time',
@@ -89,9 +91,10 @@ export default function ApplyPage() {
             startup_sphere: existingStartup.startup_sphere || DEFAULT_STARTUP_SPHERE,
             stage: existingStartup.stage || 'mvp',
             description: existingStartup.description || '',
-            phone: existingStartup.phone === 'Not provided' ? '' : existingStartup.phone || '',
+            phone: existingStartup.phone === 'Not provided' || existingStartup.phone === 'Kiritilmagan' ? '' : existingStartup.phone || '',
             telegram: existingStartup.telegram === '@not_provided' ? '' : existingStartup.telegram || '',
             pitch_deck: existingStartup.pitch_deck || '',
+            startup_logo: existingStartup.startup_logo || '',
             resume_url: existingStartup.resume_url || '',
             team_size: String(existingStartup.team_size ?? 1),
             commitment: existingStartup.commitment || 'full-time',
@@ -124,14 +127,14 @@ export default function ApplyPage() {
     if (form.applicationType === 'existing_resident') {
       if (step === 1) {
         if (!form.startup_name.trim()) errs.startup_name = 'Startup nomi kiritilishi shart';
-        if (!form.description.trim() || form.description.trim().length < 20) errs.description = 'Tavsif kamida 20 ta belgidan iborat bo\'lishi kerak';
-        if (!form.pitch_deck.trim()) errs.pitch_deck = 'Pitch deck manzili kiritilishi shart';
+        if (!form.description.trim()) errs.description = 'Tavsif kiritilishi shart';
+        if (!form.pitch_deck.trim()) errs.pitch_deck = 'Taqdimot havolasi kiritilishi shart';
       }
     } else {
       if (step === 1) {
         if (!form.startup_name.trim()) errs.startup_name = 'Startup nomi kiritilishi shart';
         if (!form.founder_name.trim()) errs.founder_name = 'Asoschi roli kiritilishi shart';
-        if (!form.description.trim() || form.description.trim().length < 20) errs.description = 'Tavsif kamida 20 ta belgidan iborat bo\'lishi kerak';
+        if (!form.description.trim()) errs.description = 'Tavsif kiritilishi shart';
         if (!form.phone.trim()) errs.phone = 'Telefon kiritilishi shart';
         if (!form.telegram.trim()) errs.telegram = 'Telegram kiritilishi shart';
       }
@@ -141,7 +144,7 @@ export default function ApplyPage() {
         });
       }
       if (step === 3) {
-        if (!form.pitch_deck.trim()) errs.pitch_deck = 'Pitch deck manzili kiritilishi shart';
+        if (!form.pitch_deck.trim()) errs.pitch_deck = 'Taqdimot havolasi kiritilishi shart';
         if (!form.resume_url.trim()) errs.resume_url = 'Rezyume manzili kiritilishi shart';
       }
     }
@@ -166,6 +169,7 @@ export default function ApplyPage() {
         phone: form.phone,
         telegram: form.telegram,
         pitch_deck: form.pitch_deck,
+        startup_logo: form.startup_logo,
         resume_url: form.resume_url,
         team_size: Number(form.team_size),
         commitment: form.commitment,
@@ -190,12 +194,13 @@ export default function ApplyPage() {
   const reviewItems =
     form.applicationType === 'existing_resident'
       ? [
-          ['Rezidentlik turi', 'Allaqachon Startup Garage residenti'],
+          ['Rezidentlik turi', 'Allaqachon Startup Garage rezidenti'],
           ['Startup nomi', form.startup_name],
           ['Startup tavsifi', form.description],
-          ['Pitch Deck', form.pitch_deck],
-          ['MRR ($)', form.mrr],
-          ['Jalb qilingan investitsiya ($)', form.investment_raised],
+          ['Taqdimot havolasi', form.pitch_deck],
+          ['Logo havolasi', form.startup_logo],
+          ['Oylik takroriy daromad', form.mrr],
+          ['Jalb qilingan investitsiya', form.investment_raised],
         ]
       : [
           ['Rezidentlik turi', 'Yangi rezidentlikka ariza'],
@@ -204,7 +209,8 @@ export default function ApplyPage() {
           ['Hudud', form.region],
           ['Soha', form.startup_sphere],
           ['Bosqich', form.stage],
-          ['Pitch Deck', form.pitch_deck],
+          ['Taqdimot havolasi', form.pitch_deck],
+          ['Logo havolasi', form.startup_logo],
           ['Rezyume', form.resume_url],
         ];
 
@@ -277,16 +283,16 @@ export default function ApplyPage() {
                 {
                   key: 'new_applicant' as const,
                   icon: <UserPlus size={26} />,
-                  title: 'Endi residentlikka topshirmoqchiman',
-                  description: 'Bu yo\'nalishda savollar, resume va pitch deck to\'ldirasiz. Ariza Yangi Leadlar ro\'yxatiga tushadi.',
+                  title: 'Endi rezidentlikka topshirmoqchiman',
+                  description: 'Bu yo\'nalishda savollar, rezyume va taqdimot havolasini to\'ldirasiz. Ariza yangi nomzodlar ro\'yxatiga tushadi.',
                   color: '#10b981',
                   bg: 'rgba(16,185,129,0.1)',
                 },
                 {
                   key: 'existing_resident' as const,
                   icon: <Building2 size={26} />,
-                  title: 'Men Startup Garage residentiman',
-                  description: 'Siz allaqachon rezident bo\'lsangiz, qisqa so\'rov yuboring. Startup tavsifi, MRR va pitch deck so\'raladi.',
+                  title: 'Men Startup Garage rezidentiman',
+                  description: 'Siz allaqachon rezident bo\'lsangiz, qisqa so\'rov yuboring. Startup tavsifi, daromad va taqdimot havolasi so\'raladi.',
                   color: '#6366f1',
                   bg: 'rgba(99,102,241,0.1)',
                 },
@@ -353,26 +359,32 @@ export default function ApplyPage() {
             </div>
 
             <div>
-              <label className="label">Pitch Deck manzili *</label>
+              <label className="label">Taqdimot havolasi *</label>
               <input value={form.pitch_deck} onChange={(e) => setField('pitch_deck', e.target.value)}
                 className="input" placeholder="https://docs.google.com/..." />
               {errors.pitch_deck && <p className="err">{errors.pitch_deck}</p>}
             </div>
 
+            <div>
+              <label className="label">Logo havolasi</label>
+              <input value={form.startup_logo} onChange={(e) => setField('startup_logo', e.target.value)}
+                className="input" placeholder="https://..." />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="label">MRR ($)</label>
+                <label className="label">Oylik daromad</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-muted)' }}>$</span>
-                  <input type="number" min="0" value={form.mrr}
+                  <input type="number" value={form.mrr}
                     onChange={(e) => setField('mrr', e.target.value)} className="input pl-8" placeholder="0" />
                 </div>
               </div>
               <div>
-                <label className="label">Jalb qilingan investitsiya ($)</label>
+                <label className="label">Jalb qilingan investitsiya</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-muted)' }}>$</span>
-                  <input type="number" min="0" value={form.investment_raised}
+                  <input type="number" value={form.investment_raised}
                     onChange={(e) => setField('investment_raised', e.target.value)} className="input pl-8" placeholder="0" />
                 </div>
               </div>
@@ -380,7 +392,7 @@ export default function ApplyPage() {
 
             <div>
               <label className="label">Foydalanuvchilar soni</label>
-              <input type="number" min="0" value={form.users_count}
+              <input type="number" value={form.users_count}
                 onChange={(e) => setField('users_count', e.target.value)} className="input" placeholder="0" />
             </div>
           </div>
@@ -401,7 +413,7 @@ export default function ApplyPage() {
               <div>
                 <label className="label">Asoschi roli *</label>
                 <input value={form.founder_name} onChange={(e) => setField('founder_name', e.target.value)}
-                  className="input" placeholder="CEO / Asoschi / CTO" />
+                  className="input" placeholder="Asoschi yoki texnik rahbar" />
                 {errors.founder_name && <p className="err">{errors.founder_name}</p>}
               </div>
             </div>
@@ -488,7 +500,7 @@ export default function ApplyPage() {
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="label">Pitch Deck manzili *</label>
+                <label className="label">Taqdimot havolasi *</label>
                 <input value={form.pitch_deck} onChange={(e) => setField('pitch_deck', e.target.value)}
                   className="input" placeholder="https://docs.google.com/..." />
                 {errors.pitch_deck && <p className="err">{errors.pitch_deck}</p>}
@@ -501,28 +513,34 @@ export default function ApplyPage() {
               </div>
             </div>
 
+            <div>
+              <label className="label">Logo havolasi</label>
+              <input value={form.startup_logo} onChange={(e) => setField('startup_logo', e.target.value)}
+                className="input" placeholder="https://..." />
+            </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
                 <label className="label">Jamoa hajmi</label>
-                <input type="number" min="1" value={form.team_size}
+                <input type="number" value={form.team_size}
                   onChange={(e) => setField('team_size', e.target.value)} className="input" />
               </div>
               <div>
-                <label className="label">MRR ($)</label>
+                <label className="label">Oylik daromad</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'var(--text-muted)' }}>$</span>
-                  <input type="number" min="0" value={form.mrr}
+                  <input type="number" value={form.mrr}
                     onChange={(e) => setField('mrr', e.target.value)} className="input pl-7" />
                 </div>
               </div>
               <div>
                 <label className="label">Foydalanuvchilar</label>
-                <input type="number" min="0" value={form.users_count}
+                <input type="number" value={form.users_count}
                   onChange={(e) => setField('users_count', e.target.value)} className="input" />
               </div>
               <div>
-                <label className="label">Investitsiya ($)</label>
-                <input type="number" min="0" value={form.investment_raised}
+                <label className="label">Investitsiya</label>
+                <input type="number" value={form.investment_raised}
                   onChange={(e) => setField('investment_raised', e.target.value)} className="input" />
               </div>
             </div>
@@ -533,7 +551,7 @@ export default function ApplyPage() {
                 <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Startup to'plami</p>
               </div>
               <p className="text-xs leading-5" style={{ color: 'var(--text-muted)' }}>
-                Pitch deck, rezyume va asosiy metrikalarni kiriting. Ariza savollari admin yoki menejer tomonidan alohida ko'rib chiqiladi.
+                Taqdimot, rezyume va asosiy ko‘rsatkichlarni kiriting. Ariza savollari admin yoki menejer tomonidan alohida ko‘rib chiqiladi.
               </p>
             </div>
           </div>

@@ -16,6 +16,7 @@ import {
   Shield,
   ChevronRight,
   Clock,
+  CheckCircle,
   Menu,
   X,
   Star,
@@ -27,12 +28,12 @@ import { useAppStore } from '@/store/appStore';
 import { useState, useEffect, MouseEvent } from 'react';
 import axios from 'axios';
 import { isGtmUnlockedBySprint } from '@/lib/sprint-unlock';
-import { GoogleTranslateSwitcher } from '@/components/GoogleTranslateSwitcher';
 
 type NavKey =
   | 'dashboard'
   | 'sprint'
   | 'gtm'
+  | 'gtmTasks'
   | 'reports'
   | 'meetings'
   | 'myStartup'
@@ -50,6 +51,7 @@ const USER_NAV: { key: NavKey; href: string; icon: React.ReactNode }[] = [
   { key: 'dashboard', href: '/dashboard', icon: <LayoutDashboard size={17} /> },
   { key: 'sprint', href: '/dashboard/sprint', icon: <Target size={17} /> },
   { key: 'gtm', href: '/dashboard/gtm', icon: <Rocket size={17} /> },
+  { key: 'gtmTasks', href: '/dashboard/gtm-tasks', icon: <CheckCircle size={17} /> },
   { key: 'reports', href: '/dashboard/reports', icon: <FileText size={17} /> },
   { key: 'meetings', href: '/dashboard/meetings', icon: <Calendar size={17} /> },
   { key: 'myStartup', href: '/dashboard/startup', icon: <Star size={17} /> },
@@ -73,22 +75,23 @@ const ADMIN_NAV: { key: NavKey; href: string; icon: React.ReactNode }[] = [
   { key: 'superAdmin', href: '/super-admin', icon: <Shield size={17} /> },
 ];
 
-const NAV_LABELS: Record<NavKey, Record<string, string>> = {
-  dashboard: { uz: 'Bosh sahifa', ru: 'Главная', en: 'Dashboard' },
-  sprint: { uz: 'Sprint', ru: 'Спринт', en: 'Sprint' },
-  gtm: { uz: 'GTM', ru: 'GTM', en: 'GTM' },
-  reports: { uz: 'Hisobotlar', ru: 'Отчёты', en: 'Reports' },
-  meetings: { uz: 'Uchrashuvlar', ru: 'Встречи', en: 'Meetings' },
-  myStartup: { uz: 'Startup', ru: 'Стартап', en: 'Startup' },
-  settings: { uz: 'Profil', ru: 'Профиль', en: 'Profile' },
-  managerPanel: { uz: 'Panel', ru: 'Панель', en: 'Panel' },
-  newLeads: { uz: 'Yangi Leadlar', ru: 'Новые лиды', en: 'New Leads' },
-  schedule: { uz: 'Jadval', ru: 'Расписание', en: 'Schedule' },
-  analytics: { uz: 'Analitika', ru: 'Аналитика', en: 'Analytics' },
-  superAdmin: { uz: 'Super Admin', ru: 'Супер Админ', en: 'Super Admin' },
-  gtmManager: { uz: 'GTM CRUD', ru: 'GTM CRUD', en: 'GTM Boshqaruvi' },
-  sprintManager: { uz: 'Sprint CRUD', ru: 'Sprint CRUD', en: 'Sprint Boshqaruvi' },
-  progressTracker: { uz: 'Progress', ru: 'Прогресс', en: 'Progress' },
+const NAV_LABELS: Record<NavKey, string> = {
+  dashboard: 'Bosh sahifa',
+  sprint: 'Sprint',
+  gtm: 'GTM',
+  gtmTasks: 'GTM vazifalari',
+  reports: 'Hisobotlar',
+  meetings: 'Uchrashuvlar',
+  myStartup: 'Startup',
+  settings: 'Profil',
+  managerPanel: 'Panel',
+  newLeads: 'Yangi nomzodlar',
+  schedule: 'Jadval',
+  analytics: 'Tahlillar',
+  superAdmin: 'Bosh admin',
+  gtmManager: 'GTM boshqaruvi',
+  sprintManager: 'Sprint boshqaruvi',
+  progressTracker: 'Natijalar',
 };
 
 const APPLY_ALLOWED = new Set(['/dashboard', '/dashboard/apply']);
@@ -98,7 +101,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const role = (session?.user as any)?.role || 'user';
-  const { lang, theme, sidebarOpen, toggleSidebar, _hydrated } = useAppStore();
+  const { theme, sidebarOpen, toggleSidebar, _hydrated } = useAppStore();
 
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -146,7 +149,7 @@ export default function Sidebar() {
   const handleMouseLeave = () => { if (!isMobile && sidebarOpen) toggleSidebar(); };
   const userImage = session?.user?.image;
 
-  const label = (key: NavKey) => NAV_LABELS[key]?.[lang] ?? NAV_LABELS[key]?.en ?? key;
+  const label = (key: NavKey) => NAV_LABELS[key] ?? key;
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard';
@@ -161,10 +164,11 @@ export default function Sidebar() {
   };
 
   const isGtmSoftLocked = (item: { key: NavKey; href: string }) =>
-    role === 'user' && item.key === 'gtm' && startupStatus === 'active' && !gtmUnlocked;
+    role === 'user' && (item.key === 'gtm' || item.key === 'gtmTasks') && startupStatus === 'active' && !gtmUnlocked;
 
   const handleBlockedNav = (event: MouseEvent<HTMLAnchorElement>, item: { key: NavKey; href: string }) => {
     if (shouldPromptResidency(item)) {
+      if (pathname !== '/dashboard') return;
       event.preventDefault();
       setShowApplyPrompt(true);
     }
@@ -175,7 +179,7 @@ export default function Sidebar() {
     const gtmLocked = isGtmSoftLocked(item);
 
     return (
-      <Link href={blocked ? pathname || '/dashboard' : item.href} onClick={(event) => handleBlockedNav(event, item)}>
+      <Link href={blocked ? '/dashboard' : item.href} onClick={(event) => handleBlockedNav(event, item)}>
         <div
           className={`sidebar-link ${isActive(item.href) ? 'active' : ''}`}
           style={{
@@ -327,7 +331,7 @@ export default function Sidebar() {
                     {session?.user?.name}
                   </p>
                   <p className="text-[11px] truncate capitalize" style={{ color: theme === 'light' ? 'rgba(15,23,42,0.52)' : 'rgba(226,232,240,0.58)' }}>
-                    {role?.replace('_', ' ')}
+                    {role === 'super_admin' ? 'bosh admin' : role === 'manager' ? 'menejer' : 'foydalanuvchi'}
                   </p>
                 </div>
               )}

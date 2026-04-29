@@ -27,25 +27,25 @@ export default function SchedulesPage() {
   useEffect(() => { load(); }, [load]);
 
   const deleteMeeting = async (id: string) => {
-    if (!confirm('Delete this meeting?')) return;
+    if (!confirm('Bu uchrashuv o‘chirilsinmi?')) return;
     try {
       await axios.delete(`/api/meetings/${id}`);
-      toast.success('Deleted');
+      toast.success('O‘chirildi');
       setSelectedMeeting(null);
       load();
-    } catch { toast.error('Failed'); }
+    } catch { toast.error('Xatolik yuz berdi'); }
   };
 
   const createSlot = async () => {
-    if (!newSlot.title || !newSlot.scheduledAt) { toast.error('Fill all fields'); return; }
+    if (!newSlot.title || !newSlot.scheduledAt) { toast.error('Barcha maydonlarni to‘ldiring'); return; }
     setCreating(true);
     try {
       await axios.post('/api/meetings', { ...newSlot, scheduledAt: new Date(newSlot.scheduledAt).toISOString() });
-      toast.success('Slot created!');
+      toast.success('Vaqt qo‘shildi');
       setCreateModal(false);
       setNewSlot({ title: '', scheduledAt: '', duration: 30 });
       load();
-    } catch (err: any) { toast.error(err.response?.data?.error || 'Failed'); }
+    } catch (err: any) { toast.error(err.response?.data?.error || 'Xatolik yuz berdi'); }
     finally { setCreating(false); }
   };
 
@@ -82,16 +82,16 @@ export default function SchedulesPage() {
 
   return (
     <div className="animate-fade-in">
-      <Header title="Calendar & Schedules" subtitle="Manage all meetings in one place" />
+      <Header title="Kalendar va uchrashuvlar" subtitle="Barcha uchrashuvlarni bir joyda boshqaring" />
       <div className="p-6 space-y-6">
 
         {/* Stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Upcoming', value: upcoming.length,                                   color: '#6366f1' },
-            { label: 'Available Slots', value: meetings.filter(m => m.status === 'available').length, color: '#10b981' },
-            { label: 'Completed', value: meetings.filter(m => m.status === 'completed').length,        color: '#64748b' },
-            { label: 'Total', value: meetings.length,                                      color: '#f59e0b' },
+            { label: 'Kelgusi', value: upcoming.length,                                   color: '#6366f1' },
+            { label: 'Bo‘sh vaqtlar', value: meetings.filter(m => m.status === 'available').length, color: '#10b981' },
+            { label: 'Yakunlangan', value: meetings.filter(m => m.status === 'completed').length,        color: '#64748b' },
+            { label: 'Jami', value: meetings.length,                                      color: '#f59e0b' },
           ].map(s => (
             <div key={s.label} className="card py-4 text-center">
               <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
@@ -126,18 +126,18 @@ export default function SchedulesPage() {
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#6366f1' }} />Booked</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#10b981' }} />Available</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#6366f1' }} />Band</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#10b981' }} />Bo‘sh</span>
                 </div>
                 <button onClick={() => setCreateModal(true)} className="btn-primary flex items-center gap-1.5 text-xs">
-                  <Plus size={13} /> Add Slot
+                  <Plus size={13} /> Vaqt qo‘shish
                 </button>
               </div>
             </div>
 
             {/* Day headers */}
             <div className="grid grid-cols-7 mb-2">
-              {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
+              {['Du','Se','Ch','Pa','Ju','Sh','Ya'].map(d => (
                 <div key={d} className="text-center text-xs font-semibold py-2"
                   style={{ color: 'var(--text-muted)' }}>{d}</div>
               ))}
@@ -203,7 +203,7 @@ export default function SchedulesPage() {
                           className="text-xs px-1.5"
                           style={{ color: 'var(--text-muted)' }}
                         >
-                          +{dayMeetings.length - 2} more
+                          +{dayMeetings.length - 2} ta yana
                         </button>
                       )}
                     </div>
@@ -218,10 +218,10 @@ export default function SchedulesPage() {
             {/* Upcoming */}
             <div className="card">
               <h3 className="font-semibold mb-3 text-sm" style={{ color: 'var(--text-primary)' }}>
-                Upcoming ({upcoming.length})
+                Kelgusi ({upcoming.length})
               </h3>
               {upcoming.length === 0 ? (
-                <p className="text-xs text-center py-4" style={{ color: 'var(--text-muted)' }}>No upcoming meetings</p>
+                <p className="text-xs text-center py-4" style={{ color: 'var(--text-muted)' }}>Kelgusi uchrashuv yo‘q</p>
               ) : (
                 <div className="space-y-2">
                   {upcoming.slice(0, 6).map(m => (
@@ -250,9 +250,9 @@ export default function SchedulesPage() {
 
             {/* Past meetings */}
             <div className="card">
-              <h3 className="font-semibold mb-3 text-sm" style={{ color: 'var(--text-primary)' }}>Recent Past</h3>
+              <h3 className="font-semibold mb-3 text-sm" style={{ color: 'var(--text-primary)' }}>So‘nggi o‘tganlar</h3>
               {past.length === 0 ? (
-                <p className="text-xs text-center py-4" style={{ color: 'var(--text-muted)' }}>No past meetings</p>
+                <p className="text-xs text-center py-4" style={{ color: 'var(--text-muted)' }}>O‘tgan uchrashuv yo‘q</p>
               ) : (
                 <div className="space-y-2">
                   {past.slice(0, 4).map(m => (
@@ -266,7 +266,7 @@ export default function SchedulesPage() {
                       </div>
                       <span className="text-xs px-2 py-0.5 rounded-full"
                         style={{ background: 'rgba(100,116,139,0.15)', color: '#64748b' }}>
-                        past
+                        o‘tgan
                       </span>
                     </div>
                   ))}
@@ -277,7 +277,7 @@ export default function SchedulesPage() {
         </div>
       </div>
 
-      {/* ── MEETING DETAIL MODAL ── */}
+      {/* Uchrashuv tafsiloti oynasi */}
       {selectedMeeting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
@@ -333,7 +333,7 @@ export default function SchedulesPage() {
               {/* Topic */}
               {selectedMeeting.topic && (
                 <div className="p-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                  <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Meeting Topic</p>
+                  <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Uchrashuv mavzusi</p>
                   <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{selectedMeeting.topic}</p>
                 </div>
               )}
@@ -344,7 +344,7 @@ export default function SchedulesPage() {
                   <>
                     <MapPin size={14} style={{ color: '#f59e0b' }} />
                     <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      Offline — {selectedMeeting.officeAddress || 'Office'}
+                      Oflayn — {selectedMeeting.officeAddress || 'Ofis'}
                     </span>
                   </>
                 ) : (
@@ -364,7 +364,7 @@ export default function SchedulesPage() {
               {selectedMeeting.meetingType === 'online' && selectedMeeting.status === 'booked' && (
                 <a href={selectedMeeting.meetLink} target="_blank" rel="noreferrer" className="flex-1">
                   <button className="btn-primary w-full flex items-center justify-center gap-2">
-                    <Video size={14} /> Open Meeting Link
+                    <Video size={14} /> Uchrashuv havolasini ochish
                   </button>
                 </a>
               )}
@@ -374,33 +374,33 @@ export default function SchedulesPage() {
                 style={{ flex: selectedMeeting.status === 'booked' ? '0 0 auto' : 1 }}
               >
                 <Trash2 size={14} />
-                {selectedMeeting.status !== 'booked' && 'Delete'}
+                {selectedMeeting.status !== 'booked' && 'O‘chirish'}
               </button>
-              <button onClick={() => setSelectedMeeting(null)} className="btn-secondary flex-1">Close</button>
+              <button onClick={() => setSelectedMeeting(null)} className="btn-secondary flex-1">Yopish</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Create slot modal */}
+      {/* Vaqt qo‘shish oynasi */}
       {createModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
           <div className="card p-8 w-full max-w-md animate-fade-in">
-            <h3 className="font-semibold text-lg mb-6" style={{ color: 'var(--text-primary)' }}>Add Manual Slot</h3>
+            <h3 className="font-semibold text-lg mb-6" style={{ color: 'var(--text-primary)' }}>Vaqtni qo‘lda qo‘shish</h3>
             <div className="space-y-4">
               <div>
-                <label className="label">Title</label>
+                <label className="label">Sarlavha</label>
                 <input value={newSlot.title} onChange={e => setNewSlot(p => ({ ...p, title: e.target.value }))}
-                  className="input" placeholder="e.g. Office Hours" />
+                  className="input" placeholder="Masalan: maslahat vaqti" />
               </div>
               <div>
-                <label className="label">Date & Time</label>
+                <label className="label">Sana va vaqt</label>
                 <input type="datetime-local" value={newSlot.scheduledAt}
                   onChange={e => setNewSlot(p => ({ ...p, scheduledAt: e.target.value }))} className="input" />
               </div>
               <div>
-                <label className="label">Duration</label>
+                <label className="label">Davomiylik</label>
                 <select value={newSlot.duration} onChange={e => setNewSlot(p => ({ ...p, duration: Number(e.target.value) }))} className="input">
                   <option value={15}>15 min</option>
                   <option value={30}>30 min</option>
@@ -410,9 +410,9 @@ export default function SchedulesPage() {
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setCreateModal(false)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={() => setCreateModal(false)} className="btn-secondary flex-1">Bekor qilish</button>
               <button onClick={createSlot} disabled={creating} className="btn-primary flex-1 flex items-center justify-center gap-2">
-                {creating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Create'}
+                {creating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Yaratish'}
               </button>
             </div>
           </div>

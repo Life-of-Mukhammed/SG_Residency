@@ -58,49 +58,49 @@ export default function SprintPage() {
   const L = {
     title: { uz: 'Sprint', ru: 'Спринт', en: 'Sprint' },
     subtitle: {
-      uz: 'Admin yoki manager qo‘shgan sprint vazifalari',
-      ru: 'Спринт-задачи, добавленные админом или менеджером',
-      en: 'Sprint tasks added by admin or manager',
+      uz: 'Admin yoki menejer qo‘shgan sprint vazifalari',
+      ru: 'Admin yoki menejer qo‘shgan sprint vazifalari',
+      en: 'Admin yoki menejer qo‘shgan sprint vazifalari',
     },
-    overall: { uz: 'Umumiy progress', ru: 'Общий прогресс', en: 'Overall Progress' },
-    completed: { uz: 'ta bajarildi', ru: 'выполнено', en: 'completed' },
-    commentTitle: { uz: 'Vazifani yakunlash', ru: 'Завершить задачу', en: 'Complete Task' },
+    overall: { uz: 'Umumiy natijalar', ru: 'Umumiy natijalar', en: 'Umumiy natijalar' },
+    completed: { uz: 'ta bajarildi', ru: 'ta bajarildi', en: 'ta bajarildi' },
+    commentTitle: { uz: 'Vazifani yakunlash', ru: 'Vazifani yakunlash', en: 'Vazifani yakunlash' },
     commentSub: {
-      uz: 'Nima qildingiz? (majburiy)',
-      ru: 'Что сделали? (обязательно)',
-      en: 'What did you do? (required)',
+      uz: 'Vazifa bo‘yicha nima qilganingizni yozing',
+      ru: 'Vazifa bo‘yicha nima qilganingizni yozing',
+      en: 'Vazifa bo‘yicha nima qilganingizni yozing',
     },
     commentPh: {
-      uz: 'Masalan: landing page tayyor bo‘ldi, intervyular o‘tkazildi...',
-      ru: 'Например: лендинг готов, интервью проведены...',
-      en: 'Example: landing page done, interviews completed...',
+      uz: 'Masalan: sahifa tayyorlandi, suhbatlar o‘tkazildi...',
+      ru: 'Masalan: sahifa tayyorlandi, suhbatlar o‘tkazildi...',
+      en: 'Masalan: sahifa tayyorlandi, suhbatlar o‘tkazildi...',
     },
-    cancel: { uz: 'Bekor qilish', ru: 'Отмена', en: 'Cancel' },
-    complete: { uz: 'Yakunlash', ru: 'Завершить', en: 'Complete' },
-    custom: { uz: 'Custom', ru: 'Custom', en: 'Custom' },
-    reviewed: { uz: 'Admin ko‘rdi', ru: 'Проверено админом', en: 'Reviewed by admin' },
-    pendingReview: { uz: 'Admin ko‘rib chiqadi', ru: 'Ожидает проверки', en: 'Waiting for admin review' },
-    quarter: { uz: 'Chorak', ru: 'Квартал', en: 'Quarter' },
-    month: { uz: 'Oy', ru: 'Месяц', en: 'Month' },
+    cancel: { uz: 'Bekor qilish', ru: 'Bekor qilish', en: 'Bekor qilish' },
+    complete: { uz: 'Yakunlash', ru: 'Yakunlash', en: 'Yakunlash' },
+    custom: { uz: 'Vazifa', ru: 'Vazifa', en: 'Vazifa' },
+    reviewed: { uz: 'Admin ko‘rdi', ru: 'Admin ko‘rdi', en: 'Admin ko‘rdi' },
+    pendingReview: { uz: 'Admin ko‘rib chiqadi', ru: 'Admin ko‘rib chiqadi', en: 'Admin ko‘rib chiqadi' },
+    quarter: { uz: 'Chorak', ru: 'Chorak', en: 'Chorak' },
+    month: { uz: 'Oy', ru: 'Oy', en: 'Oy' },
     emptyTitle: {
       uz: 'Hozircha sprint task yo‘q',
-      ru: 'Пока нет задач спринта',
-      en: 'No sprint tasks yet',
+      ru: 'Hozircha sprint vazifasi yo‘q',
+      en: 'Hozircha sprint vazifasi yo‘q',
     },
     emptyText: {
-      uz: 'Admin yoki manager yangi sprint task qo‘shganda shu yerda chiqadi.',
-      ru: 'Когда админ или менеджер добавит задачи, они появятся здесь.',
-      en: 'Tasks will appear here when admin or manager adds them.',
+      uz: 'Admin yoki menejer yangi sprint vazifasi qo‘shganda shu yerda chiqadi.',
+      ru: 'Admin yoki menejer yangi sprint vazifasi qo‘shganda shu yerda chiqadi.',
+      en: 'Admin yoki menejer yangi sprint vazifasi qo‘shganda shu yerda chiqadi.',
     },
     lockedTitle: {
       uz: 'Sprint hozircha yopiq',
-      ru: 'Спринт пока закрыт',
-      en: 'Sprint is locked',
+      ru: 'Sprint hozircha yopiq',
+      en: 'Sprint hozircha yopiq',
     },
     lockedText: {
-      uz: 'Residency arizangiz tasdiqlangandan keyin sprint ochiladi.',
-      ru: 'Спринт откроется после одобрения вашей residency заявки.',
-      en: 'Sprint opens after your residency application is approved.',
+      uz: 'Rezidentlik arizangiz tasdiqlangandan keyin sprint ochiladi.',
+      ru: 'Rezidentlik arizangiz tasdiqlangandan keyin sprint ochiladi.',
+      en: 'Rezidentlik arizangiz tasdiqlangandan keyin sprint ochiladi.',
     },
   };
 
@@ -195,15 +195,15 @@ export default function SprintPage() {
     try {
       const res = await axios.post('/api/sprints', { taskId, quarter, month, completed, comment: cmt });
       setProgress((prev) => ({ ...prev, [taskId]: { completed, comment: cmt } }));
-      if (completed) toast.success('Task marked as completed');
+      if (completed) toast.success('Vazifa bajarildi');
     } catch (error: any) {
       const serverError = error.response?.data?.error;
       toast.error(
         serverError === 'comment_required'
           ? t('commentSub')
           : serverError === 'task_locked'
-            ? 'This task is already completed and cannot be changed.'
-            : 'Error'
+            ? 'Bu vazifa bajarilgan, uni o‘zgartirib bo‘lmaydi.'
+            : 'Xatolik yuz berdi'
       );
     } finally {
       setSaving(null);
@@ -255,7 +255,7 @@ export default function SprintPage() {
               {t('lockedTitle')}
             </p>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              Submit your residency application to start tracking sprint progress.
+              Sprint natijalarini kuzatish uchun rezidentlik arizasini yuboring.
             </p>
           </div>
         </div>
@@ -423,7 +423,7 @@ export default function SprintPage() {
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
                                           <p
-                                            className={`text-sm font-medium ${done ? 'line-through' : ''}`}
+                                            className={`text-lg font-bold leading-6 ${done ? 'line-through' : ''}`}
                                             style={{
                                               color: done ? 'var(--text-muted)' : 'var(--text-primary)',
                                             }}
@@ -443,7 +443,7 @@ export default function SprintPage() {
                                         </div>
 
                                         {task.description && (
-                                          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                                          <p className="text-sm mt-1.5 leading-6" style={{ color: 'var(--text-muted)' }}>
                                             {task.description}
                                           </p>
                                         )}
@@ -465,7 +465,7 @@ export default function SprintPage() {
                                             }}
                                           >
                                             <CheckCircle size={11} />
-                                            {reviewed ? t('reviewed') : 'Completed'}
+                                            {reviewed ? t('reviewed') : t('pendingReview')}
                                           </div>
                                         )}
                                       </div>

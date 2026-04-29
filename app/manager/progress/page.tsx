@@ -5,7 +5,6 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
 import { CheckCircle, Clock, TrendingUp, MessageSquare, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
-import { format } from 'date-fns';
 import { useAppStore } from '@/store/appStore';
 
 interface ProgressData {
@@ -25,17 +24,17 @@ export default function ProgressPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const labels = {
-    title:       { uz: "Founder Progress",     ru: "Прогресс стартапов",    en: "Founder Progress"    },
-    subtitle:    { uz: "Jami sprint tasklarga nisbatan founder progress", ru: "Прогресс фаундеров относительно всех sprint задач", en: "Founder progress against all sprint tasks" },
-    noData:      { uz: "Aktiv startaplar yo'q", ru: "Нет активных стартапов", en: "No active startups" },
-    completed:   { uz: "Bajarildi",             ru: "Выполнено",              en: "Completed"          },
-    progress:    { uz: "Jarayon",               ru: "Прогресс",               en: "Progress"           },
-    lastTask:    { uz: "Oxirgi vazifa",          ru: "Последняя задача",       en: "Last task"          },
-    comment:     { uz: "Kommentariya",           ru: "Комментарий",            en: "Comment"            },
-    recentTasks: { uz: "So'nggi vazifalar",      ru: "Недавние задачи",        en: "Recent tasks"       },
-    review:      { uz: "Ko'rildi deb belgilash", ru: "Отметить просмотренным", en: "Mark as reviewed"  },
-    reviewed:    { uz: "Ko'rildi",               ru: "Проверено",              en: "Reviewed"           },
-    reviewSaved: { uz: "Tasdiqlandi",            ru: "Подтверждено",           en: "Confirmed"          },
+    title:       { uz: "Asoschilar natijasi",     ru: "Asoschilar natijasi",    en: "Asoschilar natijasi"    },
+    subtitle:    { uz: "Jami sprint vazifalariga nisbatan asoschilar natijasi", ru: "Jami sprint vazifalariga nisbatan asoschilar natijasi", en: "Jami sprint vazifalariga nisbatan asoschilar natijasi" },
+    noData:      { uz: "Faol startaplar yo'q", ru: "Faol startaplar yo'q", en: "Faol startaplar yo'q" },
+    completed:   { uz: "Bajarildi",             ru: "Bajarildi",              en: "Bajarildi"          },
+    progress:    { uz: "Jarayon",               ru: "Jarayon",               en: "Jarayon"           },
+    lastTask:    { uz: "Oxirgi vazifa",          ru: "Oxirgi vazifa",       en: "Oxirgi vazifa"          },
+    comment:     { uz: "Izoh",           ru: "Izoh",            en: "Izoh"            },
+    recentTasks: { uz: "So'nggi vazifalar",      ru: "So'nggi vazifalar",        en: "So'nggi vazifalar"       },
+    review:      { uz: "Ko'rildi deb belgilash", ru: "Ko'rildi deb belgilash", en: "Ko'rildi deb belgilash"  },
+    reviewed:    { uz: "Ko'rildi",               ru: "Ko'rildi",              en: "Ko'rildi"           },
+    reviewSaved: { uz: "Tasdiqlandi",            ru: "Tasdiqlandi",           en: "Tasdiqlandi"          },
   };
   const l = (k: keyof typeof labels) => labels[k][lang] ?? labels[k].en;
 
@@ -57,7 +56,7 @@ export default function ProgressPage() {
       await load();
     } catch (error) {
       console.error(error);
-      toast.error('Failed');
+      toast.error('Xatolik yuz berdi');
     }
   };
 
@@ -77,14 +76,14 @@ export default function ProgressPage() {
         {/* Summary bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: lang === 'uz' ? 'Jami founderlar' : lang === 'ru' ? 'Всего фаундеров' : 'Total Founders',
+            { label: 'Jami asoschilar',
               value: data.length, color: '#6366f1' },
-            { label: lang === 'uz' ? 'Aktiv' : lang === 'ru' ? 'Активных' : 'Active',
+            { label: 'Faol',
               value: data.filter(d => d.pct > 0).length, color: '#10b981' },
-            { label: lang === 'uz' ? "O'rtacha progress" : lang === 'ru' ? 'Средний прогресс' : 'Avg Progress',
+            { label: "O'rtacha natija",
               value: data.length > 0 ? `${Math.round(data.reduce((s, d) => s + d.pct, 0) / data.length)}%` : '0%',
               color: '#f59e0b' },
-            { label: lang === 'uz' ? 'Jami bajarildi' : lang === 'ru' ? 'Всего выполнено' : 'Total Completed',
+            { label: 'Jami bajarildi',
               value: data.reduce((s, d) => s + d.completed, 0), color: '#ec4899' },
           ].map(s => (
             <div key={s.label} className="card text-center py-3">
@@ -97,7 +96,7 @@ export default function ProgressPage() {
         {/* Refresh */}
         <div className="flex justify-end">
           <button onClick={load} className="btn-secondary flex items-center gap-2 text-sm">
-            <RefreshCw size={13}/> {lang === 'uz' ? 'Yangilash' : lang === 'ru' ? 'Обновить' : 'Refresh'}
+            <RefreshCw size={13}/> Yangilash
           </button>
         </div>
 
@@ -200,7 +199,7 @@ export default function ProgressPage() {
                               {l('lastTask')}
                             </p>
                             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                              {d.lastActivity.completedAt ? format(new Date(d.lastActivity.completedAt), 'MMM d, HH:mm') : ''}
+                              {d.lastActivity.completedAt ? new Date(d.lastActivity.completedAt).toLocaleString('uz') : ''}
                             </span>
                           </div>
                           <p className="text-xs font-mono mb-2" style={{ color: 'var(--accent)' }}>
@@ -219,15 +218,15 @@ export default function ProgressPage() {
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div className="p-4 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                          <p className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>Total Sprint Tasks</p>
+                          <p className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>Jami sprint vazifalari</p>
                           <p className="text-2xl font-bold mt-2" style={{ color: 'var(--text-primary)' }}>{d.totalTasks}</p>
                         </div>
                         <div className="p-4 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                          <p className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>Completed</p>
+                          <p className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>Bajarildi</p>
                           <p className="text-2xl font-bold mt-2" style={{ color: '#10b981' }}>{d.completed}</p>
                         </div>
                         <div className="p-4 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                          <p className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>Completion</p>
+                          <p className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>Yakunlanish</p>
                           <p className="text-2xl font-bold mt-2" style={{ color: 'var(--accent)' }}>{d.pct}%</p>
                         </div>
                       </div>
@@ -269,7 +268,7 @@ export default function ProgressPage() {
                                 </div>
                                 <div className="flex flex-col items-end gap-2 flex-shrink-0">
                                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                                    {t.completedAt ? format(new Date(t.completedAt), 'MMM d') : ''}
+                                    {t.completedAt ? new Date(t.completedAt).toLocaleDateString('uz') : ''}
                                   </span>
                                   {!t.reviewed && (
                                     <button

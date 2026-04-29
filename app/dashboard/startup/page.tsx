@@ -9,7 +9,6 @@ import {
   Rocket, Globe, Users, DollarSign, Phone, MessageCircle,
   FileText, TrendingUp, Edit2, X, Save, Bell, ArrowRight
 } from 'lucide-react';
-import { format } from 'date-fns';
 import { DEFAULT_STARTUP_SPHERE, STARTUP_SPHERES } from '@/lib/startup-spheres';
 
 type StartupForm = {
@@ -73,11 +72,11 @@ export default function MyStartupPage() {
         investment_raised: Number(form.investment_raised),
         team_size: Number(form.team_size),
       });
-      toast.success('Startup updated');
+      toast.success('Startup yangilandi');
       setEditing(false);
       await loadStartup();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Update failed');
+      toast.error(error.response?.data?.error || 'Yangilab bo‘lmadi');
     } finally {
       setSaving(false);
     }
@@ -85,7 +84,7 @@ export default function MyStartupPage() {
 
   if (loading) return (
     <div>
-      <Header title="My Startup" />
+      <Header title="Mening startupim" />
       <div className="p-8 space-y-4 max-w-3xl mx-auto">
         {Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton h-32 rounded-2xl" />)}
       </div>
@@ -94,7 +93,7 @@ export default function MyStartupPage() {
 
   if (!startup) return (
     <div className="animate-fade-in">
-      <Header title="My Startup" subtitle="No application submitted yet" />
+      <Header title="Mening startupim" subtitle="Hali ariza yuborilmagan" />
       <div className="p-8 max-w-2xl mx-auto">
         <div className="card text-center py-16">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
@@ -102,14 +101,14 @@ export default function MyStartupPage() {
             <Rocket size={28} style={{ color: 'var(--accent)' }} />
           </div>
           <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-            No startup yet
+            Hali startup yo‘q
           </h2>
           <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-            Apply to the residency program to get started
+            Boshlash uchun rezidentlik dasturiga ariza yuboring
           </p>
           <Link href="/dashboard/apply">
             <button className="btn-primary flex items-center gap-2 mx-auto">
-              <Rocket size={16} /> Apply Now <ArrowRight size={16} />
+              <Rocket size={16} /> Ariza yuborish <ArrowRight size={16} />
             </button>
           </Link>
         </div>
@@ -118,10 +117,10 @@ export default function MyStartupPage() {
   );
 
   const metrics = [
-    { label: 'MRR', value: `$${startup.mrr?.toLocaleString() ?? 0}`, icon: <DollarSign size={18} />, color: '#10b981', noTranslate: true },
-    { label: 'Users', value: startup.users_count?.toLocaleString() ?? '0', icon: <Users size={18} />, color: '#6366f1' },
-    { label: 'Investment Raised', value: `$${startup.investment_raised?.toLocaleString() ?? 0}`, icon: <TrendingUp size={18} />, color: '#f59e0b', noTranslate: true },
-    { label: 'Team Size', value: startup.team_size ?? '—', icon: <Users size={18} />, color: '#ec4899' },
+    { label: 'Oylik daromad', value: `$${startup.mrr?.toLocaleString() ?? 0}`, icon: <DollarSign size={18} />, color: '#10b981', noTranslate: true },
+    { label: 'Foydalanuvchilar', value: startup.users_count?.toLocaleString() ?? '0', icon: <Users size={18} />, color: '#6366f1' },
+    { label: 'Investitsiya', value: `$${startup.investment_raised?.toLocaleString() ?? 0}`, icon: <TrendingUp size={18} />, color: '#f59e0b', noTranslate: true },
+    { label: 'Jamoa hajmi', value: startup.team_size ?? '—', icon: <Users size={18} />, color: '#ec4899' },
   ];
 
   return (
@@ -148,7 +147,7 @@ export default function MyStartupPage() {
                   style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}
                 >
                   <p className="text-xs uppercase tracking-[0.24em] mb-2" style={{ color: '#ef4444' }}>
-                    Rejection Reason
+                    Rad etish sababi
                   </p>
                   <p className="text-sm leading-6" style={{ color: 'var(--text-primary)' }}>
                     {startup.rejectionReason}
@@ -171,13 +170,13 @@ export default function MyStartupPage() {
                 {startup.pitch_deck && (
                   <a href={startup.pitch_deck} target="_blank" rel="noreferrer"
                     className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--accent)' }}>
-                    <FileText size={13} /> Pitch Deck
+                    <FileText size={13} /> Taqdimot
                   </a>
                 )}
               </div>
             </div>
             <button onClick={() => setEditing(true)} className="btn-secondary flex items-center gap-2">
-              <Edit2 size={14} /> Edit
+              <Edit2 size={14} /> Tahrirlash
             </button>
           </div>
         </div>
@@ -201,26 +200,26 @@ export default function MyStartupPage() {
               <Bell size={20} style={{ color: 'var(--accent)' }} />
             </div>
             <div className="flex-1">
-              <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Notifications and reminders</p>
+              <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Bildirishnomalar va eslatmalar</p>
               <p className="text-sm mt-2 leading-6" style={{ color: 'var(--text-secondary)' }}>
-                Meeting reminders, approval updates and workspace changes now go to the website, email, and Telegram bot after you connect it in profile settings.
+                Uchrashuv eslatmalari, tasdiq yangiliklari va ish muhiti o‘zgarishlari sayt, pochta va profilingizda ulaganingizdan keyin Telegram bot orqali yuboriladi.
               </p>
             </div>
           </div>
         </div>
 
         <div className="card">
-          <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Startup Details</h3>
+          <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Startup tafsilotlari</h3>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: 'Your role', value: startup.founder_name, noTranslate: true },
-              { label: 'Region', value: startup.region },
-              { label: 'Sphere', value: startup.startup_sphere },
-              { label: 'Stage', value: startup.stage },
-              { label: 'Commitment', value: startup.commitment },
-              { label: 'Team Size', value: `${startup.team_size} people` },
-              { label: 'Applied', value: format(new Date(startup.createdAt), 'MMM d, yyyy') },
-              { label: 'Status', value: startup.status },
+              { label: 'Roli', value: startup.founder_name, noTranslate: true },
+              { label: 'Hudud', value: startup.region },
+              { label: 'Soha', value: startup.startup_sphere },
+              { label: 'Bosqich', value: startup.stage },
+              { label: 'Bandlik', value: startup.commitment },
+              { label: 'Jamoa hajmi', value: `${startup.team_size} kishi` },
+              { label: 'Ariza sanasi', value: new Date(startup.createdAt).toLocaleDateString('uz') },
+              { label: 'Holat', value: startup.status },
             ].map(({ label, value, noTranslate }) => (
               <div key={label} className="p-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
                 <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
@@ -236,7 +235,7 @@ export default function MyStartupPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)' }}>
           <div className="card w-full max-w-2xl p-8">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Edit Startup</h3>
+              <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Startupni tahrirlash</h3>
               <button onClick={() => setEditing(false)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                 <X size={16} />
               </button>
@@ -244,44 +243,44 @@ export default function MyStartupPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="label">Startup Name</label>
+                <label className="label">Startup nomi</label>
                 <input value={form.startup_name} onChange={(e) => setForm((prev) => ({ ...prev, startup_name: e.target.value }))} className="input" />
               </div>
               <div className="md:col-span-2">
-                <label className="label">Pitch Deck URL</label>
+                <label className="label">Taqdimot havolasi</label>
                 <input value={form.pitch_deck} onChange={(e) => setForm((prev) => ({ ...prev, pitch_deck: e.target.value }))} className="input notranslate" translate="no" />
               </div>
               <div className="md:col-span-2">
-                <label className="label">Startup Sphere</label>
+                <label className="label">Startup sohasi</label>
                 <select value={form.startup_sphere} onChange={(e) => setForm((prev) => ({ ...prev, startup_sphere: e.target.value }))} className="input">
                   {STARTUP_SPHERES.map((sphere) => <option key={sphere} value={sphere}>{sphere}</option>)}
                 </select>
               </div>
               <div>
-                <label className="label">MRR ($)</label>
+                <label className="label">Oylik daromad</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-muted)' }}>$</span>
-                  <input type="number" min="0" value={form.mrr} onChange={(e) => setForm((prev) => ({ ...prev, mrr: e.target.value }))} className="input pl-8 notranslate" translate="no" />
+                  <input type="number" value={form.mrr} onChange={(e) => setForm((prev) => ({ ...prev, mrr: e.target.value }))} className="input pl-8 notranslate" translate="no" />
                 </div>
               </div>
               <div>
-                <label className="label">Users</label>
-                <input type="number" min="0" value={form.users_count} onChange={(e) => setForm((prev) => ({ ...prev, users_count: e.target.value }))} className="input notranslate" translate="no" />
+                <label className="label">Foydalanuvchilar</label>
+                <input type="number" value={form.users_count} onChange={(e) => setForm((prev) => ({ ...prev, users_count: e.target.value }))} className="input notranslate" translate="no" />
               </div>
               <div>
-                <label className="label">Investment Raised</label>
-                <input type="number" min="0" value={form.investment_raised} onChange={(e) => setForm((prev) => ({ ...prev, investment_raised: e.target.value }))} className="input notranslate" translate="no" />
+                <label className="label">Investitsiya</label>
+                <input type="number" value={form.investment_raised} onChange={(e) => setForm((prev) => ({ ...prev, investment_raised: e.target.value }))} className="input notranslate" translate="no" />
               </div>
               <div>
-                <label className="label">Team Size</label>
-                <input type="number" min="1" value={form.team_size} onChange={(e) => setForm((prev) => ({ ...prev, team_size: e.target.value }))} className="input notranslate" translate="no" />
+                <label className="label">Jamoa hajmi</label>
+                <input type="number" value={form.team_size} onChange={(e) => setForm((prev) => ({ ...prev, team_size: e.target.value }))} className="input notranslate" translate="no" />
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setEditing(false)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={() => setEditing(false)} className="btn-secondary flex-1">Bekor qilish</button>
               <button onClick={save} disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
-                {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Save size={15} /> Save</>}
+                {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Save size={15} /> Saqlash</>}
               </button>
             </div>
           </div>

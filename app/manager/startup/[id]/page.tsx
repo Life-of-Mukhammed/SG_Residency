@@ -7,7 +7,6 @@ import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
 import Link from 'next/link';
 import { ArrowLeft, Globe, Users, DollarSign, Phone, MessageCircle, FileText, Calendar, CheckCircle, XCircle, Clock, Edit2 } from 'lucide-react';
-import { format } from 'date-fns';
 
 export default function StartupDetailPage() {
   const { id } = useParams();
@@ -66,9 +65,9 @@ export default function StartupDetailPage() {
       const res = await axios.patch(`/api/startups/${id}`, editForm);
       setStartup(res.data.startup);
       setEditModal(false);
-      toast.success('Startup updated');
+      toast.success('Startup yangilandi');
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to save');
+      toast.error(err.response?.data?.error || 'Saqlab bo‘lmadi');
     } finally {
       setSaving(false);
     }
@@ -77,27 +76,27 @@ export default function StartupDetailPage() {
   const reviewReport = async (reportId: string, status: 'accepted' | 'rejected', reason?: string) => {
     try {
       await axios.patch(`/api/reports/${reportId}`, { status, rejectionReason: reason });
-      toast.success(`Report ${status}`);
+      toast.success(status === 'accepted' ? 'Hisobot qabul qilindi' : 'Hisobot rad etildi');
       setRejectModal(null);
       setRejectReason('');
       const rRes = await axios.get('/api/reports');
       setReports((rRes.data.reports || []).filter((r: any) => r.startupId?._id === id || r.startupId === id));
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to update report');
+      toast.error(err.response?.data?.error || 'Hisobotni yangilab bo‘lmadi');
     }
   };
 
   if (loading) return (
     <div>
-      <Header title="Startup Detail" />
+      <Header title="Startup tafsiloti" />
       <div className="p-8 space-y-4">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton h-32" />)}</div>
     </div>
   );
 
   if (!startup) return (
     <div>
-      <Header title="Not Found" />
-      <div className="p-8 text-center" style={{ color: 'var(--text-muted)' }}>Startup not found</div>
+      <Header title="Topilmadi" />
+      <div className="p-8 text-center" style={{ color: 'var(--text-muted)' }}>Startup topilmadi</div>
     </div>
   );
 
@@ -107,7 +106,7 @@ export default function StartupDetailPage() {
       <div className="p-8 space-y-6">
         <Link href="/manager">
           <button className="btn-secondary flex items-center gap-2 text-sm mb-2">
-            <ArrowLeft size={14} /> Back to Manager Panel
+            <ArrowLeft size={14} /> Menejer paneliga qaytish
           </button>
         </Link>
 
@@ -125,7 +124,7 @@ export default function StartupDetailPage() {
                   <span className={`badge badge-${startup.stage}`}>{startup.stage}</span>
                 </div>
                 <button onClick={openEdit} className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-xl flex-shrink-0" style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--accent)' }}>
-                  <Edit2 size={13} /> Edit
+                  <Edit2 size={13} /> Tahrirlash
                 </button>
               </div>
               <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>{startup.description}</p>
@@ -141,7 +140,7 @@ export default function StartupDetailPage() {
                 </div>
                 {startup.pitch_deck && (
                   <a href={startup.pitch_deck} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm" style={{ color: 'var(--accent)' }}>
-                    <FileText size={14} /> Pitch Deck
+                    <FileText size={14} /> Taqdimot
                   </a>
                 )}
               </div>
@@ -152,10 +151,10 @@ export default function StartupDetailPage() {
         {/* Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'MRR', value: `$${startup.mrr?.toLocaleString()}`, icon: <DollarSign size={18} />, color: '#10b981' },
-            { label: 'Users', value: startup.users_count?.toLocaleString(), icon: <Users size={18} />, color: '#6366f1' },
-            { label: 'Investment', value: `$${startup.investment_raised?.toLocaleString()}`, icon: <DollarSign size={18} />, color: '#f59e0b' },
-            { label: 'Team Size', value: startup.team_size, icon: <Users size={18} />, color: '#ec4899' },
+            { label: 'Oylik daromad', value: `$${startup.mrr?.toLocaleString()}`, icon: <DollarSign size={18} />, color: '#10b981' },
+            { label: 'Foydalanuvchilar', value: startup.users_count?.toLocaleString(), icon: <Users size={18} />, color: '#6366f1' },
+            { label: 'Investitsiya', value: `$${startup.investment_raised?.toLocaleString()}`, icon: <DollarSign size={18} />, color: '#f59e0b' },
+            { label: 'Jamoa hajmi', value: startup.team_size, icon: <Users size={18} />, color: '#ec4899' },
           ].map(({ label, value, icon, color }) => (
             <div key={label} className="card">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: `${color}22`, color }}>
@@ -171,10 +170,10 @@ export default function StartupDetailPage() {
         <div className="card">
           <div className="flex items-center gap-3 mb-4">
             <FileText size={18} style={{ color: 'var(--accent)' }} />
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Weekly Reports ({reports.length})</h3>
+            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Haftalik hisobotlar ({reports.length})</h3>
           </div>
           {reports.length === 0 ? (
-            <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>No reports submitted yet</p>
+            <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>Hali hisobot yuborilmagan</p>
           ) : (
             <div className="space-y-3">
               {reports.map((r) => (
@@ -182,30 +181,30 @@ export default function StartupDetailPage() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       {r.status === 'accepted' ? <CheckCircle size={16} style={{ color: '#10b981' }} /> : r.status === 'rejected' ? <XCircle size={16} style={{ color: '#ef4444' }} /> : <Clock size={16} style={{ color: '#f59e0b' }} />}
-                      <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Week of {format(new Date(r.weekStart), 'MMM d, yyyy')}</span>
+                      <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{new Date(r.weekStart).toLocaleDateString('uz')} haftasi</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`badge badge-${r.status}`}>{r.status}</span>
                       {r.status === 'pending' && (
                         <>
                           <button onClick={() => reviewReport(r._id, 'accepted')} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>
-                            Accept
+                            Qabul qilish
                           </button>
                           <button onClick={() => setRejectModal(r._id)} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>
-                            Reject
+                            Rad etish
                           </button>
                         </>
                       )}
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3 text-xs">
-                    <div><p className="font-medium mb-1" style={{ color: '#10b981' }}>✅ Done</p><p style={{ color: 'var(--text-secondary)' }}>{r.completed}</p></div>
-                    <div><p className="font-medium mb-1" style={{ color: '#f59e0b' }}>⚠️ Not Done</p><p style={{ color: 'var(--text-secondary)' }}>{r.notCompleted}</p></div>
-                    <div><p className="font-medium mb-1" style={{ color: '#6366f1' }}>📋 Next Week</p><p style={{ color: 'var(--text-secondary)' }}>{r.plans}</p></div>
+                    <div><p className="font-medium mb-1" style={{ color: '#10b981' }}>Bajarildi</p><p style={{ color: 'var(--text-secondary)' }}>{r.completed}</p></div>
+                    <div><p className="font-medium mb-1" style={{ color: '#f59e0b' }}>Bajarilmadi</p><p style={{ color: 'var(--text-secondary)' }}>{r.notCompleted}</p></div>
+                    <div><p className="font-medium mb-1" style={{ color: '#6366f1' }}>Keyingi hafta</p><p style={{ color: 'var(--text-secondary)' }}>{r.plans}</p></div>
                   </div>
                   {r.rejectionReason && (
                     <div className="mt-3 p-2 rounded-lg text-xs" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>
-                      Rejection: {r.rejectionReason}
+                      Rad etish sababi: {r.rejectionReason}
                     </div>
                   )}
                 </div>
@@ -218,21 +217,21 @@ export default function StartupDetailPage() {
         <div className="card">
           <div className="flex items-center gap-3 mb-4">
             <Calendar size={18} style={{ color: 'var(--accent)' }} />
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Meetings ({meetings.length})</h3>
+            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Uchrashuvlar ({meetings.length})</h3>
           </div>
           {meetings.length === 0 ? (
-            <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>No meetings recorded</p>
+            <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>Hali uchrashuv yozilmagan</p>
           ) : (
             <div className="space-y-2">
               {meetings.map((m) => (
                 <div key={m._id} className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
                   <div>
                     <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{m.title}</p>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{format(new Date(m.scheduledAt), 'MMM d, yyyy · h:mm a')} · {m.topic || 'No topic'}</p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(m.scheduledAt).toLocaleString('uz')} · {m.topic || 'Mavzu yo‘q'}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`badge badge-${m.status}`}>{m.status}</span>
-                    <a href={m.meetLink} target="_blank" rel="noreferrer" className="text-xs px-2 py-1 rounded-lg" style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--accent)' }}>Join</a>
+                    <a href={m.meetLink} target="_blank" rel="noreferrer" className="text-xs px-2 py-1 rounded-lg" style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--accent)' }}>Qo‘shilish</a>
                   </div>
                 </div>
               ))}
@@ -241,12 +240,12 @@ export default function StartupDetailPage() {
         </div>
       </div>
 
-      {/* Edit Modal */}
+      {/* Tahrirlash oynasi */}
       {editModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
           <div className="card p-0 w-full max-w-2xl max-h-[90vh] flex flex-col animate-fade-in overflow-hidden">
             <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
-              <h3 className="font-semibold text-lg" style={{ color: 'var(--text-primary)' }}>Edit Startup Data</h3>
+              <h3 className="font-semibold text-lg" style={{ color: 'var(--text-primary)' }}>Startup maʼlumotlarini tahrirlash</h3>
               <button onClick={() => setEditModal(false)} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--bg-secondary)' }}>
                 <XCircle size={16} />
               </button>
@@ -254,13 +253,13 @@ export default function StartupDetailPage() {
             <div className="px-6 py-5 overflow-y-auto flex-1 space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 {[
-                  { label: 'Startup Name', key: 'startup_name' },
-                  { label: 'Founder Name', key: 'founder_name' },
-                  { label: 'Region', key: 'region' },
-                  { label: 'Phone', key: 'phone' },
+                  { label: 'Startup nomi', key: 'startup_name' },
+                  { label: 'Asoschi ismi', key: 'founder_name' },
+                  { label: 'Hudud', key: 'region' },
+                  { label: 'Telefon', key: 'phone' },
                   { label: 'Telegram', key: 'telegram' },
-                  { label: 'Pitch Deck URL', key: 'pitch_deck' },
-                  { label: 'Resume URL', key: 'resume_url' },
+                  { label: 'Taqdimot havolasi', key: 'pitch_deck' },
+                  { label: 'Rezyume havolasi', key: 'resume_url' },
                 ].map(({ label, key }) => (
                   <div key={key}>
                     <label className="label">{label}</label>
@@ -272,32 +271,32 @@ export default function StartupDetailPage() {
                   </div>
                 ))}
                 <div>
-                  <label className="label">Stage</label>
+                  <label className="label">Bosqich</label>
                   <select value={editForm.stage} onChange={(e) => setEditForm((p: any) => ({ ...p, stage: e.target.value }))} className="input">
                     {['idea', 'mvp', 'growth', 'scale'].map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="label">Commitment</label>
+                  <label className="label">Bandlik</label>
                   <select value={editForm.commitment} onChange={(e) => setEditForm((p: any) => ({ ...p, commitment: e.target.value }))} className="input">
-                    <option value="full-time">Full-time</option>
-                    <option value="part-time">Part-time</option>
+                    <option value="full-time">To‘liq vaqt</option>
+                    <option value="part-time">Yarim vaqt</option>
                   </select>
                 </div>
                 {[
-                  { label: 'MRR ($)', key: 'mrr' },
-                  { label: 'Users', key: 'users_count' },
-                  { label: 'Investment ($)', key: 'investment_raised' },
-                  { label: 'Team Size', key: 'team_size' },
+                  { label: 'Oylik daromad', key: 'mrr' },
+                  { label: 'Foydalanuvchilar', key: 'users_count' },
+                  { label: 'Investitsiya', key: 'investment_raised' },
+                  { label: 'Jamoa hajmi', key: 'team_size' },
                 ].map(({ label, key }) => (
                   <div key={key}>
                     <label className="label">{label}</label>
-                    <input type="number" min="0" value={editForm[key] ?? 0} onChange={(e) => setEditForm((p: any) => ({ ...p, [key]: Number(e.target.value) }))} className="input" />
+                    <input type="number" value={editForm[key] ?? 0} onChange={(e) => setEditForm((p: any) => ({ ...p, [key]: Number(e.target.value) }))} className="input" />
                   </div>
                 ))}
               </div>
               <div>
-                <label className="label">Accepted Date (qabul qilingan sana)</label>
+                <label className="label">Qabul qilingan sana</label>
                 <input
                   type="date"
                   value={editForm.acceptedAt || ''}
@@ -306,32 +305,32 @@ export default function StartupDetailPage() {
                 />
               </div>
               <div>
-                <label className="label">Description</label>
+                <label className="label">Tavsif</label>
                 <textarea value={editForm.description || ''} onChange={(e) => setEditForm((p: any) => ({ ...p, description: e.target.value }))} className="input min-h-24 resize-none" />
               </div>
             </div>
             <div className="px-6 py-4 border-t flex gap-3 justify-end" style={{ borderColor: 'var(--border)' }}>
-              <button onClick={() => setEditModal(false)} className="btn-secondary">Cancel</button>
+              <button onClick={() => setEditModal(false)} className="btn-secondary">Bekor qilish</button>
               <button onClick={saveEdit} disabled={saving} className="btn-primary flex items-center gap-2">
-                {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Edit2 size={14} /> Save Changes</>}
+                {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Edit2 size={14} /> O‘zgarishlarni saqlash</>}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Reject Modal */}
+      {/* Rad etish oynasi */}
       {rejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
           <div className="card p-8 w-full max-w-md animate-fade-in">
-            <h3 className="font-semibold text-lg mb-4" style={{ color: 'var(--text-primary)' }}>Reject Report</h3>
+            <h3 className="font-semibold text-lg mb-4" style={{ color: 'var(--text-primary)' }}>Hisobotni rad etish</h3>
             <div className="mb-6">
-              <label className="label">Reason for rejection *</label>
-              <textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} className="input min-h-24 resize-none" placeholder="Explain why this report is being rejected and what the founder should improve..." />
+              <label className="label">Rad etish sababi *</label>
+              <textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} className="input min-h-24 resize-none" placeholder="Hisobot nima sababdan rad etilayotganini va asoschi nimalarni yaxshilashi kerakligini yozing..." />
             </div>
             <div className="flex gap-3">
-              <button onClick={() => { setRejectModal(null); setRejectReason(''); }} className="btn-secondary flex-1">Cancel</button>
-              <button onClick={() => rejectReason.trim() && reviewReport(rejectModal, 'rejected', rejectReason)} className="btn-danger flex-1">Reject Report</button>
+              <button onClick={() => { setRejectModal(null); setRejectReason(''); }} className="btn-secondary flex-1">Bekor qilish</button>
+              <button onClick={() => rejectReason.trim() && reviewReport(rejectModal, 'rejected', rejectReason)} className="btn-danger flex-1">Hisobotni rad etish</button>
             </div>
           </div>
         </div>

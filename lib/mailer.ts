@@ -11,16 +11,16 @@ export type NotificationMailInput = {
 function getSmtpConfig() {
   const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
   const smtpPort = Number(process.env.SMTP_PORT || 465);
-  const smtpUser = process.env.SMTP_USER;
+  const smtpUser = process.env.SMTP_USER || 'muhtarzhanov45@gmail.com';
   const smtpPass = process.env.SMTP_PASS;
-  const smtpFrom = process.env.SMTP_FROM || smtpUser;
+  const smtpFrom = process.env.SMTP_FROM || 'muhtarzhanov45@gmail.com';
   return { smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom };
 }
 
 function getTransporter() {
   const { smtpHost, smtpPort, smtpUser, smtpPass } = getSmtpConfig();
   if (!smtpUser || !smtpPass) {
-    throw new Error('SMTP is not configured. Add SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM to env.');
+    throw new Error('Pochta sozlanmagan. Muhit sozlamasiga SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS va SMTP_FROM kiriting.');
   }
   return nodemailer.createTransport({
     host: smtpHost,
@@ -31,9 +31,9 @@ function getTransporter() {
 }
 
 const TYPE_META: Record<string, { icon: string; accent: string; label: string }> = {
-  meeting: { icon: '🗓', accent: '#6366f1', label: 'Meeting' },
-  report:  { icon: '📊', accent: '#10b981', label: 'Report'  },
-  info:    { icon: '🔔', accent: '#f59e0b', label: 'Update'  },
+  meeting: { icon: '🗓', accent: '#6366f1', label: 'Uchrashuv' },
+  report:  { icon: '📊', accent: '#10b981', label: 'Hisobot'  },
+  info:    { icon: '🔔', accent: '#f59e0b', label: 'Yangilik'  },
 };
 
 function buildEmailHtml(title: string, message: string, type?: string): string {
@@ -45,7 +45,7 @@ function buildEmailHtml(title: string, message: string, type?: string): string {
     .replace(/\n/g, '<br>');
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="uz">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -66,7 +66,7 @@ function buildEmailHtml(title: string, message: string, type?: string): string {
                       <div style="width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:36px;text-align:center;">🚀</div>
                       <span style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;vertical-align:middle;margin-left:10px;">Startup Garage</span>
                     </div>
-                    <p style="margin:14px 0 0;font-size:13px;color:rgba(255,255,255,0.7);">Residency Management Platform</p>
+                    <p style="margin:14px 0 0;font-size:13px;color:rgba(255,255,255,0.7);">Rezidentlik boshqaruv tizimi</p>
                   </td>
                   <td align="right" style="vertical-align:top;">
                     <div style="background:rgba(255,255,255,0.15);border-radius:20px;padding:6px 14px;display:inline-block;">
@@ -103,7 +103,7 @@ function buildEmailHtml(title: string, message: string, type?: string): string {
                   <td style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:10px;">
                     <a href="${process.env.NEXTAUTH_URL || 'https://residency.startupgarage.uz'}/dashboard"
                        style="display:inline-block;padding:13px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;">
-                      Open Dashboard →
+                      Bosh sahifani ochish →
                     </a>
                   </td>
                 </tr>
@@ -119,7 +119,7 @@ function buildEmailHtml(title: string, message: string, type?: string): string {
                 <tr>
                   <td>
                     <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
-                      Need help? Contact support on Telegram:
+                      Yordam kerak bo‘lsa, Telegram orqali yozing:
                       <a href="https://t.me/Life_of_muhammed"
                          style="color:#6366f1;font-weight:600;text-decoration:none;">@Life_of_muhammed</a>
                     </p>
@@ -133,8 +133,8 @@ function buildEmailHtml(title: string, message: string, type?: string): string {
           <tr>
             <td style="padding:24px 40px 0;text-align:center;">
               <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.7;">
-                © ${new Date().getFullYear()} Startup Garage · Residency Platform<br>
-                You are receiving this because you have a manager or admin role.
+                © ${new Date().getFullYear()} Startup Garage · Rezidentlik tizimi<br>
+                Bu xabar sizga tizimdagi rolingiz sababli yuborildi.
               </p>
             </td>
           </tr>
@@ -153,11 +153,11 @@ export async function sendPasswordResetCode(email: string, code: string) {
   await transporter.sendMail({
     from: `"Startup Garage" <${smtpFrom}>`,
     to: email,
-    subject: 'Startup Garage — password reset code',
-    text: `Your password reset code is ${code}. It expires in 10 minutes.`,
+    subject: 'Startup Garage — parolni tiklash kodi',
+    text: `Parolni tiklash kodingiz: ${code}. Kod 10 daqiqa ichida amal qiladi.`,
     html: buildEmailHtml(
-      'Password Reset Code',
-      `You requested a password reset for your Startup Garage account.\n\nYour code: <strong style="font-size:28px;letter-spacing:6px;color:#6366f1;">${code}</strong>\n\nThis code expires in 10 minutes. If you did not request this, ignore this email.`,
+      'Parolni tiklash kodi',
+      `Startup Garage akkauntingiz uchun parolni tiklash so‘rovi yuborildi.\n\nKodingiz: <strong style="font-size:28px;letter-spacing:6px;color:#6366f1;">${code}</strong>\n\nBu kod 10 daqiqa amal qiladi. Agar bu so‘rovni siz yubormagan bo‘lsangiz, xabarni eʼtiborsiz qoldiring.`,
       'info'
     ),
   });
@@ -175,6 +175,6 @@ export async function sendNotificationEmail(input: NotificationMailInput) {
       html: buildEmailHtml(input.title, input.message, input.type),
     });
   } catch (error) {
-    console.error('[Mailer] notification email failed:', error);
+    console.error('[Pochta] bildirishnoma xati yuborilmadi:', error);
   }
 }

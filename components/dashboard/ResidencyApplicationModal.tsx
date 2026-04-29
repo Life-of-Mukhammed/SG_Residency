@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { ChevronLeft, ChevronRight, FileText, Rocket, UploadCloud, X, Building2, UserPlus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText, Rocket, X, Building2, UserPlus } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { UZ_REGIONS } from '@/lib/regions';
 import { DEFAULT_STARTUP_SPHERE, STARTUP_SPHERES } from '@/lib/startup-spheres';
@@ -29,6 +29,7 @@ type FormState = {
   phone: string;
   telegram: string;
   pitch_deck: string;
+  startup_logo: string;
   resume_url: string;
   team_size: string;
   commitment: 'full-time' | 'part-time';
@@ -48,6 +49,7 @@ const EMPTY_FORM: FormState = {
   phone: '',
   telegram: '',
   pitch_deck: '',
+  startup_logo: '',
   resume_url: '',
   team_size: '1',
   commitment: 'full-time',
@@ -95,9 +97,10 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
           startup_sphere: startup.startup_sphere || DEFAULT_STARTUP_SPHERE,
           stage: startup.stage || 'mvp',
           description: startup.description || '',
-          phone: startup.phone === 'Not provided' ? '' : startup.phone || '',
+          phone: startup.phone === 'Not provided' || startup.phone === 'Kiritilmagan' ? '' : startup.phone || '',
           telegram: startup.telegram === '@not_provided' ? '' : startup.telegram || '',
           pitch_deck: startup.pitch_deck || '',
+          startup_logo: startup.startup_logo || '',
           resume_url: startup.resume_url || '',
           team_size: String(startup.team_size ?? 1),
           commitment: startup.commitment || 'full-time',
@@ -117,8 +120,6 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
 
   if (!open) return null;
 
-  const countWords = (text: string) => text.trim().split(/\s+/).filter(Boolean).length;
-
   const validatePhone = (phone: string) =>
     /^(\+998|998|0)[0-9]{9}$/.test(phone.replace(/[\s\-()]/g, ''));
 
@@ -134,11 +135,8 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
     if (form.applicationType === 'existing_resident') {
       if (step === 1) {
         if (!form.startup_name.trim()) nextErrors.startup_name = 'Startup nomi kiritilishi shart';
-        const descWords = countWords(form.description);
         if (!form.description.trim()) nextErrors.description = 'Tavsif kiritilishi shart';
-        else if (descWords < 20) nextErrors.description = `Tavsif kamida 20 ta so'zdan iborat bo'lishi kerak (hozir: ${descWords})`;
-        else if (descWords > 50) nextErrors.description = `Tavsif 50 ta so'zdan oshmasligi kerak (hozir: ${descWords})`;
-        if (!form.pitch_deck.trim()) nextErrors.pitch_deck = 'Pitch deck manzili kiritilishi shart';
+        if (!form.pitch_deck.trim()) nextErrors.pitch_deck = 'Taqdimot havolasi kiritilishi shart';
       }
     } else {
       if (step === 1) {
@@ -146,10 +144,7 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
         if (!form.founder_name.trim()) nextErrors.founder_name = 'Asoschi roli kiritilishi shart';
         if (!form.region.trim()) nextErrors.region = 'Hudud kiritilishi shart';
         if (!form.startup_sphere.trim()) nextErrors.startup_sphere = 'Soha kiritilishi shart';
-        const descWords = countWords(form.description);
         if (!form.description.trim()) nextErrors.description = 'Tavsif kiritilishi shart';
-        else if (descWords < 20) nextErrors.description = `Tavsif kamida 20 ta so'zdan iborat bo'lishi kerak (hozir: ${descWords})`;
-        else if (descWords > 50) nextErrors.description = `Tavsif 50 ta so'zdan oshmasligi kerak (hozir: ${descWords})`;
         if (!form.phone.trim()) nextErrors.phone = 'Telefon kiritilishi shart';
         else if (!validatePhone(form.phone)) nextErrors.phone = 'Telefon noto\'g\'ri formatda (masalan: +998901234567)';
         if (!form.telegram.trim()) nextErrors.telegram = 'Telegram kiritilishi shart';
@@ -159,15 +154,11 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
           const answer = answers[q._id]?.trim() || '';
           if (q.required && !answer) {
             nextErrors[`q_${q._id}`] = 'Bu maydon to\'ldirilishi shart';
-          } else if (answer && q.type === 'textarea') {
-            const wc = countWords(answer);
-            if (wc < 20) nextErrors[`q_${q._id}`] = `Kamida 20 ta so'z yozing (hozir: ${wc})`;
-            else if (wc > 50) nextErrors[`q_${q._id}`] = `50 ta so'zdan oshmasin (hozir: ${wc})`;
           }
         });
       }
       if (step === 3) {
-        if (!form.pitch_deck.trim()) nextErrors.pitch_deck = 'Pitch deck manzili kiritilishi shart';
+        if (!form.pitch_deck.trim()) nextErrors.pitch_deck = 'Taqdimot havolasi kiritilishi shart';
         if (!form.resume_url.trim()) nextErrors.resume_url = 'Rezyume manzili kiritilishi shart';
       }
     }
@@ -197,6 +188,7 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
         phone: form.phone,
         telegram: form.telegram,
         pitch_deck: form.pitch_deck,
+        startup_logo: form.startup_logo,
         resume_url: form.resume_url,
         team_size: Number(form.team_size),
         commitment: form.commitment,
@@ -223,12 +215,13 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
   const currentReviewItems =
     form.applicationType === 'existing_resident'
       ? [
-          ['Rezidentlik turi', 'Allaqachon Startup Garage residenti'],
+          ['Rezidentlik turi', 'Allaqachon Startup Garage rezidenti'],
           ['Startup nomi', form.startup_name],
           ['Startup tavsifi', form.description],
-          ['Pitch Deck', form.pitch_deck],
-          ['MRR ($)', form.mrr],
-          ['Jalb qilingan investitsiya ($)', form.investment_raised],
+          ['Taqdimot havolasi', form.pitch_deck],
+          ['Logo havolasi', form.startup_logo],
+          ['Oylik takroriy daromad', form.mrr],
+          ['Jalb qilingan investitsiya', form.investment_raised],
         ]
       : [
           ['Rezidentlik turi', 'Yangi rezidentlikka ariza'],
@@ -237,7 +230,8 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
           ['Hudud', form.region],
           ['Soha', form.startup_sphere],
           ['Bosqich', form.stage],
-          ['Pitch Deck', form.pitch_deck],
+          ['Taqdimot havolasi', form.pitch_deck],
+          ['Logo havolasi', form.startup_logo],
           ['Rezyume', form.resume_url],
         ];
 
@@ -247,11 +241,19 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
 
         {/* Header */}
         <div className="px-6 py-5 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em]" style={{ color: 'var(--accent)' }}>Rezidentlikka ariza</p>
-            <h2 className="text-2xl font-bold mt-2" style={{ color: 'var(--text-primary)' }}>
-              {startup?.status === 'rejected' ? 'Arizani yangilash' : 'Rezidentlik so\'rovi'}
-            </h2>
+          <div className="flex items-center gap-4">
+            <img
+              src="/sg-logo.png"
+              alt="SG Residency"
+              className="w-12 h-12 rounded-2xl object-cover flex-shrink-0 border"
+              style={{ borderColor: 'rgba(99,102,241,0.2)' }}
+            />
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em]" style={{ color: 'var(--accent)' }}>Rezidentlikka ariza</p>
+              <h2 className="text-2xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>
+                {startup?.status === 'rejected' ? 'Arizani yangilash' : 'Rezidentlik so\'rovi'}
+              </h2>
+            </div>
           </div>
           {!lockOpen && (
             <button onClick={onClose} className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'var(--bg-secondary)' }}>
@@ -293,16 +295,16 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
                 {
                   key: 'existing_resident' as const,
                   icon: <Building2 size={28} />,
-                  title: 'Men Startup Garage residentiman',
-                  description: 'Siz allaqachon rezident bo\'lsangiz, qisqa so\'rov yuboring. Startup tavsifi, MRR va pitch deck so\'raladi.',
+                  title: 'Men Startup Garage rezidentiman',
+                  description: 'Siz allaqachon rezident bo\'lsangiz, qisqa so\'rov yuboring. Startup tavsifi, daromad va taqdimot havolasi so\'raladi.',
                   color: '#6366f1',
                   bg: 'rgba(99,102,241,0.1)',
                 },
                 {
                   key: 'new_applicant' as const,
                   icon: <UserPlus size={28} />,
-                  title: 'Endi residentlikka topshirmoqchiman',
-                  description: 'Bu yo\'nalishda savollar, resume va pitch deck to\'ldirasiz. Ariza Yangi Leadlar ro\'yxatiga tushadi.',
+                  title: 'Endi rezidentlikka topshirmoqchiman',
+                  description: 'Bu yo\'nalishda savollar, rezyume va taqdimot havolasini to\'ldirasiz. Ariza yangi nomzodlar ro\'yxatiga tushadi.',
                   color: '#10b981',
                   bg: 'rgba(16,185,129,0.1)',
                 },
@@ -358,42 +360,40 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
               <div>
                 <label className="label">Startup tavsifi *</label>
                 <textarea value={form.description} onChange={(e) => setField('description', e.target.value)} className="input min-h-28 resize-none" placeholder="Startapingiz haqida qisqacha: muammo, yechim, hozirgi holat..." />
-                <div className="flex items-center justify-between mt-1">
-                  {errors.description
-                    ? <p className="text-xs" style={{ color: 'var(--danger)' }}>{errors.description}</p>
-                    : <span />}
-                  <p className="text-xs" style={{ color: countWords(form.description) < 20 || countWords(form.description) > 50 ? 'var(--danger)' : '#10b981' }}>
-                    {countWords(form.description)} / 50 so'z (min 20)
-                  </p>
-                </div>
+                {errors.description && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.description}</p>}
               </div>
 
               <div>
-                <label className="label">Pitch Deck manzili *</label>
+                <label className="label">Taqdimot havolasi *</label>
                 <input value={form.pitch_deck} onChange={(e) => setField('pitch_deck', e.target.value)} className="input" placeholder="https://docs.google.com/..." />
                 {errors.pitch_deck && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.pitch_deck}</p>}
               </div>
 
+              <div>
+                <label className="label">Logo havolasi</label>
+                <input value={form.startup_logo} onChange={(e) => setField('startup_logo', e.target.value)} className="input" placeholder="https://..." />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">MRR ($)</label>
+                  <label className="label">Oylik takroriy daromad</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-muted)' }}>$</span>
-                    <input type="number" min="0" value={form.mrr} onChange={(e) => setField('mrr', e.target.value)} className="input pl-8" placeholder="0" />
+                    <input type="number" value={form.mrr} onChange={(e) => setField('mrr', e.target.value)} className="input pl-8" placeholder="0" />
                   </div>
                 </div>
                 <div>
-                  <label className="label">Jalb qilingan investitsiya ($)</label>
+                  <label className="label">Jalb qilingan investitsiya</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-muted)' }}>$</span>
-                    <input type="number" min="0" value={form.investment_raised} onChange={(e) => setField('investment_raised', e.target.value)} className="input pl-8" placeholder="0" />
+                    <input type="number" value={form.investment_raised} onChange={(e) => setField('investment_raised', e.target.value)} className="input pl-8" placeholder="0" />
                   </div>
                 </div>
               </div>
 
               <div>
                 <label className="label">Foydalanuvchilar soni</label>
-                <input type="number" min="0" value={form.users_count} onChange={(e) => setField('users_count', e.target.value)} className="input" placeholder="0" />
+                <input type="number" value={form.users_count} onChange={(e) => setField('users_count', e.target.value)} className="input" placeholder="0" />
               </div>
             </div>
           )}
@@ -409,7 +409,7 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
                 </div>
                 <div>
                   <label className="label">Asoschi roli *</label>
-                  <input value={form.founder_name} onChange={(e) => setField('founder_name', e.target.value)} className="input" placeholder="CEO / Asoschi / CTO" />
+                  <input value={form.founder_name} onChange={(e) => setField('founder_name', e.target.value)} className="input" placeholder="Asoschi yoki texnik rahbar" />
                   {errors.founder_name && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.founder_name}</p>}
                 </div>
               </div>
@@ -460,9 +460,6 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
                   {errors.description
                     ? <p className="text-xs" style={{ color: 'var(--danger)' }}>{errors.description}</p>
                     : <span />}
-                  <p className="text-xs" style={{ color: countWords(form.description) < 20 || countWords(form.description) > 50 ? 'var(--danger)' : '#10b981' }}>
-                    {countWords(form.description)} / 50 so'z (min 20)
-                  </p>
                 </div>
               </div>
             </div>
@@ -489,9 +486,6 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
                         {errors[`q_${q._id}`]
                           ? <p className="text-xs" style={{ color: 'var(--danger)' }}>{errors[`q_${q._id}`]}</p>
                           : <span />}
-                        <p className="text-xs" style={{ color: (() => { const wc = countWords(answers[q._id] || ''); return wc > 0 && (wc < 20 || wc > 50) ? 'var(--danger)' : '#10b981'; })() }}>
-                          {countWords(answers[q._id] || '')} / 50 so'z (min 20)
-                        </p>
                       </div>
                     </>
                   ) : (
@@ -518,7 +512,7 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
             <div className="space-y-5">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Pitch Deck manzili *</label>
+                  <label className="label">Taqdimot havolasi *</label>
                   <input value={form.pitch_deck} onChange={(e) => setField('pitch_deck', e.target.value)} className="input" placeholder="https://docs.google.com/..." />
                   {errors.pitch_deck && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.pitch_deck}</p>}
                 </div>
@@ -529,25 +523,30 @@ export default function ResidencyApplicationModal({ open, onClose, onSubmitted, 
                 </div>
               </div>
 
+              <div>
+                <label className="label">Logo havolasi</label>
+                <input value={form.startup_logo} onChange={(e) => setField('startup_logo', e.target.value)} className="input" placeholder="https://..." />
+              </div>
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <label className="label">Jamoa hajmi</label>
-                  <input type="number" min="1" value={form.team_size} onChange={(e) => setField('team_size', e.target.value)} className="input" />
+                  <input type="number" value={form.team_size} onChange={(e) => setField('team_size', e.target.value)} className="input" />
                 </div>
                 <div>
-                  <label className="label">MRR ($)</label>
+                  <label className="label">Oylik daromad</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-muted)' }}>$</span>
-                    <input type="number" min="0" value={form.mrr} onChange={(e) => setField('mrr', e.target.value)} className="input pl-8" />
+                    <input type="number" value={form.mrr} onChange={(e) => setField('mrr', e.target.value)} className="input pl-8" />
                   </div>
                 </div>
                 <div>
                   <label className="label">Foydalanuvchilar</label>
-                  <input type="number" min="0" value={form.users_count} onChange={(e) => setField('users_count', e.target.value)} className="input" />
+                  <input type="number" value={form.users_count} onChange={(e) => setField('users_count', e.target.value)} className="input" />
                 </div>
                 <div>
-                  <label className="label">Investitsiya ($)</label>
-                  <input type="number" min="0" value={form.investment_raised} onChange={(e) => setField('investment_raised', e.target.value)} className="input" />
+                  <label className="label">Investitsiya</label>
+                  <input type="number" value={form.investment_raised} onChange={(e) => setField('investment_raised', e.target.value)} className="input" />
                 </div>
               </div>
 

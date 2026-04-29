@@ -159,7 +159,7 @@ export default function MeetingsPage() {
     return (
       <div className="animate-fade-in">
         <Header
-          title={startup?.status === 'lead_accepted' ? 'Intervyu uchrashivi' : 'Uchrashuv belgilash'}
+          title={startup?.status === 'lead_accepted' ? 'Intervyu uchrashuvi' : 'Uchrashuv belgilash'}
           subtitle={startup?.status === 'lead_accepted' ? 'Intervyu uchun vaqt tanlang' : 'Menejer bilan vaqt belgilang'}
         />
         <div className="p-6">

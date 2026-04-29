@@ -41,7 +41,7 @@ const startupSchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!session) return NextResponse.json({ error: 'Ruxsat berilmagan' }, { status: 401 });
 
     await connectDB();
 
@@ -85,19 +85,19 @@ export async function GET(req: NextRequest) {
     });
   } catch (err) {
     console.error('[GET /api/startups]', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Ichki xatolik yuz berdi' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!session) return NextResponse.json({ error: 'Ruxsat berilmagan' }, { status: 401 });
 
     const body   = await req.json();
     const result = startupSchema.safeParse(body);
     if (!result.success) {
-      return NextResponse.json({ error: result.error.issues[0]?.message || 'Validation error' }, { status: 400 });
+      return NextResponse.json({ error: result.error.issues[0]?.message || 'Maʼlumotlarni tekshirishda xatolik' }, { status: 400 });
     }
 
     await connectDB();
@@ -105,20 +105,17 @@ export async function POST(req: NextRequest) {
     const user = session.user as { id: string; role: string };
     const currentUser = await User.findById(user.id).lean();
     if (!currentUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Foydalanuvchi topilmadi' }, { status: 404 });
     }
 
     const payload = result.data;
 
     if (payload.applicationType === 'new_applicant') {
       if (!payload.resume_url?.trim()) {
-        return NextResponse.json({ error: 'Resume is required for new applicants' }, { status: 400 });
-      }
-      if (!payload.description || payload.description.trim().length < 20) {
-        return NextResponse.json({ error: 'Description must be at least 20 characters' }, { status: 400 });
+        return NextResponse.json({ error: 'Yangi ariza uchun rezyume kerak' }, { status: 400 });
       }
       if (!payload.startup_sphere || !payload.region || !payload.founder_name || !payload.phone || !payload.telegram) {
-        return NextResponse.json({ error: 'Please complete all required founder and startup fields' }, { status: 400 });
+        return NextResponse.json({ error: 'Asoschi va startup boʼyicha majburiy maydonlarni toʼldiring' }, { status: 400 });
       }
     }
 
@@ -128,11 +125,11 @@ export async function POST(req: NextRequest) {
       surname: payload.surname?.trim() || currentUser.surname,
       gmail: payload.gmail?.trim().toLowerCase() || currentUser.email,
       startup_name: payload.startup_name.trim(),
-      region: payload.region?.trim() || 'Tashkent',
+      region: payload.region?.trim() || 'Toshkent shahri',
       startup_logo: payload.startup_logo?.trim() || '',
       description:
         payload.applicationType === 'existing_resident'
-          ? payload.description?.trim() || 'Existing Startup Garage resident requested residency access.'
+          ? payload.description?.trim() || 'Mavjud Startup Garage rezidenti rezidentlikka kirish sorovini yubordi.'
           : payload.description?.trim() || '',
       startup_sphere:
         payload.applicationType === 'existing_resident'
@@ -143,7 +140,7 @@ export async function POST(req: NextRequest) {
           ? payload.stage || 'mvp'
           : payload.stage || 'idea',
       founder_name: payload.founder_name?.trim() || `${currentUser.name} ${currentUser.surname}`,
-      phone: payload.phone?.trim() || 'Not provided',
+      phone: payload.phone?.trim() || 'Kiritilmagan',
       telegram: payload.telegram?.trim() || '@not_provided',
       team_size: payload.team_size || 1,
       pitch_deck: payload.pitch_deck.trim(),
@@ -183,17 +180,17 @@ export async function POST(req: NextRequest) {
 
     const startup = await Startup.create({ ...normalizedData, userId: user.id });
     await notifyRoles(['manager', 'super_admin'], {
-      title: 'New residency application',
+      title: 'Yangi rezidentlik arizasi',
       message:
         normalizedData.applicationType === 'existing_resident'
-          ? `${normalizedData.founder_name} requested residency access for ${normalizedData.startup_name}.`
-          : `${normalizedData.founder_name} submitted ${normalizedData.startup_name} as a new lead.`,
+          ? `${normalizedData.founder_name} ${normalizedData.startup_name} uchun rezidentlikka kirish soʼrovini yubordi.`
+          : `${normalizedData.founder_name} ${normalizedData.startup_name} loyihasini yangi nomzod sifatida yubordi.`,
       type: 'info',
     });
 
     return NextResponse.json({ startup }, { status: 201 });
   } catch (err) {
     console.error('[POST /api/startups]', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Ichki xatolik yuz berdi' }, { status: 500 });
   }
 }

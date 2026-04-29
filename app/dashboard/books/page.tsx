@@ -40,7 +40,7 @@ export default function BooksPage() {
   const [form, setForm] = useState<BookForm>({ title: '', author: '', description: '', fileUrl: '', coverUrl: '', category: '' });
   const [adding, setAdding] = useState(false);
 
-  const categories = ['Business', 'Marketing', 'Technology', 'Leadership', 'Finance', 'Product', 'Design', 'Sales'];
+  const categories = ['Biznes', 'Marketing', 'Texnologiya', 'Rahbarlik', 'Moliya', 'Mahsulot', 'Dizayn', 'Savdo'];
 
   const fetchBooks = async () => {
     setLoading(true);
@@ -50,7 +50,7 @@ export default function BooksPage() {
       setBooks(res.data.books || []);
     } catch (error) {
       console.error(error);
-      toast.error('Failed to load books');
+      toast.error('Kitoblarni yuklab bo‘lmadi');
     }
     finally { setLoading(false); }
   };
@@ -61,26 +61,26 @@ export default function BooksPage() {
 
   const addBook = async () => {
     if (!form.title || !form.author || !form.fileUrl || !form.category) {
-      toast.error('Please fill all required fields');
+      toast.error('Majburiy maydonlarni to‘ldiring');
       return;
     }
     setAdding(true);
     try {
-      await axios.post('/api/books', { ...form, description: form.description || 'No description provided.' });
-      toast.success('Book added!');
+      await axios.post('/api/books', { ...form, description: form.description || 'Tavsif kiritilmagan.' });
+      toast.success('Kitob qo‘shildi');
       setAddModal(false);
       setForm({ title: '', author: '', description: '', fileUrl: '', coverUrl: '', category: '' });
       void fetchBooks();
-    } catch { toast.error('Failed to add book'); }
+    } catch { toast.error('Kitob qo‘shib bo‘lmadi'); }
     finally { setAdding(false); }
   };
 
   const deleteBook = async (id: string) => {
     try {
       await axios.delete(`/api/books/${id}`);
-      toast.success('Book deleted');
+      toast.success('Kitob o‘chirildi');
       void fetchBooks();
-    } catch { toast.error('Failed to delete'); }
+    } catch { toast.error('O‘chirib bo‘lmadi'); }
   };
 
   const handleDownload = async (book: Book) => {
@@ -90,7 +90,7 @@ export default function BooksPage() {
       void fetchBooks();
     } catch (error) {
       console.error(error);
-      toast.error('Failed to start download');
+      toast.error('Yuklab olishni boshlab bo‘lmadi');
     }
   };
 
@@ -98,7 +98,7 @@ export default function BooksPage() {
 
   return (
     <div className="animate-fade-in">
-      <Header title="Library" subtitle="Curated books and resources for founders" />
+      <Header title="Kutubxona" subtitle="Asoschilar uchun tanlangan kitoblar va manbalar" />
       <div className="p-8 space-y-6">
         <div className="flex items-center gap-4">
           <div className="flex-1 relative">
@@ -107,12 +107,12 @@ export default function BooksPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="input pl-10"
-              placeholder="Search books..."
+              placeholder="Kitoblarni qidirish..."
             />
           </div>
           {isManagerOrAdmin && (
             <button onClick={() => setAddModal(true)} className="btn-primary flex items-center gap-2">
-              <Plus size={16} /> Add Book
+              <Plus size={16} /> Kitob qo‘shish
             </button>
           )}
         </div>
@@ -124,9 +124,9 @@ export default function BooksPage() {
         ) : books.length === 0 ? (
           <div className="card text-center py-16">
             <BookOpen size={48} className="mx-auto mb-4 opacity-20" />
-            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>No books yet</p>
+            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Hozircha kitob yo‘q</p>
             <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-              {isManagerOrAdmin ? 'Add the first book to the library' : 'Check back soon for resources'}
+              {isManagerOrAdmin ? 'Kutubxonaga birinchi kitobni qo‘shing' : 'Yangi manbalar tez orada qo‘shiladi'}
             </p>
           </div>
         ) : (
@@ -176,46 +176,46 @@ export default function BooksPage() {
         )}
       </div>
 
-      {/* Add Book Modal */}
+      {/* Kitob qo‘shish oynasi */}
       {addModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
           <div className="card p-8 w-full max-w-lg animate-fade-in">
-            <h3 className="font-semibold text-lg mb-6" style={{ color: 'var(--text-primary)' }}>Add Book to Library</h3>
+            <h3 className="font-semibold text-lg mb-6" style={{ color: 'var(--text-primary)' }}>Kutubxonaga kitob qo‘shish</h3>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Title *</label>
+                  <label className="label">Nomi *</label>
                   <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input" placeholder="Zero to One" />
                 </div>
                 <div>
-                  <label className="label">Author *</label>
+                  <label className="label">Muallif *</label>
                   <input value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} className="input" placeholder="Peter Thiel" />
                 </div>
               </div>
               <div>
-                <label className="label">Category *</label>
+                <label className="label">Toifa *</label>
                 <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="input">
-                  <option value="">Select category...</option>
+                  <option value="">Toifani tanlang...</option>
                   {categories.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
-                <label className="label">PDF/Book URL *</label>
+                <label className="label">Kitob havolasi *</label>
                 <input value={form.fileUrl} onChange={(e) => setForm({ ...form, fileUrl: e.target.value })} className="input" placeholder="https://..." />
               </div>
               <div>
-                <label className="label">Cover Image URL (optional)</label>
+                <label className="label">Muqova rasmi havolasi</label>
                 <input value={form.coverUrl} onChange={(e) => setForm({ ...form, coverUrl: e.target.value })} className="input" placeholder="https://..." />
               </div>
               <div>
-                <label className="label">Description</label>
-                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input min-h-20 resize-none" placeholder="Brief description..." />
+                <label className="label">Tavsif</label>
+                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input min-h-20 resize-none" placeholder="Qisqa tavsif..." />
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setAddModal(false)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={() => setAddModal(false)} className="btn-secondary flex-1">Bekor qilish</button>
               <button onClick={addBook} disabled={adding} className="btn-primary flex-1 flex items-center justify-center gap-2">
-                {adding ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Add Book'}
+                {adding ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Kitob qo‘shish'}
               </button>
             </div>
           </div>

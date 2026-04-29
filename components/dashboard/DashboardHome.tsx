@@ -256,7 +256,9 @@ export default function DashboardHome() {
           <div
             className="card text-center py-12 px-8 relative overflow-hidden"
             style={{
-              background: 'radial-gradient(circle at top left, rgba(99,102,241,0.12), transparent 30%), radial-gradient(circle at bottom right, rgba(16,185,129,0.08), transparent 30%)',
+              background: isInterviewStage
+                ? 'linear-gradient(135deg, rgba(16,185,129,0.16), rgba(56,189,248,0.12)), radial-gradient(circle at top right, rgba(34,197,94,0.18), transparent 34%)'
+                : 'radial-gradient(circle at top left, rgba(99,102,241,0.12), transparent 30%), radial-gradient(circle at bottom right, rgba(16,185,129,0.08), transparent 30%)',
             }}
           >
             <div
@@ -286,7 +288,7 @@ export default function DashboardHome() {
               {isRejected
                 ? 'Arizangiz rad etildi. Tahrirlash imkoniyatidan foydalanib qayta yuboring.'
                 : isInterviewStage
-                  ? 'Leadingiz birinchi tekshiruvdan o\'tdi. Hozircha faqat uchrashuvlar ochiq.'
+                  ? 'Tabriklaymiz! Arizangiz birinchi tekshiruvdan muvaffaqiyatli o\'tdi. Endi loyihangiz bilan yaxshiroq tanishib olish uchun uchrashuvlar bo\'limidan qulay vaqtni tanlang va uchrashuv belgilang.'
                   : 'Arizangiz muvaffaqiyatli yuborildi. Menejer yoki admin ko\'rib chiqishi davom etmoqda.'}
             </p>
 
@@ -331,9 +333,6 @@ export default function DashboardHome() {
                 <Link href="/dashboard/meetings">
                   <button className="btn-primary">Uchrashuvlarni ochish</button>
                 </Link>
-                <button className="btn-secondary" onClick={() => setShowInterviewModal(true)}>
-                  Intervyu oynasini ko&apos;rish
-                </button>
               </div>
             )}
           </div>
@@ -708,7 +707,7 @@ export default function DashboardHome() {
                         })}
                       </p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                        {meeting.topic || 'Intervyu uchrashivi'}
+                        {meeting.topic || 'Intervyu uchrashuvi'}
                       </p>
                     </div>
                   ))}

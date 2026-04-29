@@ -81,9 +81,9 @@ export default function GTMPage() {
 
   const totalItems = items.length;
   const selectedSectionTitles = {
-    guide: sections.find((section) => section.key === 'guide')?.title || 'Guide',
-    plan: sections.find((section) => section.key === 'plan')?.title || 'Plan',
-    system: sections.find((section) => section.key === 'system')?.title || 'System',
+    guide: sections.find((section) => section.key === 'guide')?.title || 'Qo‘llanma',
+    plan: sections.find((section) => section.key === 'plan')?.title || 'Reja',
+    system: sections.find((section) => section.key === 'system')?.title || 'Tizim',
   };
 
   return (
@@ -94,7 +94,7 @@ export default function GTMPage() {
           'radial-gradient(circle at 12% 12%, rgba(99,102,241,0.14), transparent 18%), radial-gradient(circle at 88% 12%, rgba(16,185,129,0.12), transparent 18%), radial-gradient(circle at 50% 92%, rgba(99,102,241,0.1), transparent 20%)',
       }}
     >
-      <Header title="GTM" subtitle="Unlocks after completing all tasks in Sprint months 1–3" />
+      <Header title="GTM" subtitle="Sprintning birinchi uch oyidagi vazifalar bajarilgandan keyin ochiladi" />
 
       {!canAccess ? (
         <div className="px-4 py-16 flex justify-center">
@@ -102,11 +102,11 @@ export default function GTMPage() {
             <Lock size={34} className="mx-auto" style={{ color: '#f59e0b' }} />
 
             <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-              GTM is locked
+              GTM yopiq
             </p>
 
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              GTM unlocks after all tasks in Sprint months 1, 2, and 3 are completed.
+              GTM sprintning 1, 2 va 3-oy vazifalari bajarilgandan keyin ochiladi.
             </p>
 
             <div className="pt-2">
@@ -115,14 +115,14 @@ export default function GTMPage() {
                 style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--accent)' }}
               >
                 <CheckCircle2 size={14} />
-                Application sent: {startup ? 'Yes' : 'No'} · First 3 months complete: {unlockedBySprint ? 'Yes' : 'No'}
+                Ariza yuborilgan: {startup ? 'Ha' : 'Yo‘q'} · Birinchi 3 oy yakunlangan: {unlockedBySprint ? 'Ha' : 'Yo‘q'}
               </div>
             </div>
           </div>
         </div>
       ) : (
         <div className="px-4 py-8 md:px-6 md:py-10">
-          <div className="max-w-7xl mx-auto space-y-12">
+          <div className="w-full mx-auto space-y-12">
 
             {showCelebration && (
               <div className="card px-6 py-5 flex items-center gap-4 relative overflow-hidden">
@@ -134,16 +134,16 @@ export default function GTMPage() {
 
                 <div>
                   <p className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-                    GTM unlocked
+                    GTM ochildi
                   </p>
                   <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    First 3 sprint months are done. Time to execute your GTM plan.
+                    Sprintning birinchi 3 oyi yakunlandi. Endi GTM rejasini bajarish vaqti.
                   </p>
                 </div>
               </div>
             )}
 
-            <section className="grid grid-cols-1 xl:grid-cols-[1.45fr_0.8fr] gap-6 items-start">
+            {/* <section className="grid grid-cols-1 xl:grid-cols-[1.45fr_0.8fr] gap-6 items-start">
               <div
                 className="card relative overflow-hidden p-0"
                 style={{
@@ -169,10 +169,10 @@ export default function GTMPage() {
                     </div>
                     <div>
                       <p className="text-[11px] uppercase tracking-[0.22em]" style={{ color: 'var(--accent)' }}>
-                        Founder Growth Engine
+                        Asoschi o‘sish tizimi
                       </p>
                       <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                        Structured playbook for visibility, trust and momentum
+                        Ko‘rinish, ishonch va o‘sish uchun tartibli qo‘llanma
                       </p>
                     </div>
                   </div>
@@ -198,7 +198,7 @@ export default function GTMPage() {
                         <Sparkles size={18} style={{ color: '#facc15', marginTop: 4 }} />
                         <div className="space-y-3">
                           <p className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>
-                            Core Thesis
+                            Asosiy fikr
                           </p>
                           <p className="text-base leading-8 font-medium" style={{ color: 'var(--text-primary)' }}>
                             “{config?.quote}”
@@ -212,9 +212,9 @@ export default function GTMPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-1 gap-3">
                       {[
-                        { label: 'Total Cards', value: totalItems, note: 'All GTM assets' },
-                        { label: 'Unlocked', value: 'Yes', note: 'Sprint months 1–3 completed' },
-                        { label: 'Startup', value: startup?.startup_name || 'Draft', note: startup?.region || 'No region yet' },
+                        { label: 'Jami kartalar', value: totalItems, note: 'Barcha GTM materiallari' },
+                        { label: 'Holat', value: 'Ochiq', note: 'Sprintning 1–3-oylari yakunlangan' },
+                        { label: 'Startup', value: startup?.startup_name || 'Qoralama', note: startup?.region || 'Hudud kiritilmagan' },
                       ].map((item) => (
                         <div
                           key={item.label}
@@ -242,9 +242,9 @@ export default function GTMPage() {
 
               <div className="grid grid-cols-1 gap-4">
                 {[
-                  { label: selectedSectionTitles.guide, value: grouped.guide.length, icon: <Bookmark size={16} />, detail: 'Frameworks, prompts and mental models' },
-                  { label: selectedSectionTitles.plan, value: grouped.plan.length, icon: <Layers3 size={16} />, detail: 'Execution steps and rollout direction' },
-                  { label: selectedSectionTitles.system, value: grouped.system.length, icon: <FileText size={16} />, detail: 'Repeatable operating system and routines' },
+                  { label: selectedSectionTitles.guide, value: grouped.guide.length, icon: <Bookmark size={16} />, detail: 'Andozalar, savollar va fikrlash yo‘llari' },
+                  { label: selectedSectionTitles.plan, value: grouped.plan.length, icon: <Layers3 size={16} />, detail: 'Bajarish qadamlari va yo‘nalish' },
+                  { label: selectedSectionTitles.system, value: grouped.system.length, icon: <FileText size={16} />, detail: 'Takrorlanadigan ish tizimi va odatlar' },
                 ].map((item) => (
                   <div
                     key={item.label}
@@ -266,9 +266,41 @@ export default function GTMPage() {
                   </div>
                 ))}
               </div>
+            </section> */}
+
+            <section className="card p-0 overflow-hidden" style={{ border: '1px solid rgba(16,185,129,0.18)' }}>
+              <div
+                className="px-6 py-5 border-b flex items-center justify-between gap-4 flex-wrap"
+                style={{
+                  borderColor: 'rgba(255,255,255,0.06)',
+                  background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(56,189,248,0.08))',
+                }}
+              >
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em]" style={{ color: '#10b981' }}>Notion</p>
+                  <h2 className="text-2xl font-black mt-1" style={{ color: 'var(--text-primary)' }}>GTM Documentation</h2>
+                </div>
+                <a
+                  href="https://illustrious-lion-3bd.notion.site/ebd//29ced76402e1800aba9ffccab388b8a2"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-secondary text-sm"
+                >
+                  Alohida ochish
+                </a>
+              </div>
+              <iframe
+                src="https://illustrious-lion-3bd.notion.site/ebd//29ced76402e1800aba9ffccab388b8a2"
+                width="100%"
+                height="760"
+                frameBorder="0"
+                allowFullScreen
+                className="w-full min-h-[72vh] bg-white"
+                title="GTM Documentation"
+              />
             </section>
 
-            <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 xl:gap-8">
+            {/* <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 xl:gap-8">
               {sections.map((section) => (
                 <div
                   key={section.key}
@@ -294,7 +326,7 @@ export default function GTMPage() {
                           {section.title}
                         </h2>
                         <p className="text-xs mt-1 uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>
-                          {(grouped[section.key] || []).length} cards
+                          {(grouped[section.key] || []).length} ta karta
                         </p>
                       </div>
                     </div>
@@ -346,19 +378,19 @@ export default function GTMPage() {
                         style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)' }}
                       >
                         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                          No GTM items in this section yet.
+                          Bu bo‘limda hozircha GTM vazifasi yo‘q.
                         </p>
                       </div>
                     )}
                   </div>
                 </div>
               ))}
-            </section>
+            </section> */}
           </div>
         </div>
       )}
 
-      {/* GTM Item Detail Modal */}
+      {/* GTM vazifa tafsiloti */}
       {selectedItem && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -400,9 +432,9 @@ export default function GTMPage() {
 
             <div className="px-6 py-4 border-t flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
               <span className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>
-                {selectedItem.section?.toUpperCase() || 'GUIDE'}
+                {selectedItem.section === 'plan' ? 'REJA' : selectedItem.section === 'system' ? 'TIZIM' : 'QO‘LLANMA'}
               </span>
-              <button onClick={() => setSelectedItem(null)} className="btn-secondary text-sm py-2">Close</button>
+              <button onClick={() => setSelectedItem(null)} className="btn-secondary text-sm py-2">Yopish</button>
             </div>
           </div>
         </div>

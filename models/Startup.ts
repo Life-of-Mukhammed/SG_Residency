@@ -51,7 +51,7 @@ const StartupSchema = new Schema<IStartup>(
     founder_name: { type: String, required: true },
     phone: { type: String, required: true },
     telegram: { type: String, required: true },
-    team_size: { type: Number, required: true, min: 1 },
+    team_size: { type: Number, required: true },
     pitch_deck: { type: String },
     resume_url: { type: String },
     applicationAnswers: [

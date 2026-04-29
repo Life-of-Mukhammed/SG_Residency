@@ -106,7 +106,7 @@ export default function NewReportPage() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="label">✅ Bu hafta nima bajardin?</label>
+              <label className="label">Bu hafta nimalarni bajardingiz?</label>
               <textarea
                 value={form.completed}
                 onChange={(e) => setForm({ ...form, completed: e.target.value })}
@@ -116,22 +116,22 @@ export default function NewReportPage() {
             </div>
 
             <div>
-              <label className="label">⚠️ Nima bajarilmadi? Barcha vazifalarni bajarishingizga nima xalaqit berdi?</label>
+              <label className="label">Qaysi vazifalar bajarilmay qoldi? Qolib ketgan vazifalarni sabablari bilan yozib keting.</label>
               <textarea
                 value={form.notCompleted}
                 onChange={(e) => setForm({ ...form, notCompleted: e.target.value })}
                 className="input min-h-32 resize-none"
-                placeholder="Rejalashtirilgan lekin bajarilmagan narsalar? Qanday to'siqlar bor edi? Halol bo'ling — bu menejeringizga sizga yordam berishga imkon beradi."
+                placeholder="Qolib ketgan vazifalar va ularning sabablarini yozing."
               />
             </div>
 
             <div>
-              <label className="label">📋 Keyingi hafta rejangiz nima?</label>
+              <label className="label">Keyingi haftaga qanday rejalar qilyapsiz?</label>
               <textarea
                 value={form.plans}
                 onChange={(e) => setForm({ ...form, plans: e.target.value })}
                 className="input min-h-32 resize-none"
-                placeholder="Keyingi hafta uchun 3-5 ta asosiy vazifa. Maqsad va ko'rsatkichlar bilan aniq bo'ling."
+                placeholder="Keyingi hafta uchun asosiy vazifalar, maqsadlar va kutilayotgan natijalarni yozing."
               />
             </div>
 

@@ -7,13 +7,13 @@ import Header from '@/components/dashboard/Header';
 import { Plus, X, Copy, RefreshCw, Clock, Calendar } from 'lucide-react';
 
 const DAYS = [
-  { key: 'sunday',    label: 'Sunday',    short: 'S' },
-  { key: 'monday',    label: 'Monday',    short: 'M' },
-  { key: 'tuesday',   label: 'Tuesday',   short: 'T' },
-  { key: 'wednesday', label: 'Wednesday', short: 'W' },
-  { key: 'thursday',  label: 'Thursday',  short: 'T' },
-  { key: 'friday',    label: 'Friday',    short: 'F' },
-  { key: 'saturday',  label: 'Saturday',  short: 'S' },
+  { key: 'sunday',    label: 'Yakshanba',    short: 'Ya' },
+  { key: 'monday',    label: 'Dushanba',    short: 'Du' },
+  { key: 'tuesday',   label: 'Seshanba',   short: 'Se' },
+  { key: 'wednesday', label: 'Chorshanba', short: 'Ch' },
+  { key: 'thursday',  label: 'Payshanba',  short: 'Pa' },
+  { key: 'friday',    label: 'Juma',    short: 'Ju' },
+  { key: 'saturday',  label: 'Shanba',  short: 'Sh' },
 ] as const;
 
 type DayKey = typeof DAYS[number]['key'];
@@ -119,21 +119,21 @@ export default function ManagerSchedulePage() {
       });
       return next;
     });
-    toast.success('Copied to all enabled days');
+    toast.success('Barcha yoqilgan kunlarga ko‘chirildi');
   };
 
   const save = async () => {
     setSaving(true);
     try {
       await axios.put('/api/schedule', schedule);
-      toast.success('Schedule saved!');
-    } catch { toast.error('Failed to save'); }
+      toast.success('Jadval saqlandi');
+    } catch { toast.error('Saqlab bo‘lmadi'); }
     finally { setSaving(false); }
   };
 
   if (loading) return (
     <div>
-      <Header title="Schedule" subtitle="Set your weekly availability" />
+      <Header title="Jadval" subtitle="Haftalik bo‘sh vaqtingizni belgilang" />
       <div className="p-8 space-y-4 max-w-2xl mx-auto">
         {Array.from({ length: 7 }).map((_, i) => (
           <div key={i} className="skeleton h-16 rounded-2xl" />
@@ -144,7 +144,7 @@ export default function ManagerSchedulePage() {
 
   return (
     <div className="animate-fade-in">
-      <Header title="Availability Schedule" subtitle="Set when founders can book meetings with you" />
+      <Header title="Bo‘sh vaqt jadvali" subtitle="Asoschilar siz bilan qachon uchrashuv belgilashi mumkinligini sozlang" />
       <div className="p-8">
         <div className="max-w-2xl mx-auto space-y-6">
 
@@ -156,9 +156,9 @@ export default function ManagerSchedulePage() {
                 <RefreshCw size={18} style={{ color: 'var(--accent)' }} />
               </div>
               <div>
-                <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Weekly hours</p>
+                <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Haftalik vaqtlar</p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  Set when you are typically available for meetings
+                  Odatda uchrashuvlar uchun bo‘sh bo‘ladigan vaqtlaringizni belgilang
                 </p>
               </div>
             </div>
@@ -168,10 +168,10 @@ export default function ManagerSchedulePage() {
                 onChange={e => setSchedule(p => ({ ...p, timezone: e.target.value }))}
                 className="input py-2 text-sm w-auto"
               >
-                <option value="Asia/Tashkent">Uzbekistan Time</option>
-                <option value="Europe/Moscow">Moscow Time</option>
+                <option value="Asia/Tashkent">O‘zbekiston vaqti</option>
+                <option value="Europe/Moscow">Moskva vaqti</option>
                 <option value="UTC">UTC</option>
-                <option value="America/New_York">New York</option>
+                <option value="America/New_York">Nyu-York</option>
                 <option value="Europe/London">London</option>
               </select>
               <select
@@ -179,10 +179,10 @@ export default function ManagerSchedulePage() {
                 onChange={e => setSchedule(p => ({ ...p, slotDuration: Number(e.target.value) }))}
                 className="input py-2 text-sm w-auto"
               >
-                <option value={15}>15 min slots</option>
-                <option value={30}>30 min slots</option>
-                <option value={45}>45 min slots</option>
-                <option value={60}>60 min slots</option>
+                <option value={15}>15 daqiqalik vaqtlar</option>
+                <option value={30}>30 daqiqalik vaqtlar</option>
+                <option value={45}>45 daqiqalik vaqtlar</option>
+                <option value={60}>60 daqiqalik vaqtlar</option>
               </select>
             </div>
           </div>
@@ -207,7 +207,7 @@ export default function ManagerSchedulePage() {
                         color:      d.enabled ? 'white' : 'var(--text-muted)',
                         border:     d.enabled ? 'none' : '1px solid var(--border)',
                       }}
-                      title={d.enabled ? 'Click to disable' : 'Click to enable'}
+                      title={d.enabled ? 'O‘chirish' : 'Yoqish'}
                     >
                       {day.short}
                     </button>
@@ -222,7 +222,7 @@ export default function ManagerSchedulePage() {
                             className="text-sm px-3 py-1 rounded-full"
                             style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
                           >
-                            Unavailable
+                            Mavjud emas
                           </span>
                           <button
                             onClick={() => toggleDay(day.key)}
@@ -266,7 +266,7 @@ export default function ManagerSchedulePage() {
                                 onClick={() => removeSlot(day.key, idx)}
                                 className="w-8 h-8 rounded-full flex items-center justify-center"
                                 style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-                                title="Remove this range"
+                                title="Bu oraliqni o‘chirish"
                               >
                                 <X size={14} />
                               </button>
@@ -276,7 +276,7 @@ export default function ManagerSchedulePage() {
                                 onClick={() => addSlot(day.key)}
                                 className="w-8 h-8 rounded-full flex items-center justify-center"
                                 style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-                                title="Add another time range"
+                                title="Yana vaqt oralig‘i qo‘shish"
                               >
                                 <Plus size={14} />
                               </button>
@@ -287,7 +287,7 @@ export default function ManagerSchedulePage() {
                                   onClick={() => copyToAll(day.key)}
                                   className="w-8 h-8 rounded-full flex items-center justify-center"
                                   style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-                                  title="Copy hours to all enabled days"
+                                  title="Vaqtlarni barcha yoqilgan kunlarga ko‘chirish"
                                 >
                                   <Copy size={13} />
                                 </button>
@@ -300,7 +300,7 @@ export default function ManagerSchedulePage() {
                               onClick={() => addSlot(day.key)}
                               className="btn-secondary text-xs flex items-center gap-1"
                             >
-                              <Plus size={12} /> Add time range
+                              <Plus size={12} /> Vaqt oralig‘i qo‘shish
                             </button>
                           )}
                         </div>
@@ -321,7 +321,7 @@ export default function ManagerSchedulePage() {
             <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2">
               {saving
                 ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                : 'Save Schedule'}
+                : 'Jadvalni saqlash'}
             </button>
           </div>
 
@@ -329,14 +329,14 @@ export default function ManagerSchedulePage() {
           <div className="card">
             <div className="flex items-center gap-2 mb-3">
               <Calendar size={16} style={{ color: 'var(--accent)' }} />
-              <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>How it works</p>
+              <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Qanday ishlaydi</p>
             </div>
             <ul className="space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-              <li>• Founders see your available days and time slots in a Calendly-style calendar</li>
-              <li>• Each slot is <strong>{schedule.slotDuration} minutes</strong> long</li>
-              <li>• Already-booked slots are automatically hidden from founders</li>
-              <li>• A valid meeting link is generated automatically when a meeting is confirmed</li>
-              <li>• Founders only enter the meeting topic when booking</li>
+              <li>• Asoschilar bo‘sh kunlar va vaqtlarni kalendarda ko‘radi</li>
+              <li>• Har bir vaqt oralig‘i <strong>{schedule.slotDuration} daqiqa</strong> davom etadi</li>
+              <li>• Band qilingan vaqtlar asoschilardan avtomatik yashiriladi</li>
+              <li>• Uchrashuv tasdiqlanganda havola avtomatik yaratiladi</li>
+              <li>• Asoschilar bron qilishda faqat uchrashuv mavzusini kiritadi</li>
             </ul>
           </div>
         </div>
