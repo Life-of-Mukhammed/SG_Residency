@@ -3,6 +3,8 @@ import connectDB from '@/lib/db';
 import Meeting from '@/models/Meeting';
 import { notifyRoles, notifyUsers } from '@/lib/notifications';
 
+export const dynamic = 'force-dynamic';
+
 function isAuthorized(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return true;
