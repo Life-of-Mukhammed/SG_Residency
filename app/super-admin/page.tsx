@@ -14,6 +14,8 @@ export default function SuperAdminPage() {
   const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState('');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, pages: 1 });
   const [roleFilter, setRoleFilter] = useState('');
   const [regionFilter, setRegionFilter] = useState('');
   const [editUser, setEditUser]     = useState<any | null>(null);
@@ -27,27 +29,30 @@ export default function SuperAdminPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [uRes, aRes] = await Promise.all([
-        axios.get(`/api/users?${new URLSearchParams({
-          ...(roleFilter ? { role: roleFilter } : {}),
-          ...(regionFilter ? { region: regionFilter } : {}),
-        }).toString()}`),
-        axios.get('/api/analytics'),
-      ]);
+      const uRes = await axios.get(`/api/users?${new URLSearchParams({
+        ...(roleFilter ? { role: roleFilter } : {}),
+        ...(regionFilter ? { region: regionFilter } : {}),
+        ...(search ? { search } : {}),
+        page: String(page),
+        limit: '10',
+      }).toString()}`);
       setUsers(uRes.data.users     ?? []);
-      setAnalytics(aRes.data);
+      setPagination(uRes.data.pagination ?? { total: 0, pages: 1 });
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }, [regionFilter, roleFilter]);
+  }, [regionFilter, roleFilter, search, page]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    axios.get('/api/analytics').then((res) => setAnalytics(res.data)).catch(console.error);
+  }, []);
 
   const confirmDelete = async () => {
     if (!deleteUser) return;
     setDeleting(true);
     try {
       await axios.delete('/api/users', { data: { userId: deleteUser._id } });
-      toast.success(`${deleteUser.name} ${deleteUser.surname} deleted`);
+      toast.success(`${deleteUser.name} ${deleteUser.surname} soft deleted`);
       setDeleteUser(null);
       fetchData();
     } catch (err: any) {
@@ -94,11 +99,7 @@ export default function SuperAdminPage() {
     } finally { setSaving(false); }
   };
 
-  const filtered = users.filter((u) =>
-    !search ||
-    u.name?.toLowerCase().includes(search.toLowerCase()) ||
-    u.email?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = users;
 
   const roleColors: Record<string, string> = {
     user: 'badge-active', manager: 'badge-mvp', super_admin: 'badge-rejected',
@@ -109,19 +110,23 @@ export default function SuperAdminPage() {
       <Header title="Super Admin" subtitle="Full system control and user management" />
       <div className="p-8 space-y-8">
 
-        {/* System Stats */}
+        {/* System Stats — resident-centric */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Users',      value: analytics?.totalUsers,    color: '#6366f1' },
-            { label: 'Total Startups',   value: analytics?.totalStartups, color: '#10b981' },
-            { label: 'Active Programs',  value: analytics?.activeStartups,color: '#f59e0b' },
-            { label: 'Pending Reviews',
-              value: (analytics?.pendingReports ?? 0) + (analytics?.pendingStartups ?? 0),
-              color: '#ec4899' },
-          ].map(({ label, value, color }) => (
+            { label: 'Jami rezidentlar', value: analytics?.totalResidents, color: '#10b981',
+              sub: `${analytics?.newResidentsThisMonth ?? 0} ta shu oy` },
+            { label: 'Yetakchi soha',    value: analytics?.topSphere || '—', color: '#6366f1',
+              sub: 'eng ko‘p rezident', small: true },
+            { label: 'Eng faol oy',      value: analytics?.bestMonth?.month || '—', color: '#f59e0b',
+              sub: `${analytics?.bestMonth?.count ?? 0} ta rezident`, small: true },
+            { label: 'Kutuvchi murojaatlar',
+              value: (analytics?.pendingReports ?? 0) + (analytics?.pendingApplications ?? 0),
+              color: '#ec4899', sub: 'ko‘rib chiqilmoqda' },
+          ].map(({ label, value, color, sub, small }) => (
             <div key={label} className="card text-center">
-              <p className="text-3xl font-bold" style={{ color }}>{value ?? '—'}</p>
+              <p className={small ? 'text-xl font-bold truncate' : 'text-3xl font-bold'} style={{ color }}>{value ?? '—'}</p>
               <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
+              {sub && <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{sub}</p>}
             </div>
           ))}
         </div>
@@ -302,17 +307,17 @@ export default function SuperAdminPage() {
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2"
                   style={{ color: 'var(--text-muted)' }} />
-                <input value={search} onChange={(e) => setSearch(e.target.value)}
+                <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                   className="input pl-8 py-2 text-sm w-48" placeholder="Search users..." />
               </div>
-              <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}
+              <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
                 className="input py-2 text-sm w-auto">
                 <option value="">All Roles</option>
                 <option value="user">Founders</option>
                 <option value="manager">Managers</option>
                 <option value="super_admin">Super Admins</option>
               </select>
-              <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)}
+              <select value={regionFilter} onChange={(e) => { setRegionFilter(e.target.value); setPage(1); }}
                 className="input py-2 text-sm w-auto">
                 <option value="">All Regions</option>
                 {REGIONS.map((region) => (
@@ -329,21 +334,21 @@ export default function SuperAdminPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>User</th><th>Email</th><th>Region</th><th>Role</th><th>Telegram</th><th>Joined</th><th>Actions</th>
+                  <th>Name</th><th>Email</th><th>Region</th><th>Role</th><th>Telegram</th><th>Status</th><th>Joined</th><th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   Array.from({ length: 6 }).map((_, i) => (
                     <tr key={i}>
-                      {Array.from({ length: 7 }).map((_, j) => (
+                      {Array.from({ length: 8 }).map((_, j) => (
                         <td key={j}><div className="skeleton h-4 w-full" /></td>
                       ))}
                     </tr>
                   ))
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-10"
+                    <td colSpan={8} className="text-center py-10"
                       style={{ color: 'var(--text-muted)' }}>No users found</td>
                   </tr>
                 ) : filtered.map((u) => (
@@ -378,6 +383,11 @@ export default function SuperAdminPage() {
                         </span>
                       )}
                     </td>
+                    <td>
+                      <span className={`badge ${u.status === 'disabled' ? 'badge-inactive' : 'badge-active'}`}>
+                        {u.status || 'active'}
+                      </span>
+                    </td>
                     <td className="text-xs" style={{ color: 'var(--text-muted)' }}>
                       {u.createdAt ? format(new Date(u.createdAt), 'MMM d, yyyy') : '—'}
                     </td>
@@ -401,6 +411,19 @@ export default function SuperAdminPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="p-4 border-t flex items-center justify-between gap-3" style={{ borderColor: 'var(--border)' }}>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {pagination.total} admin/user · Page {page} of {pagination.pages || 1}
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="btn-secondary text-sm">
+                Previous
+              </button>
+              <button onClick={() => setPage((p) => Math.min(pagination.pages || 1, p + 1))} disabled={page >= (pagination.pages || 1)} className="btn-secondary text-sm">
+                Next
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -456,7 +479,7 @@ export default function SuperAdminPage() {
               Delete Account
             </h3>
             <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
-              You are about to permanently delete:
+              You are about to soft delete:
             </p>
             <div className="p-3 rounded-xl mb-4" style={{ background: 'var(--bg-secondary)' }}>
               <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
@@ -467,7 +490,7 @@ export default function SuperAdminPage() {
             <div className="p-3 rounded-xl mb-6"
               style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
               <p className="text-xs" style={{ color: '#ef4444' }}>
-                ⚠️ This will delete the account, startup, and all related data. This action cannot be undone.
+                This keeps historical data traceable and hides the account from active lists.
               </p>
             </div>
             <div className="flex gap-3">
@@ -477,7 +500,7 @@ export default function SuperAdminPage() {
                 style={{ background: deleting ? '#f87171' : '#ef4444' }}>
                 {deleting
                   ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  : <><Trash2 size={14} /> Delete permanently</>}
+                  : <><Trash2 size={14} /> Soft delete</>}
               </button>
             </div>
           </div>

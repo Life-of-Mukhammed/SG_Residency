@@ -67,52 +67,55 @@ export default function NewLeadsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [regionFilter, setRegionFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [leadStats, setLeadStats] = useState({ total: 0, accepted: 0, rejected: 0, pending: 0 });
   const [expandedLeads, setExpandedLeads] = useState<Set<string>>(new Set());
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(searchQuery.trim()), 350);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    axios.get('/api/residency-questions')
+      .then((res) => setQuestions(res.data.questions || []))
+      .catch(() => toast.error('Savollarni yuklash amalga oshmadi'));
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [leadsRes, questionsRes] = await Promise.all([
-        axios.get('/api/startups?limit=200'),
-        axios.get('/api/residency-questions'),
+      const statusParam = statusFilter === 'accepted'
+        ? 'accepted'
+        : statusFilter;
+      const [leadsRes, residentsRes] = await Promise.all([
+        axios.get(`/api/startups?${new URLSearchParams({
+          limit: '50',
+          applicationType: 'new_applicant',
+          ...(statusParam ? { status: statusParam } : { statuses: 'pending,lead_accepted,active,rejected' }),
+          ...(debouncedSearch ? { search: debouncedSearch } : {}),
+          ...(regionFilter ? { region: regionFilter } : {}),
+          ...(fromDate ? { from: fromDate } : {}),
+          ...(toDate ? { to: toDate } : {}),
+        }).toString()}`),
+        axios.get('/api/startups?limit=20&applicationType=existing_resident&statuses=pending,lead_accepted'),
       ]);
       const all = leadsRes.data.startups || [];
-      setLeads(
-        all.filter((item: any) =>
-          ['pending', 'lead_accepted'].includes(item.status) &&
-          item.applicationType !== 'existing_resident'
-        )
-      );
-      setExistingResidents(
-        all.filter((item: any) =>
-          item.applicationType === 'existing_resident' &&
-          ['pending', 'lead_accepted'].includes(item.status)
-        )
-      );
-      setQuestions(questionsRes.data.questions || []);
+      setLeadStats(leadsRes.data.stats || { total: 0, accepted: 0, rejected: 0, pending: 0 });
+      setLeads(all);
+      setExistingResidents(residentsRes.data.startups || []);
     } catch {
       toast.error('Yangi leadlarni yuklash amalga oshmadi');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fromDate, toDate, debouncedSearch, regionFilter, statusFilter]);
 
   useEffect(() => { load(); }, [load]);
 
-  const filteredLeads = useMemo(() => {
-    return leads.filter((lead) => {
-      if (statusFilter && lead.status !== statusFilter) return false;
-      if (regionFilter && lead.region !== regionFilter) return false;
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        if (
-          !lead.startup_name?.toLowerCase().includes(q) &&
-          !lead.founder_name?.toLowerCase().includes(q)
-        ) return false;
-      }
-      return true;
-    });
-  }, [leads, statusFilter, regionFilter, searchQuery]);
+  const filteredLeads = leads;
 
   const toggleExpanded = (id: string) => {
     setExpandedLeads((prev) => {
@@ -223,7 +226,16 @@ export default function NewLeadsPage() {
 
   const pendingCount   = leads.filter((l) => l.status === 'pending').length;
   const interviewCount = leads.filter((l) => l.status === 'lead_accepted').length;
+  const acceptedCount = leads.filter((l) => ['lead_accepted', 'active'].includes(l.status)).length;
+  const rejectedCount = leads.filter((l) => l.status === 'rejected').length;
+  const activeLeads = filteredLeads.filter((lead) => lead.status !== 'rejected');
+  const rejectedLeads = filteredLeads.filter((lead) => lead.status === 'rejected');
   const usedRegions    = Array.from(new Set(leads.map((l) => l.region).filter(Boolean)));
+
+  const telegramHref = (value?: string) => {
+    const username = (value || '').trim().replace(/^@/, '');
+    return username ? `https://t.me/${username}` : '';
+  };
 
   return (
     <div className="animate-fade-in">
@@ -232,8 +244,22 @@ export default function NewLeadsPage() {
       <div className="p-6 space-y-6">
 
         {/* ── Stat cards ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           {[
+            {
+              label: 'Qabul qilinganlar',
+              value: acceptedCount,
+              sub: 'Intervyu va rezidentlik bosqichi',
+              color: '#10b981',
+              bg: 'rgba(16,185,129,0.10)',
+            },
+            {
+              label: 'Rad etilganlar',
+              value: rejectedCount,
+              sub: 'Rad etilgan leadlar arxivi',
+              color: '#ef4444',
+              bg: 'rgba(239,68,68,0.10)',
+            },
             {
               label: 'Yangi leadlar',
               value: pendingCount,
@@ -245,8 +271,8 @@ export default function NewLeadsPage() {
               label: 'Intervyu bosqichi',
               value: interviewCount,
               sub: 'Intervyu tayinlashga tayyor',
-              color: '#10b981',
-              bg: 'rgba(16,185,129,0.10)',
+              color: '#3b82f6',
+              bg: 'rgba(59,130,246,0.10)',
             },
             {
               label: 'Savol banki',
@@ -302,14 +328,36 @@ export default function NewLeadsPage() {
                     <option key={r} value={r}>{r}</option>
                   ))}
                 </select>
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="input text-sm w-auto"
+                  title="Boshlanish sanasi"
+                />
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="input text-sm w-auto"
+                  title="Tugash sanasi"
+                />
               </div>
+
+              {(fromDate || toDate) && (
+                <div className="rounded-2xl p-3 text-sm" style={{ background: 'rgba(99,102,241,0.08)', color: 'var(--text-primary)' }}>
+                  <strong>{fromDate || '...'} dan {toDate || '...'} gacha:</strong>{' '}
+                  Jami murojaatlar: {leadStats.total} · Qabul qilinganlar: {leadStats.accepted} · Rad etilganlar: {leadStats.rejected} · Kutilmoqda: {leadStats.pending}
+                </div>
+              )}
 
               {/* Status tabs */}
               <div className="flex gap-2 flex-wrap">
                 {[
                   { key: '', label: `Barchasi (${leads.length})` },
                   { key: 'pending', label: `Yangi (${pendingCount})` },
-                  { key: 'lead_accepted', label: `Intervyu (${interviewCount})` },
+                  { key: 'accepted', label: `Qabul (${acceptedCount})` },
+                  { key: 'rejected', label: `Rad (${rejectedCount})` },
                 ].map((tab) => (
                   <button
                     key={tab.key}
@@ -354,7 +402,7 @@ export default function NewLeadsPage() {
                   <div key={i} className="skeleton h-44 rounded-3xl" />
                 ))}
               </div>
-            ) : filteredLeads.length === 0 ? (
+            ) : activeLeads.length === 0 ? (
               <div className="card rounded-3xl p-12 text-center">
                 <div
                   className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4"
@@ -371,7 +419,7 @@ export default function NewLeadsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredLeads.map((lead) => {
+                {activeLeads.map((lead) => {
                   const isInterview = lead.status === 'lead_accepted';
                   const rColor = regionColor(lead.region || '');
                   const sColor = STAGE_COLORS[lead.stage] || '#6366f1';
@@ -421,6 +469,9 @@ export default function NewLeadsPage() {
                                   }}
                                 >
                                   {isInterview ? 'Intervyu bosqichi' : 'Yangi lead'}
+                                </span>
+                                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                                  {lead.createdAt ? new Date(lead.createdAt).toLocaleString('uz-UZ') : '—'}
                                 </span>
                                 {lead.applicationType === 'existing_resident' && (
                                   <span className="px-2 py-0.5 rounded-lg text-xs font-medium"
@@ -483,7 +534,7 @@ export default function NewLeadsPage() {
                                   <X size={13} /> Rad etish
                                 </button>
                               </>
-                            ) : (
+                            ) : lead.status === 'lead_accepted' ? (
                               <button
                                 onClick={() => setPromoteTarget(lead)}
                                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:scale-[1.02]"
@@ -491,6 +542,10 @@ export default function NewLeadsPage() {
                               >
                                 <Send size={13} /> Rezidentlikka qo&apos;shish
                               </button>
+                            ) : (
+                              <span className="px-3 py-2 rounded-xl text-xs font-semibold" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
+                                Qabul qilingan
+                              </span>
                             )}
                           </div>
                         </div>
@@ -506,12 +561,23 @@ export default function NewLeadsPage() {
                               <span className="text-xs notranslate" translate="no" style={{ color: 'var(--text-primary)' }}>{lead.phone}</span>
                             </div>
                           )}
-                          {lead.telegram && (
-                            <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2">
                               <MessageCircle size={12} style={{ color: 'var(--text-muted)' }} />
-                              <span className="text-xs notranslate" translate="no" style={{ color: 'var(--accent)' }}>{lead.telegram}</span>
+                              {telegramHref(lead.telegram) ? (
+                                <a
+                                  href={telegramHref(lead.telegram)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs notranslate hover:underline"
+                                  translate="no"
+                                  style={{ color: 'var(--accent)' }}
+                                >
+                                  {lead.telegram?.startsWith('@') ? lead.telegram : `@${lead.telegram}`}
+                                </a>
+                              ) : (
+                                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
+                              )}
                             </div>
-                          )}
                           {lead.pitch_deck && (
                             <a
                               href={lead.pitch_deck}
@@ -588,6 +654,42 @@ export default function NewLeadsPage() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {rejectedLeads.length > 0 && (
+              <div className="card">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Rejected Leads</h2>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                      Rad etilgan leadlar saqlanadi, qidiriladi va analyticsga kiradi
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                    {rejectedLeads.length}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {rejectedLeads.map((lead) => (
+                    <div key={lead._id} className="rounded-2xl p-4" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold notranslate" translate="no" style={{ color: 'var(--text-primary)' }}>{lead.startup_name}</p>
+                          <p className="text-xs mt-1 notranslate" translate="no" style={{ color: 'var(--text-muted)' }}>
+                            {lead.founder_name} · {lead.createdAt ? new Date(lead.createdAt).toLocaleString('uz-UZ') : '—'}
+                          </p>
+                          {lead.rejectionReason && (
+                            <p className="text-sm mt-2" style={{ color: '#ef4444' }}>{lead.rejectionReason}</p>
+                          )}
+                        </div>
+                        <a href={`/manager/startup/${lead._id}`} className="text-xs hover:underline" style={{ color: 'var(--accent)' }}>
+                          Ochish
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

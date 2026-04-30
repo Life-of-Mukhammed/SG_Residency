@@ -8,6 +8,10 @@ import { z } from 'zod';
 import User from '@/models/User';
 import { DEFAULT_STARTUP_SPHERE, STARTUP_SPHERES } from '@/lib/startup-spheres';
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 const startupSchema = z.object({
   applicationType:   z.enum(['existing_resident', 'new_applicant']),
   name:              z.string().optional(),
@@ -53,11 +57,30 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status') || '';
     const sphere = searchParams.get('sphere') || '';
     const region = searchParams.get('region') || '';
+    const from = searchParams.get('from') || '';
+    const to = searchParams.get('to') || '';
+    const applicationType = searchParams.get('applicationType') || '';
+    const statuses = searchParams.get('statuses') || '';
+    const leadStatus = searchParams.get('leadStatus') || '';
+    const includeAnswers = searchParams.get('includeAnswers') === '1';
 
     const user = session.user as { id: string; role: string };
-    const query: Record<string, unknown> = {};
 
-    if (user.role === 'user') query.userId = user.id;
+    // Fast-path: regular users always fetch their own single startup. Skip count/aggregate.
+    if (user.role === 'user') {
+      const own = await Startup.findOne({ userId: user.id, deletedAt: null })
+        .select(includeAnswers ? '' : '-applicationAnswers -statusHistory')
+        .populate('userId', 'name surname email')
+        .lean();
+      const startups = own ? [own] : [];
+      return NextResponse.json({
+        startups,
+        stats: { total: startups.length, accepted: 0, rejected: 0, pending: 0 },
+        pagination: { total: startups.length, page: 1, limit: startups.length || 1, pages: 1 },
+      });
+    }
+
+    const query: Record<string, any> = { deletedAt: null };
     if (search) {
       query.$or = [
         { startup_name:  { $regex: search, $options: 'i' } },
@@ -66,21 +89,54 @@ export async function GET(req: NextRequest) {
       ];
     }
     if (stage)  query.stage  = stage;
-    if (status) query.status = status;
+    if (statuses) query.status = { $in: statuses.split(',').map((item) => item.trim()).filter(Boolean) };
+    else if (status === 'accepted') query.status = { $in: ['lead_accepted', 'active'] };
+    else if (status) query.status = status;
     if (sphere) query.startup_sphere = sphere;
-    if (region) query.region = { $regex: `^${region}$`, $options: 'i' };
+    if (region) query.region = { $regex: `^${escapeRegex(region)}$`, $options: 'i' };
+    if (applicationType) query.applicationType = applicationType;
+    if (leadStatus) query.leadStatus = leadStatus;
+    if (from || to) {
+      query.createdAt = {};
+      if (from) query.createdAt.$gte = new Date(`${from}T00:00:00.000Z`);
+      if (to) query.createdAt.$lte = new Date(`${to}T23:59:59.999Z`);
+    }
 
-    const total    = await Startup.countDocuments(query);
-    const startups = await Startup.find(query)
-      .populate('userId',    'name surname email')
-      .populate('managerId', 'name surname email')
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean();
+    const statsQuery = { ...query };
+    delete statsQuery.status;
+
+    // Compact field set for table rendering — much smaller payload on the wire
+    const listSelect = includeAnswers
+      ? ''
+      : 'startup_name founder_name phone region stage status leadStatus mrr users_count investment_raised acceptedAt createdAt applicationType startup_sphere telegram gmail rejectionReason team_size pitch_deck userId managerId';
+
+    // Run all three queries in parallel — total count, status stats, and the page itself
+    const [total, statusStats, startups] = await Promise.all([
+      Startup.countDocuments(query),
+      Startup.aggregate([
+        { $match: statsQuery },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            accepted: { $sum: { $cond: [{ $in: ['$status', ['lead_accepted', 'active']] }, 1, 0] } },
+            rejected: { $sum: { $cond: [{ $eq: ['$status', 'rejected'] }, 1, 0] } },
+            pending:  { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
+          },
+        },
+      ]),
+      Startup.find(query)
+        .select(listSelect)
+        .populate('userId', 'name surname email')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+    ]);
 
     return NextResponse.json({
       startups,
+      stats: statusStats[0] || { total: 0, accepted: 0, rejected: 0, pending: 0 },
       pagination: { total, page, limit, pages: Math.ceil(total / limit) },
     });
   } catch (err) {
@@ -156,7 +212,7 @@ export async function POST(req: NextRequest) {
     };
 
     if (user.role === 'user') {
-      const existing = await Startup.findOne({ userId: user.id });
+      const existing = await Startup.findOne({ userId: user.id, deletedAt: null });
       if (existing) {
         if (existing.status === 'rejected' || existing.status === 'pending') {
           const startup = await Startup.findByIdAndUpdate(

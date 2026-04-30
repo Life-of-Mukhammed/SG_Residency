@@ -19,6 +19,9 @@ export default function StartupDetailPage() {
   const [editModal, setEditModal] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
+  const telegramUrl = startup?.telegram?.trim()
+    ? `https://t.me/${startup.telegram.trim().replace(/^@/, '')}`
+    : '';
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -47,6 +50,8 @@ export default function StartupDetailPage() {
       founder_name: startup.founder_name || '',
       phone: startup.phone || '',
       telegram: startup.telegram || '',
+      gmail: startup.gmail || '',
+      leadStatus: startup.leadStatus || '',
       pitch_deck: startup.pitch_deck || '',
       resume_url: startup.resume_url || '',
       team_size: startup.team_size ?? 1,
@@ -133,7 +138,12 @@ export default function StartupDetailPage() {
                   <Phone size={14} /> {startup.phone}
                 </div>
                 <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-                  <MessageCircle size={14} /> {startup.telegram}
+                  <MessageCircle size={14} />
+                  {telegramUrl ? (
+                    <a href={telegramUrl} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--accent)' }}>
+                      {startup.telegram.startsWith('@') ? startup.telegram : `@${startup.telegram}`}
+                    </a>
+                  ) : '—'}
                 </div>
                 <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
                   <Globe size={14} /> {startup.gmail}
@@ -255,18 +265,20 @@ export default function StartupDetailPage() {
                 {[
                   { label: 'Startup nomi', key: 'startup_name' },
                   { label: 'Asoschi ismi', key: 'founder_name' },
+                  { label: 'Email / Gmail', key: 'gmail', placeholder: 'founder@gmail.com' },
                   { label: 'Hudud', key: 'region' },
                   { label: 'Telefon', key: 'phone' },
                   { label: 'Telegram', key: 'telegram' },
                   { label: 'Taqdimot havolasi', key: 'pitch_deck' },
                   { label: 'Rezyume havolasi', key: 'resume_url' },
-                ].map(({ label, key }) => (
+                ].map(({ label, key, placeholder }: any) => (
                   <div key={key}>
                     <label className="label">{label}</label>
                     <input
                       value={editForm[key] || ''}
                       onChange={(e) => setEditForm((p: any) => ({ ...p, [key]: e.target.value }))}
                       className="input"
+                      placeholder={placeholder}
                     />
                   </div>
                 ))}
@@ -274,6 +286,13 @@ export default function StartupDetailPage() {
                   <label className="label">Bosqich</label>
                   <select value={editForm.stage} onChange={(e) => setEditForm((p: any) => ({ ...p, stage: e.target.value }))} className="input">
                     {['idea', 'mvp', 'growth', 'scale'].map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Sheet status</label>
+                  <select value={editForm.leadStatus || ''} onChange={(e) => setEditForm((p: any) => ({ ...p, leadStatus: e.target.value }))} className="input">
+                    <option value="">— (yo'q)</option>
+                    {['High', 'Medium', 'Low', 'On Hold', 'Dead', 'Stopped'].map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div>

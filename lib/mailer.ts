@@ -11,9 +11,10 @@ export type NotificationMailInput = {
 function getSmtpConfig() {
   const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
   const smtpPort = Number(process.env.SMTP_PORT || 465);
-  const smtpUser = process.env.SMTP_USER || 'muhtarzhanov45@gmail.com';
-  const smtpPass = process.env.SMTP_PASS;
-  const smtpFrom = process.env.SMTP_FROM || 'muhtarzhanov45@gmail.com';
+  const smtpUser = process.env.SMTP_USER;
+  // Gmail App Passwords are formatted as "xxxx xxxx xxxx xxxx" but must be sent without spaces.
+  const smtpPass = process.env.SMTP_PASS?.replace(/\s+/g, '');
+  const smtpFrom = process.env.SMTP_FROM || smtpUser;
   return { smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom };
 }
 
@@ -145,6 +146,25 @@ function buildEmailHtml(title: string, message: string, type?: string): string {
   </table>
 </body>
 </html>`;
+}
+
+export async function sendVerificationCode(email: string, code: string, isResident: boolean) {
+  const { smtpFrom } = getSmtpConfig();
+  const transporter = getTransporter();
+  const introMessage = isResident
+    ? `Salom! <b>Startup Garage</b> rezidentligida sizning ushbu email manzilingiz topildi.\n\nAkkauntingizga kirish uchun pastdagi tasdiqlash kodini kiriting:`
+    : `Salom! Startup Garage akkauntini yaratish uchun ushbu email manzilini tasdiqlash kerak.\n\nTasdiqlash kodingiz:`;
+  await transporter.sendMail({
+    from: `"Startup Garage" <${smtpFrom}>`,
+    to: email,
+    subject: 'Startup Garage — tasdiqlash kodi',
+    text: `Tasdiqlash kodingiz: ${code}. Kod 10 daqiqa ichida amal qiladi.`,
+    html: buildEmailHtml(
+      isResident ? 'Rezident akkauntini tasdiqlash' : 'Email tasdiqlash kodi',
+      `${introMessage}\n\n<strong style="font-size:32px;letter-spacing:8px;color:#6366f1;">${code}</strong>\n\nKod 10 daqiqa amal qiladi. Agar siz so‘rov yubormagan bo‘lsangiz, bu xabarni eʼtiborsiz qoldiring.`,
+      'info'
+    ),
+  });
 }
 
 export async function sendPasswordResetCode(email: string, code: string) {

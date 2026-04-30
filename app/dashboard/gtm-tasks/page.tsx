@@ -36,6 +36,7 @@ export default function GtmTasksPage() {
   const [sprintTasks, setSprintTasks] = useState<any[]>([]);
   const [sprintProgress, setSprintProgress] = useState<any[]>([]);
   const [progress, setProgress] = useState<ProgressMap>({});
+  const [assignedTasks, setAssignedTasks] = useState<any[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ guide: true, plan: true, system: true });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -45,12 +46,13 @@ export default function GtmTasksPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [startupRes, itemsRes, sprintTaskRes, sprintProgressRes, gtmProgressRes] = await Promise.all([
+        const [startupRes, itemsRes, sprintTaskRes, sprintProgressRes, gtmProgressRes, assignedRes] = await Promise.all([
           axios.get('/api/startups?limit=1'),
           axios.get('/api/gtm'),
           axios.get('/api/sprint-tasks'),
           axios.get('/api/sprints'),
           axios.get('/api/gtm-progress'),
+          axios.get('/api/gtm-tasks'),
         ]);
 
         const map: ProgressMap = {};
@@ -68,6 +70,7 @@ export default function GtmTasksPage() {
         setSprintTasks(sprintTaskRes.data.tasks ?? []);
         setSprintProgress(sprintProgressRes.data.tasks ?? []);
         setProgress(map);
+        setAssignedTasks(assignedRes.data.tasks ?? []);
       } catch (error) {
         console.error(error);
       } finally {
@@ -141,6 +144,16 @@ export default function GtmTasksPage() {
     }
   };
 
+  const updateAssignedTask = async (taskId: string, status: string) => {
+    try {
+      await axios.patch('/api/gtm-tasks', { taskId, status });
+      setAssignedTasks((prev) => prev.map((task) => task._id === taskId ? { ...task, status } : task));
+      toast.success('Vazifa statusi yangilandi');
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Statusni yangilab bo‘lmadi');
+    }
+  };
+
   if (loading) {
     return (
       <div>
@@ -198,6 +211,38 @@ export default function GtmTasksPage() {
             <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#10b981,#38bdf8)' }} />
           </div>
         </div>
+
+        {assignedTasks.length > 0 && (
+          <div className="card space-y-3">
+            <div>
+              <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Manager biriktirgan vazifalar</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Shaxsiy GTM vazifalaringiz</p>
+            </div>
+            {assignedTasks.map((task) => (
+              <div key={task._id} className="rounded-2xl p-4" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{task.title}</p>
+                    <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{task.description}</p>
+                    <p className="text-xs mt-2" style={{ color: 'var(--accent)' }}>Deadline: {new Date(task.deadline).toLocaleDateString('uz-UZ')}</p>
+                  </div>
+                  <select value={task.status} onChange={(e) => updateAssignedTask(task._id, e.target.value)} className="input text-sm w-auto">
+                    <option value="todo">todo</option>
+                    <option value="in_progress">in progress</option>
+                    <option value="done">done</option>
+                  </select>
+                </div>
+                {task.attachments?.length > 0 && (
+                  <div className="flex gap-2 flex-wrap mt-3">
+                    {task.attachments.map((file: any) => (
+                      <a key={file.url} href={file.url} target="_blank" rel="noreferrer" className="badge badge-mvp">{file.name}</a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         {grouped.length === 0 ? (
           <div className="card max-w-2xl mx-auto text-center py-14">

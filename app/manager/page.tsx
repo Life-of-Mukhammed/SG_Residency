@@ -5,7 +5,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
 import Link from 'next/link';
-import { Search, ChevronUp, ChevronDown, Trash2, Eye, RefreshCw, Users, TrendingUp, FileText, Calendar, Check, X } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Trash2, Eye, RefreshCw, Users, TrendingUp, FileText, Calendar, Check, X, Plus, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { UZ_REGIONS } from '@/lib/regions';
 
@@ -16,6 +16,24 @@ const REGIONS = UZ_REGIONS;
 const STAGES   = ['idea','mvp','growth','scale'];
 const STATUSES = ['active','inactive','rejected'];
 
+const EMPTY_RESIDENT = {
+  founderName: '',
+  email: '',
+  phone: '',
+  telegram: '',
+  startupName: '',
+  region: 'Toshkent shahri',
+  description: '',
+  startupSphere: '',
+  stage: 'mvp',
+  teamSize: 1,
+  mrr: 0,
+  usersCount: 0,
+  investmentRaised: 0,
+  pitchDeck: '',
+  resumeUrl: '',
+};
+
 export default function ManagerPage() {
   const [startups, setStartups]     = useState<any[]>([]);
   const [analytics, setAnalytics]   = useState<any>(null);
@@ -24,6 +42,7 @@ export default function ManagerPage() {
   const [stage, setStage]           = useState('');
   const [status, setStatus]         = useState('');
   const [region, setRegion]         = useState('');
+  const [leadStatus, setLeadStatus] = useState('');
   const [sortKey, setSortKey]       = useState<SortKey>('createdAt');
   const [sortDir, setSortDir]       = useState<SortDir>('desc');
   const [page, setPage]             = useState(1);
@@ -31,6 +50,13 @@ export default function ManagerPage() {
   const [rejectTarget, setRejectTarget] = useState<any | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [residentModal, setResidentModal] = useState(false);
+  const [residentForm, setResidentForm] = useState(EMPTY_RESIDENT);
+  const [savingResident, setSavingResident] = useState(false);
+  const [importModal, setImportModal] = useState(false);
+  const [sheetUrl, setSheetUrl] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importSummary, setImportSummary] = useState<any>(null);
 
 
   const T = {
@@ -57,11 +83,12 @@ export default function ManagerPage() {
       if (stage)  params.set('stage',  stage);
       if (status) params.set('status', status);
       if (region) params.set('region', region);
+      if (leadStatus) params.set('leadStatus', leadStatus);
       params.set('page', String(page));
       params.set('limit', '25');
       const [sRes, aRes] = await Promise.all([
         axios.get(`/api/startups?${params}`),
-        page === 1 && !search && !stage && !status && !region
+        page === 1 && !search && !stage && !status && !region && !leadStatus
           ? axios.get('/api/analytics')
           : Promise.resolve({ data: null }),
       ]);
@@ -70,7 +97,7 @@ export default function ManagerPage() {
       if (aRes.data) setAnalytics(aRes.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }, [search, stage, status, region, page]);
+  }, [search, stage, status, region, leadStatus, page]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -129,6 +156,44 @@ export default function ManagerPage() {
     } catch { toast.error('Xato yuz berdi'); }
   };
 
+  const saveResident = async () => {
+    if (!residentForm.founderName.trim() || !residentForm.email.trim() || !residentForm.phone.trim() || !residentForm.startupName.trim()) {
+      toast.error('Asoschi, email, telefon va startup nomi majburiy');
+      return;
+    }
+    setSavingResident(true);
+    try {
+      await axios.post('/api/residents', residentForm);
+      toast.success('Resident qo‘shildi');
+      setResidentModal(false);
+      setResidentForm(EMPTY_RESIDENT);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Resident qo‘shib bo‘lmadi');
+    } finally {
+      setSavingResident(false);
+    }
+  };
+
+  const importResidents = async () => {
+    if (!sheetUrl.trim()) {
+      toast.error('Google Sheet link kiriting');
+      return;
+    }
+    setImporting(true);
+    setImportSummary(null);
+    try {
+      const res = await axios.put('/api/residents', { sheetUrl: sheetUrl.trim() });
+      setImportSummary(res.data);
+      toast.success(`${res.data.summary.created} qo‘shildi, ${res.data.summary.updated} yangilandi`);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Sheetdan import qilib bo‘lmadi');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     else { setSortKey(key); setSortDir('asc'); }
@@ -152,32 +217,39 @@ export default function ManagerPage() {
     </span>
   );
 
-  const hasFilters = !!(search || stage || status || region);
+  const hasFilters = !!(search || stage || status || region || leadStatus);
 
   return (
     <div className="animate-fade-in">
       <Header title="Rezidentlar paneli" subtitle="Tasdiqlangan va ko'rib chiqilgan startaplar" />
       <div className="p-6 space-y-5">
 
-        {/* Analytics summary */}
+        {/* Analytics summary — resident-centric */}
         {analytics && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: <Users size={18}/>,      label: t('total'),   value: analytics.totalStartups,  color: '#6366f1' },
-            { icon: <TrendingUp size={18}/>,  label: t('active'),  value: analytics.activeStartups, color: '#10b981' },
-            { icon: <FileText size={18}/>,    label: 'Kutuvchi hisobotlar',
-                value: analytics.pendingReports, color: '#f59e0b' },
-            { icon: <Calendar size={18}/>,    label: 'Uchrashuvlar',
-                value: analytics.totalMeetings,  color: '#ec4899' },
+              { icon: <Users size={18}/>,      label: 'Jami rezidentlar',
+                value: analytics.totalResidents, color: '#10b981',
+                sub: `${analytics.newResidentsThisMonth ?? 0} ta shu oy` },
+              { icon: <TrendingUp size={18}/>, label: 'Eng faol oy',
+                value: analytics.bestMonth?.month || '—', color: '#f59e0b',
+                sub: `${analytics.bestMonth?.count ?? 0} ta rezident` },
+              { icon: <FileText size={18}/>,   label: 'Yangi murojaatlar',
+                value: analytics.applicationsThisMonth ?? 0, color: '#6366f1',
+                sub: `oldingi oy: ${analytics.applicationsLastMonth ?? 0}` },
+              { icon: <Calendar size={18}/>,   label: 'Uchrashuvlar',
+                value: analytics.totalMeetings ?? 0, color: '#ec4899',
+                sub: 'bron qilinganlar' },
             ].map(s => (
               <div key={s.label} className="card flex items-center gap-3 py-4">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: `${s.color}22`, color: s.color }}>
                   {s.icon}
                 </div>
-                <div>
-                  <p className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{s.value ?? '—'}</p>
+                <div className="min-w-0">
+                  <p className="text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>{s.value ?? '—'}</p>
                   <p className="text-xs"            style={{ color: 'var(--text-muted)'   }}>{s.label}</p>
+                  {s.sub && <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{s.sub}</p>}
                 </div>
               </div>
             ))}
@@ -207,30 +279,69 @@ export default function ManagerPage() {
             <button onClick={fetchData} className="btn-secondary flex items-center gap-1.5 text-sm">
               <RefreshCw size={13}/> {t('refresh')}
             </button>
+            <button onClick={() => setResidentModal(true)} className="btn-primary flex items-center gap-1.5 text-sm">
+              <Plus size={13}/> Resident qo‘shish
+            </button>
+            <button onClick={() => { setImportModal(true); setImportSummary(null); }} className="btn-secondary flex items-center gap-1.5 text-sm">
+              <Upload size={13}/> Sheetdan import
+            </button>
             {hasFilters && (
-              <button onClick={() => { setSearch(''); setStage(''); setStatus(''); setRegion(''); setPage(1); }}
+              <button onClick={() => { setSearch(''); setStage(''); setStatus(''); setRegion(''); setLeadStatus(''); setPage(1); }}
                 className="text-sm px-3 py-2 rounded-xl" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>
                 {t('clear')}
               </button>
             )}
           </div>
 
+          {/* Lead status quick filters */}
+          <div className="flex gap-2 flex-wrap">
+            {(() => {
+              const STATUSES_META: { key: string; label: string; color: string }[] = [
+                { key: '',         label: 'Hammasi',  color: '#6366f1' },
+                { key: 'High',     label: 'High',     color: '#10b981' },
+                { key: 'Medium',   label: 'Medium',   color: '#f59e0b' },
+                { key: 'Low',      label: 'Low',      color: '#3b82f6' },
+                { key: 'On Hold',  label: 'On Hold',  color: '#8b5cf6' },
+                { key: 'Dead',     label: 'Dead',     color: '#ef4444' },
+                { key: 'Stopped',  label: 'Stopped',  color: '#64748b' },
+              ];
+              return STATUSES_META.map((m) => {
+                const active = leadStatus === m.key;
+                return (
+                  <button
+                    key={m.key || 'all'}
+                    onClick={() => { setLeadStatus(m.key); setPage(1); }}
+                    className="text-xs px-3 py-1.5 rounded-full font-semibold transition"
+                    style={{
+                      background: active ? m.color : `${m.color}1a`,
+                      color: active ? 'white' : m.color,
+                      border: `1px solid ${m.color}${active ? '' : '40'}`,
+                    }}
+                  >
+                    {m.label}
+                  </button>
+                );
+              });
+            })()}
+          </div>
+
           {/* Filter chips */}
           {hasFilters && (
             <div className="flex gap-2 flex-wrap">
-              {search && <span className="badge badge-mvp text-xs">🔍 &quot;{search}&quot;</span>}
-              {stage  && <span className="badge badge-mvp text-xs capitalize">📊 {stage}</span>}
-              {status && <span className="badge badge-pending text-xs capitalize">📍 {status}</span>}
-              {region && <span className="badge badge-active text-xs">🌍 {region}</span>}
+              {search     && <span className="badge badge-mvp text-xs">🔍 &quot;{search}&quot;</span>}
+              {stage      && <span className="badge badge-mvp text-xs capitalize">📊 {stage}</span>}
+              {status     && <span className="badge badge-pending text-xs capitalize">📍 {status}</span>}
+              {region     && <span className="badge badge-active text-xs">🌍 {region}</span>}
+              {leadStatus && <span className="badge badge-pending text-xs">🏷 {leadStatus}</span>}
             </div>
           )}
         </div>
 
         {/* Stats */}
         <div className="flex gap-5 text-sm flex-wrap">
-          <span style={{ color: 'var(--text-muted)' }}>Rezidentlar: <strong style={{ color: 'var(--text-primary)' }}>{visibleStartups.length}</strong></span>
+          <span style={{ color: 'var(--text-muted)' }}>Jami: <strong style={{ color: 'var(--text-primary)' }}>{pagination.total}</strong></span>
           <span style={{ color: 'var(--text-muted)' }}>{t('active')}: <strong style={{ color: '#10b981' }}>{visibleStartups.filter(s => s.status === 'active').length}</strong></span>
-          <span style={{ color: 'var(--text-muted)' }}>Rad etilgan: <strong style={{ color: '#ef4444' }}>{visibleStartups.filter(s => s.status === 'rejected').length}</strong></span>
+          <span style={{ color: 'var(--text-muted)' }}>Nofaol: <strong style={{ color: '#64748b' }}>{visibleStartups.filter(s => s.status === 'inactive').length}</strong></span>
         </div>
 
         {/* Table */}
@@ -246,6 +357,7 @@ export default function ManagerPage() {
                 <th className="cursor-pointer select-none" onClick={() => handleSort('stage')}>
                   Bosqich <SortIcon k="stage"/>
                 </th>
+                <th>Status</th>
                 <th className="cursor-pointer select-none" onClick={() => handleSort('mrr')}>
                   MRR <SortIcon k="mrr"/>
                 </th>
@@ -266,7 +378,7 @@ export default function ManagerPage() {
                 ))
               ) : visibleStartups.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-16" style={{ color: 'var(--text-muted)' }}>
+                  <td colSpan={10} className="text-center py-16" style={{ color: 'var(--text-muted)' }}>
                     {t('noData')}
                     {hasFilters && (
                       <button onClick={() => { setSearch(''); setStage(''); setStatus(''); setRegion(''); }}
@@ -278,14 +390,20 @@ export default function ManagerPage() {
                 </tr>
               ) : visibleStartups.map(s => {
                 const isResidentRequest = s.applicationType === 'existing_resident' && s.status === 'pending';
+                const isDead = s.leadStatus === 'Dead' || s.leadStatus === 'Stopped';
+                const isOnHold = s.leadStatus === 'On Hold';
+                const rowStyle: React.CSSProperties = isResidentRequest ? {
+                  background: 'rgba(239,68,68,0.04)',
+                  borderLeft: '3px solid rgba(239,68,68,0.55)',
+                } : isDead ? {
+                  opacity: 0.65,
+                  background: 'rgba(239,68,68,0.025)',
+                } : isOnHold ? {
+                  opacity: 0.85,
+                  background: 'rgba(139,92,246,0.025)',
+                } : {};
                 return (
-                <tr
-                  key={s._id}
-                  style={isResidentRequest ? {
-                    background: 'rgba(239,68,68,0.04)',
-                    borderLeft: '3px solid rgba(239,68,68,0.55)',
-                  } : {}}
-                >
+                <tr key={s._id} style={rowStyle}>
                   <td>
                     <Link href={`/manager/startup/${s._id}`}>
                       <div className="flex items-center gap-2.5 group cursor-pointer">
@@ -299,7 +417,7 @@ export default function ManagerPage() {
                           </p>
                           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{s.startup_sphere}</p>
                           {isResidentRequest && (
-                            <span className="text-xs px-1.5 py-0.5 rounded-md font-medium" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                            <span className="text-xs px-1.5 py-0.5 rounded-md font-medium mt-1 inline-block" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
                               Resident so'rovi
                             </span>
                           )}
@@ -318,6 +436,23 @@ export default function ManagerPage() {
                     </span>
                   </td>
                   <td><span className={`badge badge-${s.stage} capitalize`}>{s.stage}</span></td>
+                  <td>
+                    {(() => {
+                      const COLORS: Record<string, string> = {
+                        High: '#10b981', Medium: '#f59e0b', Low: '#3b82f6',
+                        'On Hold': '#8b5cf6', Dead: '#ef4444', Stopped: '#64748b',
+                      };
+                      const c = COLORS[s.leadStatus];
+                      if (!c) return <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>;
+                      return (
+                        <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-semibold"
+                          style={{ background: `${c}1a`, color: c, border: `1px solid ${c}40` }}>
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />
+                          {s.leadStatus}
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td className="font-mono text-sm notranslate" translate="no">${s.mrr?.toLocaleString() ?? 0}</td>
                   <td className="text-sm">{s.users_count?.toLocaleString() ?? 0}</td>
                   <td>
@@ -360,7 +495,9 @@ export default function ManagerPage() {
                     )}
                   </td>
                   <td className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {s.createdAt ? format(new Date(s.createdAt), 'dd.MM.yyyy') : '—'}
+                    {s.acceptedAt
+                      ? format(new Date(s.acceptedAt), 'dd.MM.yyyy')
+                      : s.createdAt ? format(new Date(s.createdAt), 'dd.MM.yyyy') : '—'}
                   </td>
                   <td>
                     <div className="flex items-center gap-1">
@@ -441,6 +578,138 @@ export default function ManagerPage() {
               </button>
               <button onClick={rejectLead} disabled={reviewLoading || !rejectReason.trim()} className="btn-danger flex-1">
                 {reviewLoading ? 'Saqlanmoqda...' : 'Rad etish'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {residentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)' }}>
+          <div className="card w-full max-w-3xl p-0 overflow-hidden">
+            <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+              <div>
+                <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Resident qo‘shish</h3>
+                <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Maʼlumotlar kiritilgach startup avtomatik active resident bo‘ladi</p>
+              </div>
+              <button onClick={() => setResidentModal(false)} className="btn-secondary p-2"><X size={16}/></button>
+            </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
+              <div>
+                <label className="label">Asoschi F.I.Sh *</label>
+                <input className="input" value={residentForm.founderName} onChange={(e) => setResidentForm((p) => ({ ...p, founderName: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label">Email *</label>
+                <input className="input" type="email" value={residentForm.email} onChange={(e) => setResidentForm((p) => ({ ...p, email: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label">Telefon *</label>
+                <input className="input" value={residentForm.phone} onChange={(e) => setResidentForm((p) => ({ ...p, phone: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label">Telegram</label>
+                <input className="input" placeholder="@username" value={residentForm.telegram} onChange={(e) => setResidentForm((p) => ({ ...p, telegram: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label">Startup nomi *</label>
+                <input className="input" value={residentForm.startupName} onChange={(e) => setResidentForm((p) => ({ ...p, startupName: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label">Hudud</label>
+                <select className="input" value={residentForm.region} onChange={(e) => setResidentForm((p) => ({ ...p, region: e.target.value }))}>
+                  {REGIONS.map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="label">Soha</label>
+                <input className="input" value={residentForm.startupSphere} onChange={(e) => setResidentForm((p) => ({ ...p, startupSphere: e.target.value }))} placeholder="Masalan: Saas, FinTech..." />
+              </div>
+              <div>
+                <label className="label">Bosqich</label>
+                <select className="input" value={residentForm.stage} onChange={(e) => setResidentForm((p) => ({ ...p, stage: e.target.value }))}>
+                  {STAGES.map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="label">Jamoa soni</label>
+                <input className="input" type="number" min={1} value={residentForm.teamSize} onChange={(e) => setResidentForm((p) => ({ ...p, teamSize: Number(e.target.value) }))} />
+              </div>
+              <div>
+                <label className="label">MRR</label>
+                <input className="input" type="number" min={0} value={residentForm.mrr} onChange={(e) => setResidentForm((p) => ({ ...p, mrr: Number(e.target.value) }))} />
+              </div>
+              <div>
+                <label className="label">Foydalanuvchilar</label>
+                <input className="input" type="number" min={0} value={residentForm.usersCount} onChange={(e) => setResidentForm((p) => ({ ...p, usersCount: Number(e.target.value) }))} />
+              </div>
+              <div>
+                <label className="label">Investitsiya</label>
+                <input className="input" type="number" min={0} value={residentForm.investmentRaised} onChange={(e) => setResidentForm((p) => ({ ...p, investmentRaised: Number(e.target.value) }))} />
+              </div>
+              <div>
+                <label className="label">Pitch deck link</label>
+                <input className="input" value={residentForm.pitchDeck} onChange={(e) => setResidentForm((p) => ({ ...p, pitchDeck: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label">Resume link</label>
+                <input className="input" value={residentForm.resumeUrl} onChange={(e) => setResidentForm((p) => ({ ...p, resumeUrl: e.target.value }))} />
+              </div>
+              <div className="md:col-span-2">
+                <label className="label">Startup haqida</label>
+                <textarea className="input min-h-24 resize-none" value={residentForm.description} onChange={(e) => setResidentForm((p) => ({ ...p, description: e.target.value }))} />
+              </div>
+            </div>
+            <div className="p-6 border-t flex gap-3 justify-end" style={{ borderColor: 'var(--border)' }}>
+              <button onClick={() => setResidentModal(false)} className="btn-secondary">Bekor qilish</button>
+              <button onClick={saveResident} disabled={savingResident} className="btn-primary">
+                {savingResident ? 'Saqlanmoqda...' : 'Residentlikka qo‘shish'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {importModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)' }}>
+          <div className="card w-full max-w-xl p-8">
+            <div className="flex items-start justify-between gap-4 mb-5">
+              <div>
+                <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Google Sheetdan resident import</h3>
+                <p className="text-sm mt-1 leading-6" style={{ color: 'var(--text-muted)' }}>
+                  Sheet public bo‘lishi kerak. Headerlar: founderName, email, phone, telegram, startupName, region, description, startupSphere, stage, teamSize, mrr, usersCount, investmentRaised.
+                </p>
+              </div>
+              <button onClick={() => setImportModal(false)} className="btn-secondary p-2"><X size={16}/></button>
+            </div>
+            <label className="label">Google Sheet link</label>
+            <input
+              className="input mb-4"
+              value={sheetUrl}
+              onChange={(e) => setSheetUrl(e.target.value)}
+              placeholder="https://docs.google.com/spreadsheets/d/..."
+            />
+            {importSummary && (
+              <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  Jami: {importSummary.summary.total} · Qo‘shildi: {importSummary.summary.created} · Yangilandi: {importSummary.summary.updated} · Xato: {importSummary.summary.failed}
+                </p>
+                {importSummary.failed?.length > 0 && (
+                  <p className="text-xs mt-2" style={{ color: '#ef4444' }}>
+                    Birinchi {importSummary.failed.length} xato row qaytdi: {importSummary.failed[0]?.error || 'maʼlumot mos kelmadi'}.
+                  </p>
+                )}
+                {importSummary.summary.headerRow && (
+                  <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                    Header qatori: {importSummary.summary.headerRow}
+                  </p>
+                )}
+              </div>
+            )}
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setImportModal(false)} className="btn-secondary">Yopish</button>
+              <button onClick={importResidents} disabled={importing} className="btn-primary flex items-center gap-2">
+                <Upload size={14}/> {importing ? 'Import qilinmoqda...' : 'Auto import'}
               </button>
             </div>
           </div>

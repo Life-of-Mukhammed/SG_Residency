@@ -34,6 +34,10 @@ const TaskProgressSchema = new Schema<ITaskProgress>(
 );
 
 TaskProgressSchema.index({ userId: 1, startupId: 1, taskId: 1 }, { unique: true });
+// Hot path: dashboard fetches all progress for a startup
+TaskProgressSchema.index({ startupId: 1 });
+// Analytics: completed task ratio
+TaskProgressSchema.index({ completed: 1 });
 
 const TaskProgress: Model<ITaskProgress> =
   (mongoose.models.TaskProgress as Model<ITaskProgress>) ||

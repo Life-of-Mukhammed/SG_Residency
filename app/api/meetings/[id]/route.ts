@@ -117,12 +117,23 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const user = session.user as { id: string; role: string };
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch {
+      body = {};
+    }
+    const cancellationReason = String(body.cancellationReason || '').trim();
+    if (!cancellationReason) {
+      return NextResponse.json({ error: 'Cancellation reason is required' }, { status: 400 });
+    }
+
     await connectDB();
     const meeting = await Meeting.findById(params.id);
     if (!meeting) return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
@@ -149,12 +160,19 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
       }
       await notifyRoles(['manager', 'super_admin'], {
         title: 'Meeting cancelled',
-        message: `${meeting.title} meeting has been cancelled.`,
+        message: `${meeting.title} meeting has been cancelled.\nReason: ${cancellationReason}`,
         type: 'meeting',
         channels: { inApp: true, email: true, telegram: true },
       });
-      await Meeting.findByIdAndDelete(params.id);
-      return NextResponse.json({ message: 'Deleted' });
+      await Meeting.findByIdAndUpdate(params.id, {
+        $set: {
+          status: 'cancelled',
+          cancellationReason,
+          cancelledAt: new Date(),
+          cancelledBy: user.id,
+        },
+      });
+      return NextResponse.json({ message: 'Cancelled' });
     }
 
     if (user.role === 'user' && String(meeting.userId) === user.id && meeting.status === 'booked') {
@@ -171,11 +189,18 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
       });
       await notifyRoles(['manager', 'super_admin'], {
         title: 'Meeting cancelled by founder',
-        message: `Meeting "${meeting.topic || meeting.title}" scheduled for ${founderCancelDate} (Tashkent) has been cancelled by the founder.`,
+        message: `Meeting "${meeting.topic || meeting.title}" scheduled for ${founderCancelDate} (Tashkent) has been cancelled by the founder.\nReason: ${cancellationReason}`,
         type: 'meeting',
         channels: { inApp: true, email: true, telegram: true },
       });
-      await Meeting.findByIdAndDelete(params.id);
+      await Meeting.findByIdAndUpdate(params.id, {
+        $set: {
+          status: 'cancelled',
+          cancellationReason,
+          cancelledAt: new Date(),
+          cancelledBy: user.id,
+        },
+      });
       return NextResponse.json({ message: 'Cancelled' });
     }
 

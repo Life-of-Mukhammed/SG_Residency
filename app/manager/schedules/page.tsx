@@ -15,6 +15,9 @@ export default function SchedulesPage() {
   const [createModal, setCreateModal]     = useState(false);
   const [newSlot, setNewSlot]             = useState({ title: '', scheduledAt: '', duration: 30 });
   const [creating, setCreating]           = useState(false);
+  const [cancelTarget, setCancelTarget]   = useState<any | null>(null);
+  const [cancelReason, setCancelReason]   = useState('');
+  const [cancelling, setCancelling]       = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -26,14 +29,27 @@ export default function SchedulesPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const deleteMeeting = async (id: string) => {
-    if (!confirm('Bu uchrashuv o‘chirilsinmi?')) return;
+  const confirmCancel = async () => {
+    if (!cancelTarget) return;
+    if (!cancelReason.trim()) {
+      toast.error('Bekor qilish sababi majburiy');
+      return;
+    }
+    setCancelling(true);
     try {
-      await axios.delete(`/api/meetings/${id}`);
-      toast.success('O‘chirildi');
+      await axios.delete(`/api/meetings/${cancelTarget._id}`, {
+        data: { cancellationReason: cancelReason.trim() },
+      });
+      toast.success('Uchrashuv bekor qilindi');
+      setCancelTarget(null);
+      setCancelReason('');
       setSelectedMeeting(null);
       load();
-    } catch { toast.error('Xatolik yuz berdi'); }
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Xatolik yuz berdi');
+    } finally {
+      setCancelling(false);
+    }
   };
 
   const createSlot = async () => {
@@ -369,12 +385,12 @@ export default function SchedulesPage() {
                 </a>
               )}
               <button
-                onClick={() => deleteMeeting(selectedMeeting._id)}
+                onClick={() => { setCancelTarget(selectedMeeting); setCancelReason(''); }}
                 className="btn-danger flex items-center gap-2"
                 style={{ flex: selectedMeeting.status === 'booked' ? '0 0 auto' : 1 }}
               >
                 <Trash2 size={14} />
-                {selectedMeeting.status !== 'booked' && 'O‘chirish'}
+                {selectedMeeting.status === 'booked' ? 'Bekor qilish' : 'O‘chirish'}
               </button>
               <button onClick={() => setSelectedMeeting(null)} className="btn-secondary flex-1">Yopish</button>
             </div>
@@ -413,6 +429,51 @@ export default function SchedulesPage() {
               <button onClick={() => setCreateModal(false)} className="btn-secondary flex-1">Bekor qilish</button>
               <button onClick={createSlot} disabled={creating} className="btn-primary flex-1 flex items-center justify-center gap-2">
                 {creating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Yaratish'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bekor qilish oynasi */}
+      {cancelTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
+          <div className="card p-8 w-full max-w-md animate-fade-in">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+              style={{ background: 'rgba(239,68,68,0.12)' }}>
+              <Trash2 size={22} style={{ color: '#ef4444' }} />
+            </div>
+            <h3 className="font-semibold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
+              Uchrashuvni bekor qilish
+            </h3>
+            <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
+              <strong style={{ color: 'var(--text-primary)' }}>{cancelTarget.title}</strong>
+              {cancelTarget.scheduledAt && ` — ${format(new Date(cancelTarget.scheduledAt), 'dd.MM.yyyy HH:mm')}`}
+            </p>
+            <label className="label mt-4">Bekor qilish sababi *</label>
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              className="input min-h-24 resize-none"
+              placeholder="Foydalanuvchi va managerlarga yuboriladigan sabab..."
+            />
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => { setCancelTarget(null); setCancelReason(''); }}
+                disabled={cancelling}
+                className="btn-secondary flex-1"
+              >
+                Yopish
+              </button>
+              <button
+                onClick={confirmCancel}
+                disabled={cancelling || !cancelReason.trim()}
+                className="btn-danger flex-1 flex items-center justify-center gap-2"
+              >
+                {cancelling
+                  ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  : <><Trash2 size={14} /> Bekor qilish</>}
               </button>
             </div>
           </div>

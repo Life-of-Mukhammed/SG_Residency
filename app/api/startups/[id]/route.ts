@@ -3,9 +3,12 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/db';
 import Startup from '@/models/Startup';
+import User from '@/models/User';
 import { notifyUsers } from '@/lib/notifications';
 import { z } from 'zod';
 import { STARTUP_SPHERES } from '@/lib/startup-spheres';
+import AuditLog from '@/models/AuditLog';
+import RejectedLead from '@/models/RejectedLead';
 
 const startupUpdateSchema = z.object({
   status: z.enum(['pending', 'lead_accepted', 'active', 'inactive', 'rejected']).optional(),
@@ -27,6 +30,8 @@ const startupUpdateSchema = z.object({
   investment_raised: z.coerce.number().min(0).optional(),
   commitment: z.enum(['full-time', 'part-time']).optional(),
   acceptedAt: z.string().optional(),
+  gmail: z.string().trim().toLowerCase().optional(),
+  leadStatus: z.string().trim().optional(),
 });
 
 const startupOwnerUpdateSchema = z.object({
@@ -46,7 +51,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
     const user = session.user as { id: string; role: string };
     await connectDB();
-    const startup = await Startup.findById(params.id)
+    const startup = await Startup.findOne({ _id: params.id, deletedAt: null })
       .populate('userId',    'name surname email')
       .populate('managerId', 'name surname email')
       .lean();
@@ -75,7 +80,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const body = await req.json();
     await connectDB();
 
-    const current = await Startup.findById(params.id).lean();
+    const current = await Startup.findOne({ _id: params.id, deletedAt: null }).lean();
     if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     if (user.role === 'user') {
@@ -120,24 +125,87 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         patch.acceptedAt = current.updatedAt ?? new Date();
       }
     }
+
+    // If manager set a new real gmail (not the @startupgarage.local placeholder), try to
+    // find a registered user with that email and re-link the startup to that account.
+    const newGmail = parsed.data.gmail?.trim().toLowerCase();
+    if (newGmail && !newGmail.endsWith('@startupgarage.local') && newGmail !== current.gmail?.toLowerCase()) {
+      const realUser = await User.findOne({ email: newGmail });
+      if (realUser && String(realUser._id) !== String(current.userId)) {
+        // The new user might already own a separate (usually empty) Startup that they
+        // self-submitted before the link. The Startup.userId index is unique so we have
+        // to soft-delete that fresh application before re-pointing this resident.
+        const conflicting = await Startup.findOne({
+          userId: realUser._id,
+          deletedAt: null,
+          _id: { $ne: current._id },
+        });
+        if (conflicting) {
+          const isAbandonable = conflicting.status === 'pending' && conflicting.applicationType === 'new_applicant';
+          if (isAbandonable) {
+            await Startup.findByIdAndUpdate(conflicting._id, {
+              $set: { deletedAt: new Date(), status: 'inactive' },
+            });
+          } else {
+            // Active or already-residency record blocks the auto-link; surface a warning instead of failing silently
+            console.warn('[startups PATCH] cannot re-link, target user already owns active startup', {
+              targetStartup: String(current._id),
+              ownerStartup:  String(conflicting._id),
+              newOwner:      String(realUser._id),
+            });
+          }
+        }
+        // Re-check after potential cleanup
+        const stillConflicting = await Startup.exists({
+          userId: realUser._id,
+          deletedAt: null,
+          _id: { $ne: current._id },
+        });
+        if (!stillConflicting) {
+          const oldOwner = await User.findById(current.userId).select('email password').lean();
+          patch.userId = realUser._id;
+          if (oldOwner && typeof oldOwner.email === 'string' && oldOwner.email.endsWith('@startupgarage.local') && !oldOwner.password) {
+            await User.findByIdAndDelete(current.userId);
+          }
+        }
+      }
+    }
     if (parsed.data.status === 'active' && !current.managerId) {
       patch.managerId = user.id;
     }
     if (parsed.data.status === 'active') {
       patch.rejectionReason = '';
+      patch.rejectedAt = undefined;
       if (current.status !== 'active') patch.acceptedAt = new Date();
     }
     if (parsed.data.status === 'pending') {
       patch.rejectionReason = '';
+      patch.rejectedAt = undefined;
     }
     if (parsed.data.status === 'lead_accepted' && !current.managerId) {
       patch.managerId = user.id;
       patch.rejectionReason = '';
     }
+    if (parsed.data.status === 'rejected') {
+      patch.rejectedAt = new Date();
+    }
+
+    const update: Record<string, unknown> = { $set: patch };
+    if (parsed.data.status && parsed.data.status !== current.status) {
+      update.$push = {
+        statusHistory: {
+          from: current.status,
+          to: parsed.data.status,
+          reason: parsed.data.rejectionReason?.trim() || '',
+          actorId: user.id,
+          changedAt: new Date(),
+        },
+      };
+    }
 
     const startup = await Startup.findByIdAndUpdate(
       params.id,
-      { $set: patch },
+      update,
       { new: true }
     ).populate('userId', 'name surname email').lean();
 
@@ -182,6 +250,32 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         type: 'info',
         channels: { inApp: true, email: true, telegram: true },
       });
+
+      await AuditLog.create({
+        actorId: user.id,
+        action: 'startup_status_changed',
+        entityType: 'Startup',
+        entityId: params.id,
+        metadata: { from: current.status, to: parsed.data.status },
+      });
+
+      if (parsed.data.status === 'rejected') {
+        await RejectedLead.findOneAndUpdate(
+          { startupId: startup._id },
+          {
+            startupId: startup._id,
+            startupName: startup.startup_name,
+            founderName: startup.founder_name,
+            phone: startup.phone,
+            telegram: startup.telegram,
+            region: startup.region,
+            rejectionReason: parsed.data.rejectionReason?.trim() || '',
+            rejectedAt: new Date(),
+            rejectedBy: user.id,
+          },
+          { upsert: true, new: true }
+        );
+      }
     }
 
     return NextResponse.json({ startup });
@@ -202,8 +296,20 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     }
 
     await connectDB();
-    await Startup.findByIdAndDelete(params.id);
-    return NextResponse.json({ message: 'Deleted' });
+    const startup = await Startup.findOneAndUpdate(
+      { _id: params.id, deletedAt: null },
+      { $set: { deletedAt: new Date(), deletedBy: user.id, status: 'inactive' } },
+      { new: true }
+    ).lean();
+    if (!startup) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    await AuditLog.create({
+      actorId: user.id,
+      action: 'startup_soft_deleted',
+      entityType: 'Startup',
+      entityId: params.id,
+      metadata: { startup_name: (startup as any).startup_name },
+    });
+    return NextResponse.json({ message: 'Soft deleted' });
   } catch (err) {
     console.error('[DELETE /api/startups/[id]]', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

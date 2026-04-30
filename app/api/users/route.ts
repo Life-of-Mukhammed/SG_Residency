@@ -6,8 +6,13 @@ import User from '@/models/User';
 import Startup from '@/models/Startup';
 import { notifyRoles } from '@/lib/notifications';
 import Notification from '@/models/Notification';
+import AuditLog from '@/models/AuditLog';
 
 export const dynamic = 'force-dynamic';
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,18 +28,36 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const role = searchParams.get('role') || '';
     const region = searchParams.get('region') || '';
+    const search = searchParams.get('search') || '';
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)));
 
-    const query: Record<string, unknown> = {};
+    const query: Record<string, any> = { deletedAt: null, status: { $ne: 'deleted' } };
     if (role) query.role = role;
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { surname: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ];
+    }
 
     if (region) {
       const startupUsers = await Startup.find({
-        region: { $regex: `^${region}$`, $options: 'i' },
+        region: { $regex: `^${escapeRegex(region)}$`, $options: 'i' },
       }).distinct('userId');
       query._id = { $in: startupUsers };
     }
 
-    const users = await User.find(query).select('-password').sort({ createdAt: -1 }).lean();
+    const [total, users] = await Promise.all([
+      User.countDocuments(query),
+      User.find(query)
+        .select('name surname email role status telegramChatId createdAt')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+    ]);
     const startupRegions = await Startup.find({
       userId: { $in: users.map((item: any) => item._id) },
     }).select('userId region').lean();
@@ -48,7 +71,10 @@ export async function GET(req: NextRequest) {
       region: regionMap.get(String(item._id)) || '',
     }));
 
-    return NextResponse.json({ users: usersWithRegion });
+    return NextResponse.json({
+      users: usersWithRegion,
+      pagination: { total, page, limit, pages: Math.ceil(total / limit) },
+    });
   } catch (err) {
     console.error('[GET /api/users]', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -74,7 +100,12 @@ export async function PATCH(req: NextRequest) {
     }
 
     await connectDB();
-    const updated = await User.findByIdAndUpdate(userId, { role }, { new: true }).select('-password').lean() as any;
+    const updated = await User.findOneAndUpdate(
+      { _id: userId, deletedAt: null },
+      { role },
+      { new: true }
+    ).select('-password').lean() as any;
+    if (!updated) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     const roleLabel: Record<string, string> = {
       user: 'Founder',
@@ -87,6 +118,13 @@ export async function PATCH(req: NextRequest) {
       message: `${updated?.name ?? ''} ${updated?.surname ?? ''} (${updated?.email ?? ''}) has been assigned the <b>${roleLabel[role] ?? role}</b> role by super admin.`,
       type: 'info',
       channels: { inApp: true, email: true, telegram: true },
+    });
+    await AuditLog.create({
+      actorId: user.id,
+      action: 'user_role_changed',
+      entityType: 'User',
+      entityId: userId,
+      metadata: { role },
     });
 
     return NextResponse.json({ user: updated });
@@ -119,9 +157,20 @@ export async function DELETE(req: NextRequest) {
     if (!target) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     await Promise.all([
-      User.findByIdAndDelete(userId),
-      Startup.deleteMany({ userId }),
-      Notification.deleteMany({ managerId: userId }),
+      User.findByIdAndUpdate(userId, {
+        $set: { status: 'deleted', deletedAt: new Date(), deletedBy: actor.id },
+      }),
+      Startup.updateMany({ userId, deletedAt: null }, {
+        $set: { deletedAt: new Date(), deletedBy: actor.id, status: 'inactive' },
+      }),
+      Notification.updateMany({ managerId: userId }, { $set: { deliveredAt: new Date() } }),
+      AuditLog.create({
+        actorId: actor.id,
+        action: 'user_soft_deleted',
+        entityType: 'User',
+        entityId: userId,
+        metadata: { email: target.email },
+      }),
     ]);
 
     return NextResponse.json({ ok: true, deleted: { id: userId, name: `${target.name} ${target.surname}` } });

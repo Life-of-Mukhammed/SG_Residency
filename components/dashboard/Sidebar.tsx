@@ -108,6 +108,7 @@ export default function Sidebar() {
   const [startupStatus, setStartupStatus] = useState<'active' | 'lead_accepted' | 'pending' | 'rejected' | 'inactive' | null>(null);
   const [gtmUnlocked, setGtmUnlocked] = useState(false);
   const [showApplyPrompt, setShowApplyPrompt] = useState(false);
+  const [scheduledMeetings, setScheduledMeetings] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -142,6 +143,25 @@ export default function Sidebar() {
     load();
   }, [role]);
 
+  useEffect(() => {
+    if (!['manager', 'super_admin'].includes(role)) return;
+    let cancelled = false;
+    const loadMeetingCount = async () => {
+      try {
+        const res = await axios.get('/api/meetings?status=booked&limit=1');
+        if (!cancelled) setScheduledMeetings(res.data.scheduledCount ?? res.data.pagination?.total ?? 0);
+      } catch {
+        if (!cancelled) setScheduledMeetings(0);
+      }
+    };
+    loadMeetingCount();
+    const timer = window.setInterval(loadMeetingCount, 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [role]);
+
   const open = mounted && _hydrated ? sidebarOpen : true;
   const w = isMobile ? (open ? 280 : 0) : (open ? 254 : 76);
 
@@ -153,7 +173,7 @@ export default function Sidebar() {
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard';
-    return pathname.startsWith(href);
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
 
   const shouldPromptResidency = (item: { key: NavKey; href: string }) => {
@@ -186,15 +206,21 @@ export default function Sidebar() {
             justifyContent: open ? 'flex-start' : 'center',
             padding: open ? '11px 13px' : '12px',
             opacity: blocked ? 0.58 : 1,
-            background: isActive(item.href) ? 'linear-gradient(135deg, rgba(56,189,248,0.14), rgba(99,102,241,0.16))' : undefined,
+            background: isActive(item.href) ? '#2563eb' : undefined,
+            color: isActive(item.href) ? '#fff' : undefined,
           }}
           title={!open ? label(item.key) : undefined}
         >
           <span className="flex-shrink-0">{item.icon}</span>
           {open && <span className="truncate text-sm">{label(item.key)}</span>}
+          {open && item.key === 'meetings' && scheduledMeetings > 0 && (
+            <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center" style={{ background: '#2563eb', color: '#fff' }}>
+              {scheduledMeetings}
+            </span>
+          )}
           {open && blocked && <Lock size={12} className="ml-auto flex-shrink-0" />}
           {open && !blocked && gtmLocked && <Lock size={12} className="ml-auto flex-shrink-0" />}
-          {open && !blocked && !gtmLocked && isActive(item.href) && <ChevronRight size={13} className="ml-auto flex-shrink-0" />}
+          {open && !blocked && !gtmLocked && isActive(item.href) && item.key !== 'meetings' && <ChevronRight size={13} className="ml-auto flex-shrink-0" />}
         </div>
       </Link>
     );

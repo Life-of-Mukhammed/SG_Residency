@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Header from '@/components/dashboard/Header';
-import { Plus, Trash2, Edit2, X, Check, Copy, Search, Rocket, Save } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Check, Copy, Search, Rocket, Save, Upload } from 'lucide-react';
 import { extractKeyValueRows, extractPipeTable, splitContentBlocks } from '@/lib/gtm-display';
 
 const TYPES = ['prompt', 'campaign', 'kpi', 'daily'] as const;
@@ -59,18 +59,26 @@ export default function ManagerGtmPage() {
   const [copied, setCopied] = useState<string | null>(null);
   const [selected, setSelected] = useState<GtmItem | null>(null);
   const [progressRows, setProgressRows] = useState<any[]>([]);
+  const [residentTasks, setResidentTasks] = useState<any[]>([]);
+  const [activeStartups, setActiveStartups] = useState<any[]>([]);
+  const [taskForm, setTaskForm] = useState({ startupId: '', title: '', description: '', deadline: '', attachments: [] as any[] });
+  const [uploading, setUploading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [itemsRes, configRes, progressRes] = await Promise.all([
+      const [itemsRes, configRes, progressRes, taskRes, startupRes] = await Promise.all([
         axios.get('/api/gtm'),
         axios.get('/api/gtm/config'),
         axios.get('/api/gtm-progress?all=1'),
+        axios.get('/api/gtm-tasks?limit=50'),
+        axios.get('/api/startups?status=active&limit=100'),
       ]);
       setItems(itemsRes.data.items ?? []);
       setConfig(configRes.data.config ?? null);
       setProgressRows(progressRes.data.progress ?? []);
+      setResidentTasks(taskRes.data.tasks ?? []);
+      setActiveStartups(startupRes.data.startups ?? []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -152,6 +160,36 @@ export default function ManagerGtmPage() {
     }
   };
 
+  const uploadAttachment = async (file: File) => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await axios.post('/api/gtm-tasks/upload', formData);
+      setTaskForm((prev) => ({ ...prev, attachments: [...prev.attachments, res.data.file] }));
+      toast.success('Fayl yuklandi');
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Fayl yuklab bo‘lmadi');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const createResidentTask = async () => {
+    if (!taskForm.startupId || !taskForm.title.trim() || !taskForm.description.trim() || !taskForm.deadline) {
+      toast.error('Rezident, nom, tavsif va deadline majburiy');
+      return;
+    }
+    try {
+      await axios.post('/api/gtm-tasks', taskForm);
+      toast.success('Rezident uchun GTM vazifa yaratildi');
+      setTaskForm({ startupId: '', title: '', description: '', deadline: '', attachments: [] });
+      load();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Vazifa yaratib bo‘lmadi');
+    }
+  };
+
   const copy = async (content: string, id: string) => {
     await navigator.clipboard.writeText(content);
     setCopied(id);
@@ -217,6 +255,45 @@ export default function ManagerGtmPage() {
           <button onClick={() => openAdd()} className="btn-primary flex items-center gap-2 text-sm">
             <Plus size={15} /> Vazifa qo‘shish
           </button>
+        </div>
+
+        <div className="card space-y-4">
+          <div>
+            <p className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Rezident GTM vazifalari</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Har bir rezidentga alohida vazifa, deadline va fayl biriktiring</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <select value={taskForm.startupId} onChange={(e) => setTaskForm((p) => ({ ...p, startupId: e.target.value }))} className="input text-sm">
+              <option value="">Rezident tanlang</option>
+              {activeStartups.map((startup) => (
+                <option key={startup._id} value={startup._id}>{startup.startup_name}</option>
+              ))}
+            </select>
+            <input value={taskForm.title} onChange={(e) => setTaskForm((p) => ({ ...p, title: e.target.value }))} className="input text-sm" placeholder="Vazifa nomi" />
+            <input type="date" value={taskForm.deadline} onChange={(e) => setTaskForm((p) => ({ ...p, deadline: e.target.value }))} className="input text-sm" />
+            <label className="btn-secondary flex items-center justify-center gap-2 text-sm cursor-pointer">
+              <Upload size={14} /> {uploading ? 'Yuklanmoqda...' : 'Fayl'}
+              <input type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" onChange={(e) => e.target.files?.[0] && uploadAttachment(e.target.files[0])} />
+            </label>
+            <button onClick={createResidentTask} className="btn-primary text-sm">Assign task</button>
+          </div>
+          <textarea value={taskForm.description} onChange={(e) => setTaskForm((p) => ({ ...p, description: e.target.value }))} className="input min-h-20 text-sm" placeholder="Vazifa tavsifi" />
+          {taskForm.attachments.length > 0 && (
+            <div className="flex gap-2 flex-wrap">
+              {taskForm.attachments.map((file) => (
+                <a key={file.url} href={file.url} target="_blank" rel="noreferrer" className="badge badge-mvp">{file.name}</a>
+              ))}
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {residentTasks.slice(0, 6).map((task) => (
+              <div key={task._id} className="rounded-2xl p-3" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{task.title}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{task.startupId?.startup_name} · {task.status} · {new Date(task.deadline).toLocaleDateString('uz-UZ')}</p>
+                {task.attachments?.length > 0 && <p className="text-xs mt-1" style={{ color: 'var(--accent)' }}>{task.attachments.length} fayl</p>}
+              </div>
+            ))}
+          </div>
         </div>
 
         {loading ? (

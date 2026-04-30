@@ -14,6 +14,9 @@ export interface IMeeting extends Document {
   officeAddress?: string;
   status: 'available' | 'booked' | 'completed' | 'cancelled';
   notes?: string;
+  cancellationReason?: string;
+  cancelledAt?: Date;
+  cancelledBy?: mongoose.Types.ObjectId;
   reminderSentAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -34,6 +37,9 @@ const MeetingSchema = new Schema<IMeeting>(
     officeAddress: { type: String },
     status:        { type: String, enum: ['available','booked','completed','cancelled'], default: 'available' },
     notes:         { type: String },
+    cancellationReason: { type: String, trim: true },
+    cancelledAt:   { type: Date },
+    cancelledBy:   { type: Schema.Types.ObjectId, ref: 'User' },
     reminderSentAt:{ type: Date, default: null },
   },
   { timestamps: true }
@@ -43,6 +49,7 @@ MeetingSchema.index({ userId: 1, status: 1 });
 MeetingSchema.index({ managerId: 1, status: 1 });
 MeetingSchema.index({ status: 1, scheduledAt: 1 });
 MeetingSchema.index({ status: 1, reminderSentAt: 1, scheduledAt: 1 });
+MeetingSchema.index({ cancelledAt: -1 }, { sparse: true });
 
 const Meeting: Model<IMeeting> =
   (mongoose.models.Meeting as Model<IMeeting>) ||

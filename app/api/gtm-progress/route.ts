@@ -28,34 +28,43 @@ export async function GET(req: NextRequest) {
 
       const [items, startups] = await Promise.all([
         GtmItem.find({}).select('_id title section category').lean(),
-        Startup.find({ status: 'active' }).populate('userId', 'name surname email').lean(),
+        Startup.find({ status: 'active', deletedAt: null })
+          .select('startup_name region stage userId')
+          .populate('userId', 'name surname email')
+          .lean(),
       ]);
 
       const totalTasks = items.length;
-      const result = await Promise.all(
-        startups.map(async (startup: any) => {
-          const tasks = await GtmTaskProgress.find({ startupId: startup._id })
-            .populate('gtmItemId', 'title section category')
-            .populate('reviewedBy', 'name surname')
-            .sort({ updatedAt: -1 })
-            .lean();
+      const startupIds = startups.map((startup: any) => startup._id);
+      const allProgress = await GtmTaskProgress.find({ startupId: { $in: startupIds } })
+        .populate('gtmItemId', 'title section category')
+        .populate('reviewedBy', 'name surname')
+        .sort({ updatedAt: -1 })
+        .lean();
 
-          const completed = tasks.filter((task: any) => task.completed).length;
-          return {
-            startup: {
-              _id: startup._id,
-              startup_name: startup.startup_name,
-              region: startup.region,
-              stage: startup.stage,
-            },
-            founder: startup.userId,
-            totalTasks,
-            completed,
-            pct: totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0,
-            recentTasks: tasks.slice(0, 8),
-          };
-        })
-      );
+      const progressByStartup = new Map<string, any[]>();
+      for (const task of allProgress) {
+        const key = String((task as any).startupId);
+        progressByStartup.set(key, [...(progressByStartup.get(key) ?? []), task]);
+      }
+
+      const result = startups.map((startup: any) => {
+        const tasks = progressByStartup.get(String(startup._id)) ?? [];
+        const completed = tasks.filter((task: any) => task.completed).length;
+        return {
+          startup: {
+            _id: startup._id,
+            startup_name: startup.startup_name,
+            region: startup.region,
+            stage: startup.stage,
+          },
+          founder: startup.userId,
+          totalTasks,
+          completed,
+          pct: totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0,
+          recentTasks: tasks.slice(0, 8),
+        };
+      });
 
       return NextResponse.json({ progress: result });
     }

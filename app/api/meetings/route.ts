@@ -15,6 +15,8 @@ export async function GET(req: NextRequest) {
     const user = session.user as { id: string; role: string };
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') || '';
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10)));
 
     const query: Record<string, any> = {};
 
@@ -27,14 +29,24 @@ export async function GET(req: NextRequest) {
     }
     if (status) query.status = status;
 
-    const meetings = await Meeting.find(query)
+    const [total, scheduledCount, meetings] = await Promise.all([
+      Meeting.countDocuments(query),
+      Meeting.countDocuments({ ...query, status: 'booked' }),
+      Meeting.find(query)
       .populate('managerId', 'name surname email')
       .populate('userId',    'name surname email')
       .populate('startupId', 'startup_name')
       .sort({ scheduledAt: 1 })
-      .lean();
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+    ]);
 
-    return NextResponse.json({ meetings });
+    return NextResponse.json({
+      meetings,
+      scheduledCount,
+      pagination: { total, page, limit, pages: Math.ceil(total / limit) },
+    });
   } catch (err) {
     console.error('[GET /api/meetings]', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -7,12 +7,18 @@ export interface IUser extends Document {
   email: string;
   password?: string;
   role: 'user' | 'manager' | 'super_admin';
+  status?: 'active' | 'disabled' | 'deleted';
   avatar?: string;
   telegramChatId?: string;
   telegramBotConnectedAt?: Date;
   telegramState?: string;
+  deletedAt?: Date;
+  deletedBy?: mongoose.Types.ObjectId;
   resetPasswordCode?: string;
   resetPasswordExpires?: Date;
+  verificationCode?: string;
+  verificationExpires?: Date;
+  emailVerified?: boolean;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidate: string): Promise<boolean>;
@@ -25,12 +31,18 @@ const UserSchema = new Schema<IUser>(
     email:    { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, minlength: 6, select: false },
     role:     { type: String, enum: ['user', 'manager', 'super_admin'], default: 'user' },
+    status:   { type: String, enum: ['active', 'disabled', 'deleted'], default: 'active', index: true },
     avatar:   { type: String },
     telegramChatId: { type: String, trim: true },
     telegramBotConnectedAt: { type: Date },
     telegramState: { type: String, default: null },
+    deletedAt: { type: Date, default: null },
+    deletedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     resetPasswordCode: { type: String, select: false },
     resetPasswordExpires: { type: Date, select: false },
+    verificationCode: { type: String, select: false },
+    verificationExpires: { type: Date, select: false },
+    emailVerified: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

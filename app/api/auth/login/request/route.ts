@@ -4,7 +4,7 @@ import { z } from 'zod';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
 import Startup from '@/models/Startup';
-import { sendPasswordResetCode } from '@/lib/mailer';
+import { sendVerificationCode } from '@/lib/mailer';
 
 const requestSchema = z.object({
   email: z.string().email('Noto‘g‘ri email manzili'),
@@ -24,18 +24,18 @@ export async function POST(req: NextRequest) {
     const inputEmail = parsed.data.email.toLowerCase().trim();
     if (inputEmail.endsWith('@startupgarage.local')) {
       return NextResponse.json(
-        { error: 'Bu placeholder email. Iltimos haqiqiy gmail manzilingiz bilan urinib ko‘ring yoki manager bilan bog‘laning.' },
+        { error: 'Bu placeholder email. Iltimos haqiqiy gmail manzilingiz bilan urinib ko‘ring.' },
         { status: 400 }
       );
     }
 
     await connectDB();
 
-    // Try to find a real user by email first
+    // Look up by User.email first, then by Startup.gmail (resident imported with this gmail)
     let user = await User.findOne({ email: inputEmail })
-      .select('+resetPasswordCode +resetPasswordExpires +password');
+      .select('+verificationCode +verificationExpires');
 
-    // If not found, try matching against an imported resident's Startup.gmail
+    let viaResident = false;
     if (!user) {
       const startup = await Startup.findOne({
         gmail: { $regex: `^${escapeRegex(inputEmail)}$`, $options: 'i' },
@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
       }).select('userId').lean();
       if (startup?.userId) {
         user = await User.findById(startup.userId)
-          .select('+resetPasswordCode +resetPasswordExpires +password');
+          .select('+verificationCode +verificationExpires');
+        viaResident = true;
       }
     }
 
@@ -51,34 +52,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Bu email bo‘yicha akkount topilmadi' }, { status: 404 });
     }
 
+    // Generate 6-digit OTP
     const code = crypto.randomInt(100000, 1000000).toString();
     const hashedCode = crypto.createHash('sha256').update(code).digest('hex');
 
-    user.resetPasswordCode = hashedCode;
-    user.resetPasswordExpires = new Date(Date.now() + 10 * 60 * 1000);
+    user.verificationCode = hashedCode;
+    user.verificationExpires = new Date(Date.now() + 10 * 60 * 1000);
     await user.save();
 
-    // Always send to the user-provided email (never to synthetic placeholder address)
     try {
-      await sendPasswordResetCode(inputEmail, code);
+      await sendVerificationCode(inputEmail, code, viaResident);
     } catch (mailError: any) {
-      console.error('[forgot-password/request] mail error', mailError);
-      const code = mailError?.code as string | undefined;
+      console.error('[login/request] mail error', mailError);
+      const errCode = mailError?.code as string | undefined;
       const userMessage =
-        code === 'EAUTH'
+        errCode === 'EAUTH'
           ? 'Email server autentifikatsiyasi noto‘g‘ri. Admin Gmail App Password ni .env faylida yangilashi kerak.'
-          : code === 'ECONNECTION' || code === 'ETIMEDOUT'
-            ? 'Email serverga ulanib bo‘lmadi. Internet yoki SMTP sozlamasini tekshiring.'
-            : 'Kod yuborib bo‘lmadi. Iltimos email manzilini tekshirib qayta urinib ko‘ring.';
+          : errCode === 'ECONNECTION' || errCode === 'ETIMEDOUT'
+            ? 'Email serverga ulanib bo‘lmadi.'
+            : 'Kod yuborib bo‘lmadi. Iltimos qayta urinib ko‘ring.';
       return NextResponse.json({ error: userMessage }, { status: 500 });
     }
 
     return NextResponse.json({
-      message: 'Tasdiqlash kodi emailingizga yuborildi.',
-      hasPassword: Boolean(user.password),
+      message: 'Kirish kodi emailingizga yuborildi',
+      isResident: viaResident,
     });
-  } catch (error: unknown) {
-    console.error('[POST /api/auth/forgot-password/request]', error);
+  } catch (error) {
+    console.error('[POST /api/auth/login/request]', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });
   }

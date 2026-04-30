@@ -32,9 +32,13 @@ function RegisterPageContent() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleConfigured, setGoogleConfigured] = useState(true);
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpResident, setOtpResident] = useState<{ startupName: string | null } | null>(null);
+  const [resending, setResending] = useState(false);
   const { t, theme } = useAppStore();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors }, getValues } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
@@ -66,14 +70,36 @@ function RegisterPageContent() {
     toast.error(messages[error] || 'Autentifikatsiya xatosi. Qayta urinib ko\'ring.');
   }, [searchParams]);
 
+  const requestOtp = async (email: string) => {
+    const res = await axios.post('/api/auth/register/request', { email });
+    setOtpSent(true);
+    setOtpResident({ startupName: res.data.startupName ?? null });
+    toast.success(res.data.isResident
+      ? `Tasdiqlash kodi rezident emailingizga yuborildi`
+      : 'Tasdiqlash kodi emailingizga yuborildi');
+  };
+
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
+      // Step 1: ask for OTP if we don't have it yet
+      if (!otpSent) {
+        await requestOtp(data.email);
+        return;
+      }
+
+      // Step 2: submit registration with OTP
+      if (!/^\d{6}$/.test(otp)) {
+        toast.error('6 raqamli tasdiqlash kodi kiriting');
+        return;
+      }
+
       await axios.post('/api/auth/register', {
         name: data.name,
         surname: data.surname,
         email: data.email,
         password: data.password,
+        otp,
       });
 
       const res = await signIn('credentials', {
@@ -95,6 +121,22 @@ function RegisterPageContent() {
       toast.error(err.response?.data?.error || 'Ro\'yxatdan o\'tish amalga oshmadi');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const resendOtp = async () => {
+    const email = getValues('email');
+    if (!email) {
+      toast.error('Email kiriting');
+      return;
+    }
+    setResending(true);
+    try {
+      await requestOtp(email);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Kod qayta yuborilmadi');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -241,9 +283,46 @@ function RegisterPageContent() {
 
             <div>
               <label className="label">{t('email')}</label>
-              <input {...register('email')} type="email" className="input notranslate" translate="no" placeholder="siz@example.com" />
+              <input
+                {...register('email')}
+                type="email"
+                className="input notranslate"
+                translate="no"
+                placeholder="siz@example.com"
+                disabled={otpSent}
+              />
               {errors.email && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.email.message}</p>}
             </div>
+
+            {otpSent && (
+              <div className="rounded-2xl p-4" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)' }}>
+                {otpResident?.startupName && (
+                  <p className="text-xs mb-3" style={{ color: '#10b981' }}>
+                    ✅ <strong>{otpResident.startupName}</strong> rezidentingiz uchun kod yuborildi
+                  </p>
+                )}
+                <label className="label">Tasdiqlash kodi (6 raqam)</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="input text-center text-2xl tracking-[0.5em] font-mono"
+                  placeholder="••••••"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={resendOtp}
+                  disabled={resending}
+                  className="text-xs mt-2"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  {resending ? 'Yuborilmoqda...' : 'Kodni qayta yuborish'}
+                </button>
+              </div>
+            )}
 
             <div>
               <label className="label">{t('password')}</label>
@@ -275,7 +354,11 @@ function RegisterPageContent() {
             </div>
 
             <button type="submit" disabled={loading || googleLoading} className="btn-primary w-full flex items-center justify-center gap-2 py-3 mt-2">
-              {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>{t('createAccount')} <ArrowRight size={16} /></>}
+              {loading
+                ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                : otpSent
+                  ? <>Tasdiqlash va hisob yaratish <ArrowRight size={16} /></>
+                  : <>Tasdiqlash kodini olish <ArrowRight size={16} /></>}
             </button>
           </form>
 
